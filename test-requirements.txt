@@ -1,0 +1,6 @@
+nose>=1.2.1
+mock>=1.0.1
+pyhamcrest>=1.6
+pexpect>=3.3
+flexmock>=0.9.7
+-e git+https://github.com/leopoul/ncclient.git@master#egg=ncclient
