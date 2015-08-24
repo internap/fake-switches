@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/internaphosting/fake-switches.svg)](https://travis-ci.org/internaphosting/fake-switches)
+
 Fake-switches
 =============
 
