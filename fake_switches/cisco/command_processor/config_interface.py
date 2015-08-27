@@ -127,6 +127,19 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
         if "redirects".startswith(args[0]):
             del self.port.vendor_specific["no ip redirects"]
 
+        if "helper-address".startswith(args[0]):
+            if len(args) == 1:
+                self.write_line("% Incomplete command.")
+                self.write_line("")
+            elif len(args) > 2:
+                self.write_line(" ^")
+                self.write_line("% Invalid input detected at '^' marker.")
+                self.write_line("")
+            else:
+                ip_network = IPNetwork(args[1])
+                if ip_network not in self.port.ip_helpers:
+                    self.port.ip_helpers.append(ip_network)
+
     def do_no_ip(self, *args):
         if "address".startswith(args[0]):
             if len(args) == 1:
@@ -152,6 +165,19 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                 self.port.vrf = None
         if "redirects".startswith(args[0]):
             self.port.vendor_specific["no ip redirects"] = True
+
+        if "helper-address".startswith(args[0]):
+            if len(args) > 2:
+                self.write_line(" ^")
+                self.write_line("% Invalid input detected at '^' marker.")
+                self.write_line("")
+            else:
+                if len(args) == 1:
+                    self.port.ip_helpers = []
+                else:
+                    ip_network = IPNetwork(args[1])
+                    if ip_network in self.port.ip_helpers:
+                        self.port.ip_helpers.remove(ip_network)
 
     def do_standby(self, group, command, *args):
         vrrp = self.port.get_vrrp_group(group)

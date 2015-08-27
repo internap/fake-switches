@@ -125,6 +125,7 @@ class Port(object):
         self.auto_negotiation = None
         self.aggregation_membership = None
         self.vendor_specific = {}
+        self.ip_helpers = []
 
     def reset(self):
         self.description = None
