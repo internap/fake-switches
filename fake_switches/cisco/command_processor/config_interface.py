@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from netaddr import IPNetwork
+from netaddr.ip import IPAddress
 
 from fake_switches.switch_configuration import VlanPort
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
@@ -136,9 +137,9 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                 self.write_line("% Invalid input detected at '^' marker.")
                 self.write_line("")
             else:
-                ip_network = IPNetwork(args[1])
-                if ip_network not in self.port.ip_helpers:
-                    self.port.ip_helpers.append(ip_network)
+                ip_address = IPAddress(args[1])
+                if ip_address not in self.port.ip_helpers:
+                    self.port.ip_helpers.append(ip_address)
 
     def do_no_ip(self, *args):
         if "address".startswith(args[0]):
@@ -175,9 +176,9 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                 if len(args) == 1:
                     self.port.ip_helpers = []
                 else:
-                    ip_network = IPNetwork(args[1])
-                    if ip_network in self.port.ip_helpers:
-                        self.port.ip_helpers.remove(ip_network)
+                    ip_address = IPAddress(args[1])
+                    if ip_address in self.port.ip_helpers:
+                        self.port.ip_helpers.remove(ip_address)
 
     def do_standby(self, group, command, *args):
         vrrp = self.port.get_vrrp_group(group)

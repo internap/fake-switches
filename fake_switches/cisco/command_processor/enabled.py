@@ -235,8 +235,8 @@ def build_running_interface(port):
                 data.append(" standby {group} authentication {authentication}".format(group=group, authentication=vrrp.authentication))
             for track, decrement in sorted(vrrp.track.items()):
                 data.append(" standby {group} track {track} decrement {decrement}".format(group=group, track=track, decrement=decrement))
-        for ip_network in port.ip_helpers:
-            data.append(" ip helper-address %s" % ip_network.ip)
+        for ip_address in port.ip_helpers:
+            data.append(" ip helper-address {}".format(ip_address))
     return data
 
 

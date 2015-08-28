@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from netaddr import IPNetwork
+from netaddr.ip import IPAddress
 
 from fake_switches.brocade.command_processor.config_interface import ConfigInterfaceCommandProcessor
 from fake_switches.brocade.command_processor.config_virtual_interface_vrrp import \
@@ -78,9 +79,9 @@ class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
                 self.write_line("Invalid input -> {}".format(" ".join(args[2:])))
                 self.write_line("Type ? for a list")
             else:
-                ip_network = IPNetwork(args[1])
-                if ip_network not in self.port.ip_helpers:
-                    self.port.ip_helpers.append(ip_network)
+                ip_address = IPAddress(args[1])
+                if ip_address not in self.port.ip_helpers:
+                    self.port.ip_helpers.append(ip_address)
                 else:
                     self.write_line("UDP: Errno(7) Duplicate helper address")
 
@@ -129,8 +130,8 @@ class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
                 self.write_line("Invalid input -> {}".format(" ".join(args[2:])))
                 self.write_line("Type ? for a list")
             else:
-                ip_network = IPNetwork(args[1])
-                if ip_network in self.port.ip_helpers:
-                    self.port.ip_helpers.remove(ip_network)
+                ip_address = IPAddress(args[1])
+                if ip_address in self.port.ip_helpers:
+                    self.port.ip_helpers.remove(ip_address)
                 else:
                     self.write_line("UDP: Errno(10) Helper address not configured")
