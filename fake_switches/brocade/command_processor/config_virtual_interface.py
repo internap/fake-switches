@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from netaddr import IPNetwork
+from netaddr.ip import IPAddress
 
 from fake_switches.brocade.command_processor.config_interface import ConfigInterfaceCommandProcessor
 from fake_switches.brocade.command_processor.config_virtual_interface_vrrp import \
@@ -71,6 +72,19 @@ class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
                 elif "no-auth".startswith(args[2]):
                     self.port.vrrp_common_authentication = None
 
+        if "helper-address".startswith(args[0]):
+            if len(args) == 1:
+                self.write_line("Incomplete command.")
+            elif len(args) > 2:
+                self.write_line("Invalid input -> {}".format(" ".join(args[2:])))
+                self.write_line("Type ? for a list")
+            else:
+                ip_address = IPAddress(args[1])
+                if ip_address not in self.port.ip_helpers:
+                    self.port.ip_helpers.append(ip_address)
+                else:
+                    self.write_line("UDP: Errno(7) Duplicate helper address")
+
     def do_no_ip(self, *args):
         if "address".startswith(args[0]):
             deleting_ip = IPNetwork(args[1])
@@ -108,3 +122,16 @@ class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
                     self.do_ip(*"vrrp-extended auth-type no-auth".split())
                 else:
                     self.write_line("Incomplete command.")
+
+        if "helper-address".startswith(args[0]):
+            if len(args) == 1:
+                self.write_line("Incomplete command.")
+            elif len(args) > 2:
+                self.write_line("Invalid input -> {}".format(" ".join(args[2:])))
+                self.write_line("Type ? for a list")
+            else:
+                ip_address = IPAddress(args[1])
+                if ip_address in self.port.ip_helpers:
+                    self.port.ip_helpers.remove(ip_address)
+                else:
+                    self.write_line("UDP: Errno(10) Helper address not configured")

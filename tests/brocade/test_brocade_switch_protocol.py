@@ -1034,6 +1034,105 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
             "interface ve 2995",
             "!"])
 
+        configuring(t, do="no interface ve 2995")
+        remove_vlan(t, "2995")
+
+    @with_protocol
+    def test_ip_helper(self, t):
+        enable(t)
+
+        create_vlan(t, "2995")
+        create_interface_vlan(t, "2995")
+
+        assert_interface_configuration(t, "ve 2995", [
+            "interface ve 2995",
+            "!"])
+
+        t.write("configure terminal")
+        t.read("SSH@my_switch(config)#")
+        t.write("interface ve 2995")
+        t.read("SSH@my_switch(config-vif-2995)#")
+        t.write("ip helper-address")
+        t.readln("Incomplete command.")
+        t.read("SSH@my_switch(config-vif-2995)#")
+
+        t.write("ip helper-address 10.10.0.1 EXTRA INFO")
+        t.readln("Invalid input -> EXTRA INFO")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config-vif-2995)#")
+        t.write("exit")
+        t.read("SSH@my_switch(config)#")
+        t.write("exit")
+        t.read("SSH@my_switch#")
+
+        configuring_interface_vlan(t, vlan="2995", do="ip helper-address 10.10.0.1")
+
+        assert_interface_configuration(t, "ve 2995", [
+            "interface ve 2995",
+            " ip helper-address 10.10.0.1",
+            "!"])
+
+        t.write("configure terminal")
+        t.read("SSH@my_switch(config)#")
+        t.write("interface ve 2995")
+        t.read("SSH@my_switch(config-vif-2995)#")
+        t.write("ip helper-address 10.10.0.1")
+        t.readln("UDP: Errno(7) Duplicate helper address")
+        t.read("SSH@my_switch(config-vif-2995)#")
+        t.write("exit")
+        t.read("SSH@my_switch(config)#")
+        t.write("exit")
+        t.read("SSH@my_switch#")
+
+        configuring_interface_vlan(t, vlan="2995", do="ip helper-address 10.10.0.2")
+        configuring_interface_vlan(t, vlan="2995", do="ip helper-address 10.10.0.3")
+
+        assert_interface_configuration(t, "ve 2995", [
+            "interface ve 2995",
+            " ip helper-address 10.10.0.1",
+            " ip helper-address 10.10.0.2",
+            " ip helper-address 10.10.0.3",
+            "!"])
+
+        configuring_interface_vlan(t, vlan="2995", do="no ip helper-address 10.10.0.1")
+
+        assert_interface_configuration(t, "ve 2995", [
+            "interface ve 2995",
+            " ip helper-address 10.10.0.2",
+            " ip helper-address 10.10.0.3",
+            "!"])
+
+        t.write("configure terminal")
+        t.read("SSH@my_switch(config)#")
+        t.write("interface ve 2995")
+        t.read("SSH@my_switch(config-vif-2995)#")
+        t.write("no ip helper-address")
+        t.readln("Incomplete command.")
+        t.read("SSH@my_switch(config-vif-2995)#")
+
+        t.write("no ip helper-address 10.10.0.1")
+        t.readln("UDP: Errno(10) Helper address not configured")
+        t.read("SSH@my_switch(config-vif-2995)#")
+
+        t.write("no ip helper-address 10.10.0.2 EXTRA INFO")
+        t.readln("Invalid input -> EXTRA INFO")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config-vif-2995)#")
+        t.write("exit")
+        t.read("SSH@my_switch(config)#")
+        t.write("exit")
+        t.read("SSH@my_switch#")
+
+        configuring_interface_vlan(t, vlan="2995", do="no ip helper-address 10.10.0.2")
+        configuring_interface_vlan(t, vlan="2995", do="no ip helper-address 10.10.0.3")
+
+        assert_interface_configuration(t, "ve 2995", [
+            "interface ve 2995",
+            "!"])
+
+        configuring(t, do="no interface ve 2995")
+        remove_vlan(t, "2995")
+
 
 def enable(t):
     t.write("enable")

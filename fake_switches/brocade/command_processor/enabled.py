@@ -251,6 +251,8 @@ def get_port_attributes(port):
                 attributes.append(" activate")
             else:
                 attributes.append(" exit")
+        for ip_address in port.ip_helpers:
+            attributes.append("ip helper-address %s" % ip_address)
 
     return attributes
 

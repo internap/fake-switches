@@ -990,6 +990,92 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
         remove_vlan(t, "4000")
 
     @with_protocol
+    def test_ip_helper(self, t):
+        enable(t)
+
+        create_interface_vlan(t, "4000")
+
+        assert_interface_configuration(t, "Vlan4000", [
+            "interface Vlan4000",
+            " no ip address",
+            "end"])
+
+        t.write("configure terminal")
+        t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
+        t.read("my_switch(config)#")
+        t.write("interface vlan 4000")
+        t.read("my_switch(config-if)#")
+        t.write("ip helper-address")
+        t.readln("% Incomplete command.")
+        t.readln("")
+        t.read("my_switch(config-if)#")
+
+        t.write("ip helper-address 10.10.0.1 EXTRA INFO")
+        t.readln(" ^")
+        t.readln("% Invalid input detected at '^' marker.")
+        t.readln("")
+        t.read("my_switch(config-if)#")
+        t.write("exit")
+        t.read("my_switch(config)#")
+        t.write("exit")
+        t.read("my_switch#")
+
+        configuring_interface_vlan(t, "4000", do="ip helper-address 10.10.10.1")
+
+        assert_interface_configuration(t, "Vlan4000", [
+            "interface Vlan4000",
+            " no ip address",
+            " ip helper-address 10.10.10.1",
+            "end"])
+
+        configuring_interface_vlan(t, "4000", do="ip helper-address 10.10.10.1")
+        configuring_interface_vlan(t, "4000", do="ip helper-address 10.10.10.2")
+        configuring_interface_vlan(t, "4000", do="ip helper-address 10.10.10.3")
+
+        assert_interface_configuration(t, "Vlan4000", [
+            "interface Vlan4000",
+            " no ip address",
+            " ip helper-address 10.10.10.1",
+            " ip helper-address 10.10.10.2",
+            " ip helper-address 10.10.10.3",
+            "end"])
+
+        configuring_interface_vlan(t, "4000", do="no ip helper-address 10.10.10.1")
+
+        assert_interface_configuration(t, "Vlan4000", [
+            "interface Vlan4000",
+            " no ip address",
+            " ip helper-address 10.10.10.2",
+            " ip helper-address 10.10.10.3",
+            "end"])
+
+        configuring_interface_vlan(t, "4000", do="no ip helper-address 10.10.10.1")
+
+        t.write("configure terminal")
+        t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
+        t.read("my_switch(config)#")
+        t.write("interface vlan 4000")
+        t.read("my_switch(config-if)#")
+        t.write("no ip helper-address 10.10.0.1 EXTRA INFO")
+        t.readln(" ^")
+        t.readln("% Invalid input detected at '^' marker.")
+        t.readln("")
+        t.read("my_switch(config-if)#")
+        t.write("exit")
+        t.read("my_switch(config)#")
+        t.write("exit")
+        t.read("my_switch#")
+
+        configuring_interface_vlan(t, "4000", do="no ip helper-address")
+
+        assert_interface_configuration(t, "Vlan4000", [
+            "interface Vlan4000",
+            " no ip address",
+            "end"])
+
+        configuring(t, do="no interface vlan 4000")
+
+    @with_protocol
     def test_write_memory(self, t):
         enable(t)
 
