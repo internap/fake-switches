@@ -13,75 +13,53 @@
 # limitations under the License.
 
 import logging
-from twisted.conch.telnet import TelnetTransport, StatefulTelnetProtocol, ECHO
+
 from twisted.internet.protocol import Factory
-from twisted.protocols.basic import LineReceiver
+
+from fake_switches.telnet.stateful_telnet import StatefulTelnet
 
 
-class SwitchTelnetShell(StatefulTelnetProtocol):
+class SwitchTelnetShell(StatefulTelnet):
     count = 0
 
     def __init__(self, switch_core):
+        super(SwitchTelnetShell, self).__init__()
         self.switch_core = switch_core
         self.processor = None
 
     def connectionMade(self):
-        self.out('Username: ')
-        self.state = 'USERNAME'
+        super(SwitchTelnetShell, self).connectionMade()
+        self.write('Username: ')
+        self.handler = self.validate_username
 
-    def telnet_USERNAME(self, _):
-        self.transport.will(ECHO)
-        self.out('Password: ')
-        return 'PASSWORD'
+    def validate_username(self, _):
+        self.write('Password: ')
+        self.enable_input_replacement("")
+        self.handler = self.validate_password
 
-    def telnet_PASSWORD(self, _):
-        def login(_):
-            self.processor = self.switch_core.launch("telnet", self.out)
-            self.state = 'COMMAND'
+    def validate_password(self, _):
+        self.disable_input_replacement()
+        self.processor = self.switch_core.launch("telnet", self.write)
+        self.handler = self.command
 
-        self.transport.wont(ECHO).addCallback(login)
-        return 'Discard'
-
-    def telnet_COMMAND(self, line):
+    def command(self, line):
         keep_going = self.processor.receive(line)
 
-        # NOTE(mmitchell): This does not fully implement replace_input's contract.
-        #                  It will simply echo back or not characters, not replace them.
-        if self.processor.command_processor.replace_input == '':
-            if self.transport.getOptionState(ECHO).us.state == 'no':
-                self.transport.will(ECHO)
+        if self.processor.command_processor.replace_input is False:
+            self.disable_input_replacement()
         else:
-            if self.transport.getOptionState(ECHO).us.state == 'yes':
-                self.transport.wont(ECHO)
+            self.enable_input_replacement(self.processor.command_processor.replace_input)
 
         if not keep_going:
             self.transport.loseConnection()
-
-    def out(self, data):
-        self.transport.write(data)
-
-    def dataReceived(self, data):
-        if data == "\r":
-            data = "\r\n"
-        return LineReceiver.dataReceived(self, data)
-
-
-class SwitchShellFactory(object):
-    def __init__(self, switch_core):
-        self.switch_core = switch_core
-
-    def __call__(self, *args, **kwargs):
-        return SwitchTelnetShell(self.switch_core)
 
 
 class SwitchTelnetFactory(Factory):
     def __init__(self, switch_core):
         self.switch_core = switch_core
 
-    def _protocol(self):
-        return TelnetTransport(SwitchShellFactory(self.switch_core))
-
-    protocol = _protocol
+    def protocol(self):
+        return SwitchTelnetShell(self.switch_core)
 
 
 class SwitchTelnetService(object):
@@ -93,6 +71,6 @@ class SwitchTelnetService(object):
     def hook_to_reactor(self, reactor):
         factory = SwitchTelnetFactory(self.switch_core)
         port = reactor.listenTCP(port=self.port, factory=factory, interface=self.ip)
-        logging.info(
-            "%s (TELNET): Registered on %s tcp/%s" % (self.switch_core.switch_configuration.name, self.ip, self.port))
+        logging.info("{} (TELNET): Registered on {} tcp/{}".format(
+            self.switch_core.switch_configuration.name, self.ip, self.port))
         return port

@@ -114,7 +114,4 @@ class TelnetTester(ProtocolTester):
         self.write(self.username)
         self.read("Password: ")
         self.write_invisible(self.password)
-        self.read("my_switch[>#]", regex=True)
-
-    def write_invisible(self, data):
-        self.child.sendline(data)
+        self.wait_for('[>#]$', regex=True)
