@@ -1,0 +1,92 @@
+# Copyright 2015 Internap.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import string
+
+from twisted.conch.telnet import ECHO, Telnet, SGA, CR, LF
+
+from fake_switches.telnet import lf_to_crlf
+
+
+class StatefulTelnet(Telnet, object):
+    """
+    This is an easy telnet service to mock a telnet server
+    It does not implement everything a terminal does, only what
+    automated code calling it would require, example : line editing.
+    """
+
+    def __init__(self):
+        super(StatefulTelnet, self).__init__()
+
+        self.handler = None
+        self._buffer = None
+        self._key_handlers = None
+        self._printable_chars = set(string.printable)
+        self._replace_input = None
+
+    def connectionMade(self):
+        self.will(ECHO)
+        self.will(SGA)
+
+        self.handler = lambda data: None
+        self._buffer = ""
+        self._key_handlers = {
+            CR: self._run_command,
+            LF: self._run_command,
+        }
+
+    def applicationDataReceived(self, data):
+        for key in data:
+            m = self._key_handlers.get(key)
+            if m is not None:
+                m()
+            elif key in self._printable_chars:
+                self._buffer += key
+                if self._replace_input is None:
+                    self.write(key)
+                elif self._replace_input != "":
+                    self.write(self._replace_input)
+
+    def write(self, data):
+        self.transport.write(lf_to_crlf(data))
+
+    def writeln(self, data):
+        self.write(data)
+        self.next_line()
+
+    def next_line(self):
+        self.write(CR + LF)
+
+    def enable_input_replacement(self, replace_char):
+        self._replace_input = replace_char
+
+    def disable_input_replacement(self):
+        self._replace_input = None
+
+    def _run_command(self):
+        self.next_line()
+        self.handler(self._buffer)
+        self._buffer = ""
+
+    def disableRemote(self, option):
+        return True
+
+    def enableRemote(self, option):
+        return True
+
+    def enableLocal(self, option):
+        return True
+
+    def disableLocal(self, option):
+        return True
