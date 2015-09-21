@@ -1,3 +1,17 @@
+# Copyright 2015 Internap.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import threading
 
 from fake_switches.brocade.brocade_core import BrocadeSwitchCore
@@ -23,6 +37,7 @@ juniper_switch_netconf_port = 11007
 juniper_qfx_copper_switch_ip = "127.0.0.1"
 juniper_qfx_copper_switch_netconf_port = 11008
 dell_switch_ip = "127.0.0.1"
+dell_switch_telnet_port = 11010
 dell_switch_ssh_port = 11009
 dell_privileged_password = 'DeLL'
 
@@ -96,6 +111,8 @@ class ThreadedReactor(threading.Thread):
                                     Port("ethernet 1/xg1"),
                                     Port("ethernet 2/xg1")
                                 ]))
+        SwitchTelnetService(dell_switch_ip, telnet_port=dell_switch_telnet_port, switch_core=switch_core,
+                            users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
         SwitchSshService(dell_switch_ip, ssh_port=dell_switch_ssh_port, switch_core=switch_core,
                          users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 

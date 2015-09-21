@@ -16,6 +16,7 @@ import logging
 
 from fake_switches.adapters import tftp_reader
 from fake_switches.command_processing.piping_processor_base import NotPipingProcessor
+from fake_switches.terminal import NoopTerminalController
 
 
 class SwitchTftpParser(object):
@@ -29,7 +30,9 @@ class SwitchTftpParser(object):
 
         data = self.reader.read_tftp(url, filename).split("\n")
 
-        command_processor = command_processor_class(self.configuration, lambda x: None, self.logger, NotPipingProcessor())
+        command_processor = command_processor_class(
+            self.configuration, NoopTerminalController(),
+            self.logger, NotPipingProcessor())
 
         for line in data:
             self.logger.debug("Processing : %s" % line)

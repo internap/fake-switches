@@ -17,16 +17,23 @@ from fake_switches.command_processing.command_processor import CommandProcessor
 
 class BaseCommandProcessor(CommandProcessor):
 
-    def __init__(self, switch_configuration, output_delegate, logger, piping_processor):
+    def __init__(self, switch_configuration, terminal_controller, logger, piping_processor):
+        """
+        :type switch_configuration: fake_switches.switch_configuration.SwitchConfiguration
+        :type terminal_controller: fake_switches.terminal.TerminalController
+        :type logger: logging.Logger
+        :type piping_processor: fake_switches.command_processing.piping_processor_base.PipingProcessorBase
+        """
+
         self.switch_configuration = switch_configuration
-        self.output_delegate = output_delegate
+        self.terminal_controller = terminal_controller
         self.logger = logger
         self.piping_processor = piping_processor
         self.sub_processor = None
         self.continuing_to = None
         self.is_done = False
         self.replace_input = False
-        self.awaiting_keystroke = None
+        self.awaiting_keystroke = False
 
     def process_command(self, line):
         if " | " in line:
@@ -76,7 +83,7 @@ class BaseCommandProcessor(CommandProcessor):
         return processed
 
     def move_to(self, new_process_class, *args):
-        self.sub_processor = new_process_class(self.switch_configuration, self.output_delegate, self.logger, self.piping_processor, *args)
+        self.sub_processor = new_process_class(self.switch_configuration, self.terminal_controller, self.logger, self.piping_processor, *args)
         self.sub_processor.show_prompt()
 
     def continue_to(self, continuing_action):
@@ -88,7 +95,7 @@ class BaseCommandProcessor(CommandProcessor):
     def write(self, data):
         filtered = self.pipe(data)
         if filtered is not False:
-            self.output_delegate(filtered)
+            self.terminal_controller.write(filtered)
 
     def write_line(self, data):
         self.write(data + "\n")
@@ -115,14 +122,11 @@ class BaseCommandProcessor(CommandProcessor):
         if self.piping_processor.is_listening():
             self.piping_processor.stop_listening()
 
-    def keystroke(self, character):
-        if self.awaiting_keystroke is not None:
-            args = self.awaiting_keystroke[1] + [character]
-            cmd = self.awaiting_keystroke[0]
-            self.awaiting_keystroke = None
-            cmd(*args)
-            return True
-        return False
-
     def on_keystroke(self, callback, *args):
-        self.awaiting_keystroke = (callback, list(args))
+        def on_keystroke_handler(key):
+            self.awaiting_keystroke = False
+            self.terminal_controller.remove_any_key_handler()
+            callback(*(args + (key,)))
+
+        self.terminal_controller.add_any_key_handler(on_keystroke_handler)
+        self.awaiting_keystroke = True

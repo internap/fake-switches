@@ -21,8 +21,8 @@ from fake_switches.command_processing.base_command_processor import BaseCommandP
 
 class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
 
-    def __init__(self, switch_configuration, output_delegate, logger, piping_processor, port):
-        BaseCommandProcessor.__init__(self, switch_configuration, output_delegate, logger, piping_processor)
+    def __init__(self, switch_configuration, terminal_controller, logger, piping_processor, port):
+        BaseCommandProcessor.__init__(self, switch_configuration, terminal_controller, logger, piping_processor)
         self.description_strip_chars = "\""
         self.port = port
 

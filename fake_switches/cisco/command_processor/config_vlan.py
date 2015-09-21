@@ -17,8 +17,8 @@ from fake_switches.command_processing.base_command_processor import BaseCommandP
 
 class ConfigVlanCommandProcessor(BaseCommandProcessor):
 
-    def __init__(self, switch_configuration, output_delegate, logger, piping_processor, vlan):
-        BaseCommandProcessor.__init__(self, switch_configuration, output_delegate, logger, piping_processor)
+    def __init__(self, switch_configuration, terminal_controller, logger, piping_processor, vlan):
+        BaseCommandProcessor.__init__(self, switch_configuration, terminal_controller, logger, piping_processor)
         self.vlan = vlan
 
     def get_prompt(self):
