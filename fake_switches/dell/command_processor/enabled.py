@@ -113,6 +113,18 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             conf.append('switchport general pvid {}'.format(port.trunk_native_vlan))
         if port.trunk_vlans:
             conf.append('switchport {} allowed vlan add {}'.format(port.mode, to_vlan_ranges(port.trunk_vlans)))
+        if port.spanning_tree is False:
+            conf.append("spanning-tree disable")
+        if port.spanning_tree_portfast:
+            conf.append("spanning-tree portfast")
+        if port.lldp_transmit is False:
+            conf.append('no lldp transmit')
+        if port.lldp_receive is False:
+            conf.append('no lldp receive')
+        if port.lldp_med_transmit_capabilities is False:
+            conf.append('no lldp med transmit-tlv capabilities')
+        if port.lldp_med_transmit_network_policy is False:
+            conf.append('no lldp med transmit-tlv network-policy')
 
         return conf
 

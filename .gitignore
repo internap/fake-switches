@@ -5,6 +5,8 @@ ChangeLog
 .tox
 *.pyc
 *.coverage
+*.egg/
 *.egg-info
 .eggs/
 .venv
+dist/

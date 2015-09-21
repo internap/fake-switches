@@ -50,6 +50,39 @@ class DellConfigInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
         super(DellConfigInterfaceCommandProcessor, self).do_shutdown(*_)
         self.write_line("")
 
+    def do_spanning_tree(self, *args):
+        if "disable".startswith(args[0]):
+            self.port.spanning_tree = False
+        if "portfast".startswith(args[0]):
+            self.port.spanning_tree_portfast = True
+        self.write_line("")
+
+    def do_no_spanning_tree(self, *args):
+        if "disable".startswith(args[0]):
+            self.port.spanning_tree = None
+        if "portfast".startswith(args[0]):
+            self.port.spanning_tree_portfast = None
+        self.write_line("")
+
+    def do_lldp(self, *args):
+        self.configure_lldp_port(args, target_value=True)
+        self.write_line("")
+
+    def do_no_lldp(self, *args):
+        self.configure_lldp_port(args, target_value=False)
+        self.write_line("")
+
+    def configure_lldp_port(self, args, target_value):
+        if "transmit".startswith(args[0]):
+            self.port.lldp_transmit = target_value
+        elif "receive".startswith(args[0]):
+            self.port.lldp_receive = target_value
+        elif "med".startswith(args[0]) and "transmit-tlv".startswith(args[1]):
+            if "capabilities".startswith(args[2]):
+                self.port.lldp_med_transmit_capabilities = target_value
+            elif "network-policy".startswith(args[2]):
+                self.port.lldp_med_transmit_network_policy = target_value
+
     def do_name(self, *args):
         if len(args) == 0:
             self.write_line("")
