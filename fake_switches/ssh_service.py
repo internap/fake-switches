@@ -13,57 +13,15 @@
 # limitations under the License.
 
 import logging
+
 from twisted.cred import portal, checkers
-from twisted.conch import avatar, recvline, interfaces as conchinterfaces
+from twisted.conch import avatar, interfaces as conchinterfaces
 from twisted.conch.ssh import factory, keys, session
 from twisted.conch.insults import insults
 from zope.interface import implements
 
+from fake_switches.terminal.ssh import SwitchSSHShell
 
-class SwitchSSHShell(recvline.HistoricRecvLine):
-    def __init__(self, user, switch_core):
-        self.user = user
-        self.switch_core = switch_core
-        self.session = None
-
-    # Hack to get rid of magical characters that reset the screen / clear / goto position 0, 0
-    def initializeScreen(self):
-        self.mode = 'insert'
-
-    def connectionMade(self):
-        recvline.HistoricRecvLine.connectionMade(self)
-        self.session = self.switch_core.launch("ssh", self.out)
-
-    def out(self, data):
-        self.terminal.write(data)
-
-    def lineReceived(self, line):
-        still_listening = self.session.receive(line)
-        if not still_listening:
-            self.terminal.loseConnection()
-
-    # replacing behavior of twisted/conch/recvline.py:205
-    def characterReceived(self, ch, moreCharactersComing):
-        command_processor = self.get_actual_processor()
-
-        if command_processor.replace_input is False:
-            self.terminal.write(ch)
-        else:
-            self.terminal.write(len(ch) * command_processor.replace_input)
-
-        hijacked = command_processor.keystroke(ch)
-        if not hijacked:
-            if self.mode == 'insert':
-                self.lineBuffer.insert(self.lineBufferIndex, ch)
-            else:
-                self.lineBuffer[self.lineBufferIndex:self.lineBufferIndex+1] = [ch]
-            self.lineBufferIndex += 1
-
-    def get_actual_processor(self):
-        proc = self.session.command_processor
-        while proc.sub_processor is not None:
-            proc = proc.sub_processor
-        return proc
 
 class SSHDemoAvatar(avatar.ConchUser):
     implements(conchinterfaces.ISession)

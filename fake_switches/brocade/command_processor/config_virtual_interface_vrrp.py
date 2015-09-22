@@ -16,10 +16,10 @@ from fake_switches.brocade.command_processor.config_interface import ConfigInter
 
 
 class ConfigVirtualInterfaceVrrpCommandProcessor(ConfigInterfaceCommandProcessor):
-    def __init__(self, switch_configuration, output_delegate, logger,
+    def __init__(self, switch_configuration, terminal_controller, logger,
                  piping_processor, port, vrrp):
         super(ConfigVirtualInterfaceVrrpCommandProcessor, self).__init__(
-            switch_configuration, output_delegate, logger, piping_processor,
+            switch_configuration, terminal_controller, logger, piping_processor,
             port)
         self.vrrp = vrrp
 

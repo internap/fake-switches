@@ -16,7 +16,8 @@ import string
 
 from twisted.conch.telnet import ECHO, Telnet, SGA, CR, LF
 
-from fake_switches.telnet import lf_to_crlf
+from fake_switches.terminal import lf_to_crlf
+from fake_switches.terminal import TerminalController
 
 
 class StatefulTelnet(Telnet, object):
@@ -90,3 +91,76 @@ class StatefulTelnet(Telnet, object):
 
     def disableLocal(self, option):
         return True
+
+
+class SwitchTelnetShell(StatefulTelnet):
+    count = 0
+
+    def __init__(self, switch_core):
+        super(SwitchTelnetShell, self).__init__()
+        self.switch_core = switch_core
+        self.session = None
+        self.awaiting_keystroke = None
+
+    def connectionMade(self):
+        super(SwitchTelnetShell, self).connectionMade()
+        self.write('Username: ')
+        self.handler = self.validate_username
+
+    def validate_username(self, _):
+        self.write('Password: ')
+        self.enable_input_replacement("")
+        self.handler = self.validate_password
+
+    def validate_password(self, _):
+        self.disable_input_replacement()
+        self.session = self.switch_core.launch(
+            "telnet", TelnetTerminalController(shell=self))
+        self.handler = self.command
+
+    def command(self, line):
+        keep_going = self.session.receive(line)
+
+        if self.session.command_processor.replace_input is False:
+            self.disable_input_replacement()
+        else:
+            self.enable_input_replacement(self.session.command_processor.replace_input)
+
+        if not keep_going:
+            self.transport.loseConnection()
+
+    def applicationDataReceived(self, data):
+        if data in self._printable_chars:
+            if self.awaiting_keystroke is not None:
+                args = self.awaiting_keystroke[1] + [data]
+                cmd = self.awaiting_keystroke[0]
+                cmd(*args)
+                return
+
+        super(SwitchTelnetShell, self).applicationDataReceived(data)
+
+    def get_actual_processor(self):
+        if not self.session:
+            return None
+        command_processor = self.session.command_processor
+        while command_processor.sub_processor is not None:
+            command_processor = command_processor.sub_processor
+        return command_processor
+
+    def handle_keystroke(self, data):
+        command_processor = self.get_actual_processor()
+        return command_processor is not None and command_processor.keystroke(data)
+
+
+class TelnetTerminalController(TerminalController):
+    def __init__(self, shell):
+        self.shell = shell
+
+    def write(self, text):
+        self.shell.write(text)
+
+    def add_any_key_handler(self, callback, *params):
+        self.shell.awaiting_keystroke = (callback, list(params))
+
+    def remove_any_key_handler(self):
+        self.shell.awaiting_keystroke = None

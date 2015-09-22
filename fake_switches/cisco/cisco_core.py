@@ -18,6 +18,7 @@ from fake_switches.cisco.command_processor.default import DefaultCommandProcesso
 from fake_switches.cisco.command_processor.enabled import EnabledCommandProcessor
 from fake_switches.cisco.command_processor.piping import PipingProcessor
 from fake_switches.command_processing.shell_session import ShellSession
+from fake_switches.terminal import LoggingTerminalController
 
 
 class CiscoSwitchCore(object):
@@ -28,14 +29,8 @@ class CiscoSwitchCore(object):
         self.logger = None
         self.last_connection_id = 0
 
-    def launch(self, protocol, output_delegate):
-        this = self
-
+    def launch(self, protocol, terminal_controller):
         self.last_connection_id += 1
-
-        def logging_output_delegate(data):
-            this.logger.debug("replying: %s" % repr(data))
-            output_delegate(data)
 
         self.logger = logging.getLogger("fake_switches.cisco.%s.%s.%s" % (self.switch_configuration.name, self.last_connection_id, protocol))
         if self.switch_configuration.auto_enabled:
@@ -43,7 +38,12 @@ class CiscoSwitchCore(object):
         else:
             processor = DefaultCommandProcessor
 
-        return CiscoShellSession(processor(self.switch_configuration, logging_output_delegate, self.logger, PipingProcessor(self.logger)))
+        return CiscoShellSession(
+            processor(
+                self.switch_configuration,
+                LoggingTerminalController(self.logger, terminal_controller),
+                self.logger,
+                PipingProcessor(self.logger)))
 
     def get_netconf_protocol(self):
         return None
@@ -51,7 +51,7 @@ class CiscoSwitchCore(object):
 
 class CiscoShellSession(ShellSession):
     def handle_unknown_command(self, line):
-        self.command_processor.output_delegate("No such command : %s\n" % line)
+        self.command_processor.terminal_controller.write("No such command : %s\n" % line)
 
 
 

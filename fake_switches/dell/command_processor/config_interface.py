@@ -18,10 +18,10 @@ from fake_switches.cisco.command_processor.config_interface import \
 
 class DellConfigInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
 
-    def __init__(self, switch_configuration, output_delegate, logger,
+    def __init__(self, switch_configuration, terminal_controller, logger,
                  piping_processor, port):
         super(DellConfigInterfaceCommandProcessor, self).__init__(
-            switch_configuration, output_delegate, logger, piping_processor,
+            switch_configuration, terminal_controller, logger, piping_processor,
             port)
         self.description_strip_chars = "\"'"
 

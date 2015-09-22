@@ -33,7 +33,7 @@ class JuniperSwitchCore(object):
         self.last_connection_id = 0
         self.datastore = datastore_class(self.switch_configuration)
 
-    def launch(self, protocol, output_delegate):
+    def launch(self, protocol, terminal_controller):
         raise NotImplemented()
 
     def process_command(self, line):

@@ -16,42 +16,7 @@ import logging
 
 from twisted.internet.protocol import Factory
 
-from fake_switches.telnet.stateful_telnet import StatefulTelnet
-
-
-class SwitchTelnetShell(StatefulTelnet):
-    count = 0
-
-    def __init__(self, switch_core):
-        super(SwitchTelnetShell, self).__init__()
-        self.switch_core = switch_core
-        self.processor = None
-
-    def connectionMade(self):
-        super(SwitchTelnetShell, self).connectionMade()
-        self.write('Username: ')
-        self.handler = self.validate_username
-
-    def validate_username(self, _):
-        self.write('Password: ')
-        self.enable_input_replacement("")
-        self.handler = self.validate_password
-
-    def validate_password(self, _):
-        self.disable_input_replacement()
-        self.processor = self.switch_core.launch("telnet", self.write)
-        self.handler = self.command
-
-    def command(self, line):
-        keep_going = self.processor.receive(line)
-
-        if self.processor.command_processor.replace_input is False:
-            self.disable_input_replacement()
-        else:
-            self.enable_input_replacement(self.processor.command_processor.replace_input)
-
-        if not keep_going:
-            self.transport.loseConnection()
+from fake_switches.terminal.telnet import SwitchTelnetShell
 
 
 class SwitchTelnetFactory(Factory):

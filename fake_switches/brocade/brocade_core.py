@@ -17,6 +17,7 @@ import logging
 from fake_switches.brocade.command_processor.default import DefaultCommandProcessor
 from fake_switches.brocade.command_processor.piping import PipingProcessor
 from fake_switches.command_processing.shell_session import ShellSession
+from fake_switches.terminal import LoggingTerminalController
 
 
 class BrocadeSwitchCore(object):
@@ -26,21 +27,15 @@ class BrocadeSwitchCore(object):
         self.logger = None
         self.last_connection_id = 0
 
-    def launch(self, protocol, output_delegate):
-        this = self
-
+    def launch(self, protocol, terminal_controller):
         self.last_connection_id += 1
-
-        def logging_output_delegate(data):
-            this.logger.debug("replying: %s" % repr(data))
-            output_delegate(data)
 
         self.logger = logging.getLogger(
             "fake_switches.brocade.%s.%s.%s" % (self.switch_configuration.name, self.last_connection_id, protocol))
 
         command_processor = DefaultCommandProcessor(
             switch_configuration=self.switch_configuration,
-            output_delegate=logging_output_delegate,
+            terminal_controller=LoggingTerminalController(self.logger, terminal_controller),
             piping_processor=PipingProcessor(self.logger),
             logger=self.logger)
 
@@ -52,4 +47,4 @@ class BrocadeSwitchCore(object):
 
 class BrocadeShellSession(ShellSession):
     def handle_unknown_command(self, line):
-        self.command_processor.output_delegate("Invalid input -> %s\nType ? for a list\n" % line)
+        self.command_processor.terminal_controller.write("Invalid input -> %s\nType ? for a list\n" % line)

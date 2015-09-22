@@ -17,8 +17,8 @@ from fake_switches.switch_configuration import split_port_name, VlanPort
 
 
 class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
-    def __init__(self, switch_configuration, output_delegate, logger, piping_processor, port):
-        BaseCommandProcessor.__init__(self, switch_configuration, output_delegate, logger, piping_processor)
+    def __init__(self, switch_configuration, terminal_controller, logger, piping_processor, port):
+        BaseCommandProcessor.__init__(self, switch_configuration, terminal_controller, logger, piping_processor)
         self.port = port
 
     def get_prompt(self):
