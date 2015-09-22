@@ -33,7 +33,7 @@ behavior, please see the tests section for each model.
 | Cisco   | ssh and telnet   | [tests/cisco/test_cisco_switch_protocol.py](tests/cisco/test_cisco_switch_protocol.py) |             
 | Brocade | ssh              | [tests/brocade/test_brocade_switch_protocol.py](tests/brocade/test_brocade_switch_protocol.py) |
 | Juniper | netconf over ssh | [tests/juniper/juniper_base_protocol_test.py](tests/juniper/juniper_base_protocol_test.py) |
-| Dell    | ssh              | [tests/dell/test_dell_switch_protocol.py](tests/dell/test_dell_switch_protocol.py) |
+| Dell    | ssh and telnet   | [tests/dell/](tests/dell/) |
 
 
 Making the switches more real
