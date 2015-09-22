@@ -98,6 +98,50 @@ class DellConfigureInterfaceTest(unittest.TestCase):
         ])
 
     @with_protocol
+    def test_lldp_options_defaults_to_enabled(self, t):
+        enable(t)
+        configuring_interface(t, "ethernet 1/g1", do='no lldp transmit')
+        configuring_interface(t, "ethernet 1/g1", do='no lldp receive')
+        configuring_interface(t, "ethernet 1/g1", do='no lldp med transmit-tlv capabilities')
+        configuring_interface(t, "ethernet 1/g1", do='no lldp med transmit-tlv network-policy')
+
+        assert_interface_configuration(t, "ethernet 1/g1", [
+            'no lldp transmit',
+            'no lldp receive',
+            'no lldp med transmit-tlv capabilities',
+            'no lldp med transmit-tlv network-policy',
+        ])
+
+        configuring_interface(t, "ethernet 1/g1", do='lldp transmit')
+        configuring_interface(t, "ethernet 1/g1", do='lldp receive')
+        configuring_interface(t, "ethernet 1/g1", do='lldp med transmit-tlv capabilities')
+        configuring_interface(t, "ethernet 1/g1", do='lldp med transmit-tlv network-policy')
+
+        assert_interface_configuration(t, "ethernet 1/g1", [
+            '',
+        ])
+
+    @with_protocol
+    def test_spanning_tree(self, t):
+        enable(t)
+        configuring_interface(t, "ethernet 1/g1", do='spanning-tree disable')
+        configuring_interface(t, "ethernet 1/g1", do='spanning-tree portfast')
+
+        assert_interface_configuration(t, "ethernet 1/g1", [
+            'spanning-tree disable',
+            'spanning-tree portfast',
+        ])
+
+        configuring_interface(t, "ethernet 1/g1", do='no spanning-tree disable')
+        configuring_interface(t, "ethernet 1/g1", do='no spanning-tree portfast')
+
+        assert_interface_configuration(t, "ethernet 1/g1", [
+            ''
+        ])
+
+
+
+    @with_protocol
     def test_access_vlan_that_doesnt_exist_prints_a_warning_and_config_is_unchanged(self, t):
         enable(t)
         configure(t)

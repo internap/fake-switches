@@ -113,6 +113,9 @@ class Port(object):
     def __init__(self, name):
         self.name = name
         self.switch_configuration = None
+        self.reset()
+
+    def reset(self):
         self.description = None
         self.mode = None
         self.access_vlan = None
@@ -126,19 +129,12 @@ class Port(object):
         self.aggregation_membership = None
         self.vendor_specific = {}
         self.ip_helpers = []
-
-    def reset(self):
-        self.description = None
-        self.mode = None
-        self.access_vlan = None
-        self.trunk_vlans = None
-        self.trunk_native_vlan = None
-        self.shutdown = None
-        self.vrf = None
-        self.speed = None
-        self.auto_negotiation = None
-        self.aggregation_membership = None
-        self.vendor_specific = {}
+        self.lldp_transmit = None
+        self.lldp_receive = None
+        self.lldp_med_transmit_capabilities = None
+        self.lldp_med_transmit_network_policy = None
+        self.spanning_tree = None
+        self.spanning_tree_portfast = None
 
     def get_subname(self, length):
         name, number = split_port_name(self.name)
@@ -174,7 +170,7 @@ class VlanPort(Port):
         self.vrrps = []
 
     def get_vrrp_group(self, group):
-        return next((vrrp for vrrp in self.vrrps if vrrp.group_id==group), None)
+        return next((vrrp for vrrp in self.vrrps if vrrp.group_id == group), None)
 
     def add_ip(self, ip_network):
         existing_ip = next((ip for ip in self.ips if ip.ip == ip_network.ip), None)
