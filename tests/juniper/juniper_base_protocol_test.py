@@ -463,6 +463,57 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
         assert_that(result.xpath("data/configuration/protocols/rstp/interface"), has_length(0))
 
+    def test_set_lldp(self):
+        self.edit({
+            "protocols": {
+                "lldp": {
+                    "interface": [
+                        {"name": "ge-0/0/3"},
+                        {"disable": ""}]}}})
+
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"protocols": {"lldp": {"interface": {"name": "ge-0/0/3"}}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/protocols/lldp/interface"), has_length(1))
+
+        interface = result.xpath("data/configuration/protocols/lldp/interface")[0]
+
+        assert_that(interface, has_length(2))
+        assert_that(interface.xpath("name")[0].text, equal_to("ge-0/0/3"))
+        assert_that(len(interface.xpath("disable")), equal_to(1))
+
+        self.edit({
+            "protocols": {
+                "lldp": {
+                    "interface": [
+                        {"name": "ge-0/0/3"},
+                        {"disable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}}})
+
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"protocols": {"lldp": {"interface": {"name": "ge-0/0/3"}}}}}
+        }))
+        assert_that(result.xpath("data/configuration/protocols/lldp/interface")[0], has_length(1))
+
+        self.edit({
+            "protocols": {
+                "lldp": {
+                    "interface": {
+                        XML_ATTRIBUTES: {"operation": "delete"},
+                        "name": "ge-0/0/3"}}}})
+
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"protocols": ""}}
+        }))
+
+        assert_that(result.xpath("data/configuration/protocols"), has_length(1))
+
     def test_set_interface_description(self):
         self.edit({
             "interfaces": {

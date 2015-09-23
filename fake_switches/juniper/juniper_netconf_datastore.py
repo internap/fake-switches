@@ -102,6 +102,8 @@ class JuniperNetconfDatastore(object):
                 actual_port.speed = updated_port.speed
                 actual_port.auto_negotiation = updated_port.auto_negotiation
                 actual_port.aggregation_membership = updated_port.aggregation_membership
+                actual_port.lldp_transmit = updated_port.lldp_transmit
+                actual_port.lldp_receive = updated_port.lldp_receive
                 actual_port.vendor_specific = updated_port.vendor_specific
 
                 if isinstance(actual_port, AggregatedPort):
@@ -336,9 +338,7 @@ def parse_protocols(conf, etree_conf):
     for rstp_interface_node in etree_conf.xpath("protocols/rstp/interface/name/.."):
         handled_elements.append(rstp_interface_node)
 
-        port = val(rstp_interface_node, "name")
-
-        port = conf.get_port_by_partial_name(port)
+        port = conf.get_port_by_partial_name(val(rstp_interface_node, "name"))
 
         if first(rstp_interface_node.xpath("edge")) is not None:
             if resolve_operation(first(rstp_interface_node.xpath("edge"))) == "delete":
@@ -355,6 +355,22 @@ def parse_protocols(conf, etree_conf):
                 port.vendor_specific["rstp-no-root-port"] = True
         elif "rstp-no-root-port" in port.vendor_specific:
             port.vendor_specific.pop("rstp-no-root-port")
+
+    for lldp_interface_node in etree_conf.xpath("protocols/lldp/interface/name/.."):
+        handled_elements.append(lldp_interface_node)
+
+        port = conf.get_port_by_partial_name(val(lldp_interface_node, "name"))
+
+        port.vendor_specific["lldp"] = True
+
+        disable_node = first(lldp_interface_node.xpath("disable"))
+        if disable_node is not None:
+            if resolve_operation(disable_node) == "delete":
+                port.lldp_transmit = None
+                port.lldp_receive = None
+            else:
+                port.lldp_transmit = False
+                port.lldp_receive = False
 
     return handled_elements
 
@@ -436,6 +452,14 @@ def extract_protocols(configuration):
                 protocols["rstp"] = []
             interface = get_or_create_interface(protocols["rstp"], port)
             interface["interface"].append({"no-root-port": ""})
+
+        if port.vendor_specific.get("lldp"):
+            if "lldp" not in protocols:
+                protocols["lldp"] = []
+            interface = get_or_create_interface(protocols["lldp"], port)
+            if port.lldp_receive is False and port.lldp_transmit is False:
+                interface["interface"].append({"disable": ""})
+
 
     return protocols
 
