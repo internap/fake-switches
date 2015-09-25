@@ -495,6 +495,11 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         configuring(t, do="no vlan 2999")
 
     @with_protocol
+    def test_removing_static_routes(self, t):
+        enable(t)
+
+
+    @with_protocol
     def test_show_all_interfaces_in_running(self, t):
         enable(t)
 

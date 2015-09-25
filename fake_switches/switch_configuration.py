@@ -22,9 +22,11 @@ class SwitchConfiguration(object):
         self.auto_enabled = auto_enabled
         self.vlans = []
         self.ports = []
+        self.static_routes = []
         self.vrfs = [VRF('DEFAULT-LAN')]
         self.locked = False
         self.objects_factory = {
+            "Route": Route,
             "VRF": VRF,
             "Vlan": Vlan,
             "Port": Port,
@@ -42,6 +44,13 @@ class SwitchConfiguration(object):
 
     def new(self, class_name, *args, **kwargs):
         return self.objects_factory[class_name](*args, **kwargs)
+
+    def add_static_route(self, route):
+        self.static_routes.append(route)
+
+    def remove_static_route(self, ip):
+        route = next(route for route in self.static_routes if route.ip == ip)
+        self.static_routes.remove(route)
 
     def get_vlan(self, number):
         return next((vlan for vlan in self.vlans if vlan.number == number), None)
@@ -99,6 +108,13 @@ class SwitchConfiguration(object):
 class VRF(object):
     def __init__(self, name):
         self.name = name
+
+
+class Route(object):
+    def __init__(self, prefix, mask, ip):
+        self.prefix = prefix
+        self.mask = mask
+        self.ip = ip
 
 
 class Vlan(object):

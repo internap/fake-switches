@@ -48,13 +48,20 @@ class ConfigCommandProcessor(BaseCommandProcessor):
         if vlan:
             self.switch_configuration.remove_vlan(vlan)
 
-    def do_no_ip(self, _, name):
-        self.switch_configuration.remove_vrf(name)
+    def do_no_ip(self, cmd, *args):
+        if "vrf".startswith(cmd):
+            self.switch_configuration.remove_vrf(args[0])
+        elif "route".startswith(cmd):
+            self.switch_configuration.remove_static_route(args[2])
 
-    def do_ip(self, cmd, name, *_):
-        vrf = self.switch_configuration.new("VRF", name)
-        self.switch_configuration.add_vrf(vrf)
-        self.move_to(ConfigVRFCommandProcessor, vrf)
+    def do_ip(self, cmd, *args):
+        if "vrf".startswith(cmd):
+            vrf = self.switch_configuration.new("VRF", args[0])
+            self.switch_configuration.add_vrf(vrf)
+            self.move_to(ConfigVRFCommandProcessor, vrf)
+        elif "route".startswith(cmd):
+            static_route = self.switch_configuration.new("Route", *args)
+            self.switch_configuration.add_static_route(static_route)
 
     def do_interface(self, *args):
         interface_name = self.interface_separator.join(args)
