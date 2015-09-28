@@ -495,9 +495,27 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         configuring(t, do="no vlan 2999")
 
     @with_protocol
-    def test_removing_static_routes(self, t):
+    def test_static_routes(self, t):
         enable(t)
-
+        t.write("configure terminal")
+        t.read("SSH@my_switch(config)#")
+        t.write("ip route 1.1.1.0 255.255.255.0 2.2.2.2")
+        t.read("SSH@my_switch(config)#")
+        t.write("ip route 1.1.2.0 255.255.255.0 2.2.2.2")
+        t.read("SSH@my_switch(config)#")
+        t.write("show ip route static")
+        t.readln("Destination        Gateway         Port          Cost          Type Uptime src-vrf")
+        t.readln("1        1.1.1.0 [x/y] via 2.2.2.2")
+        t.readln("2        1.1.2.0 [x/y] via 2.2.2.2")
+        t.readln("")
+        t.write("no ip route 1.1.1.0 255.255.255.0 2.2.2.2")
+        t.read("SSH@my_switch(config)#")
+        t.write("show ip route static")
+        t.readln("Destination        Gateway         Port          Cost          Type Uptime src-vrf")
+        t.readln("1        1.1.2.0 [x/y] via 2.2.2.2")
+        t.readln("")
+        t.write("exit")
+        t.read("SSH@my_switch#")
 
     @with_protocol
     def test_show_all_interfaces_in_running(self, t):

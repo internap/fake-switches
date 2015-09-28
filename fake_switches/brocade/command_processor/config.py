@@ -90,7 +90,7 @@ class ConfigCommandProcessor(BaseCommandProcessor):
         if "vrf".startswith(cmd):
             self.switch_configuration.remove_vrf(args[0])
         elif "route".startswith(cmd):
-            self.switch_configuration.remove_static_route(args[2])
+            self.switch_configuration.remove_static_route(args[0], args[1])
 
     def do_ip(self, cmd, *args):
         if "vrf".startswith(cmd):

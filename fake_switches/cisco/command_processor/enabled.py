@@ -125,7 +125,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
                 if "static".startswith(args[2]):
                     routes = self.switch_configuration.static_routes
                     for r in routes:
-                        self.write_line("S        %s [x/y] via %s" % (r.prefix, r.ip))
+                        self.write_line("S        %s [x/y] via %s" % (r.subnet.ip, r.ip))
                 self.write_line("")
 
     def do_copy(self, source_url, destination_url):

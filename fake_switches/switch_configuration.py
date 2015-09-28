@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from netaddr import IPNetwork
 
 import re
 
@@ -48,8 +49,9 @@ class SwitchConfiguration(object):
     def add_static_route(self, route):
         self.static_routes.append(route)
 
-    def remove_static_route(self, ip):
-        route = next(route for route in self.static_routes if route.ip == ip)
+    def remove_static_route(self, prefix, mask):
+        subnet = IPNetwork(prefix, mask)
+        route = next(route for route in self.static_routes if route.subnet == subnet)
         self.static_routes.remove(route)
 
     def get_vlan(self, number):
@@ -112,8 +114,7 @@ class VRF(object):
 
 class Route(object):
     def __init__(self, prefix, mask, ip):
-        self.prefix = prefix
-        self.mask = mask
+        self.subnet = IPNetwork(prefix, mask)
         self.ip = ip
 
 

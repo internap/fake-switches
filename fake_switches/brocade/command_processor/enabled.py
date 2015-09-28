@@ -43,6 +43,14 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             else:
                 self.write_line("Invalid input -> %s" % args[1])
                 self.write_line("Type ? for a list")
+        elif "route".startswith(args[1]):
+            if "static".startswith(args[2]):
+                routes = self.switch_configuration.static_routes
+                if routes:
+                    self.write_line("Destination        Gateway         Port          Cost          Type Uptime src-vrf")
+                for n, r in enumerate(routes):
+                    self.write_line("%s        %s [x/y] via %s" % (n+1, r.subnet.ip, r.ip))
+            self.write_line("")
 
     def do_ncopy(self, protocol, url, filename, target):
         try:
