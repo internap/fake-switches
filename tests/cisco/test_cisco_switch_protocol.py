@@ -1083,8 +1083,12 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
         t.read("my_switch(config)#")
         t.write("ip route 1.1.1.0 255.255.255.0 2.2.2.2")
         t.read("my_switch(config)#")
+
         t.write("show ip route static | inc 2.2.2.2")
         t.readln("S        1.1.1.0 [x/y] via 2.2.2.2")
+        t.write("show running | inc 2.2.2.2")
+        t.readln("ip route 1.1.1.0 255.255.255.0 2.2.2.2")
+
         t.write("no ip route 1.1.1.0 255.255.255.0 2.2.2.2")
         t.read("my_switch(config)#")
         t.write("show ip route static")

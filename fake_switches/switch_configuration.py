@@ -50,7 +50,7 @@ class SwitchConfiguration(object):
         self.static_routes.append(route)
 
     def remove_static_route(self, prefix, mask):
-        subnet = IPNetwork(prefix, mask)
+        subnet = IPNetwork("{}/{}".format(prefix, mask))
         route = next(route for route in self.static_routes if route.subnet == subnet)
         self.static_routes.remove(route)
 
@@ -114,8 +114,16 @@ class VRF(object):
 
 class Route(object):
     def __init__(self, prefix, mask, ip):
-        self.subnet = IPNetwork(prefix, mask)
+        self.subnet = IPNetwork("{}/{}".format(prefix, mask))
         self.ip = ip
+
+    @property
+    def prefix(self):
+        return self.subnet.ip
+
+    @property
+    def mask(self):
+        return self.subnet.netmask
 
 
 class Vlan(object):

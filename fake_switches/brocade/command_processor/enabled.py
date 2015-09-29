@@ -47,9 +47,9 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             if "static".startswith(args[2]):
                 routes = self.switch_configuration.static_routes
                 if routes:
-                    self.write_line("Destination        Gateway         Port          Cost          Type Uptime src-vrf")
+                    self.write_line("         Destination        Gateway         Port          Cost          Type Uptime src-vrf")
                 for n, r in enumerate(routes):
-                    self.write_line("%s        %s [x/y] via %s" % (n+1, r.subnet.ip, r.ip))
+                    self.write_line("%s        %s         %s" % (n+1, r.subnet, r.ip))
             self.write_line("")
 
     def do_ncopy(self, protocol, url, filename, target):
