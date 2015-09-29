@@ -1076,6 +1076,26 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
         configuring(t, do="no interface vlan 4000")
 
     @with_protocol
+    def test_ip_route(self, t):
+        enable(t)
+        configuring(t, do="ip route 1.1.1.0 255.255.255.0 2.2.2.2")
+
+        t.write("show ip route static | inc 2.2.2.2")
+        t.readln("S        1.1.1.0 [x/y] via 2.2.2.2")
+        t.read("my_switch#")
+
+        t.write("show running | inc 2.2.2.2")
+        t.readln("ip route 1.1.1.0 255.255.255.0 2.2.2.2")
+        t.read("my_switch#")
+
+        configuring(t, do="no ip route 1.1.1.0 255.255.255.0 2.2.2.2")
+
+        t.write("show ip route static")
+        t.readln("")
+        t.read("my_switch#")
+        t.write("exit")
+
+    @with_protocol
     def test_write_memory(self, t):
         enable(t)
 

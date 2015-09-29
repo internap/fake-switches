@@ -121,6 +121,12 @@ class EnabledCommandProcessor(BaseCommandProcessor):
                                 self.write_line("  Inbound  access list is %s" % (interface.access_group_in if interface.access_group_in else "not set"))
                                 if interface.vrf is not None:
                                     self.write_line("  VPN Routing/Forwarding \"%s\"" % interface.vrf.name)
+            elif "route".startswith(args[1]):
+                if "static".startswith(args[2]):
+                    routes = self.switch_configuration.static_routes
+                    for route in routes:
+                        self.write_line("S        {0} [x/y] via {1}".format(route.destination, route.next_hop))
+                self.write_line("")
 
     def do_copy(self, source_url, destination_url):
         dest_protocol, dest_file = destination_url.split(":")
@@ -159,6 +165,10 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             all_data = all_data + build_running_vlan(vlan) + ["!"]
         for interface in sorted(self.switch_configuration.ports, key=lambda e: ("b" if isinstance(e, VlanPort) else "a") + e.name):
             all_data = all_data + build_running_interface(interface) + ["!"]
+        if self.switch_configuration.static_routes:
+            for route in self.switch_configuration.static_routes:
+                all_data.append(build_static_routes(route))
+            all_data.append("!")
 
         all_data += ["end", ""]
 
@@ -172,6 +182,9 @@ class EnabledCommandProcessor(BaseCommandProcessor):
 def strip_leading_slash(dest_file):
     return dest_file[1:]
 
+
+def build_static_routes(route):
+    return "ip route {0} {1} {2}".format(route.destination, route.mask, route.next_hop)
 
 def build_running_vlan(vlan):
     data = [

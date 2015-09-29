@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from netaddr import IPNetwork, IPAddress
 
 import re
 
@@ -22,9 +23,11 @@ class SwitchConfiguration(object):
         self.auto_enabled = auto_enabled
         self.vlans = []
         self.ports = []
+        self.static_routes = []
         self.vrfs = [VRF('DEFAULT-LAN')]
         self.locked = False
         self.objects_factory = {
+            "Route": Route,
             "VRF": VRF,
             "Vlan": Vlan,
             "Port": Port,
@@ -42,6 +45,14 @@ class SwitchConfiguration(object):
 
     def new(self, class_name, *args, **kwargs):
         return self.objects_factory[class_name](*args, **kwargs)
+
+    def add_static_route(self, route):
+        self.static_routes.append(route)
+
+    def remove_static_route(self, destination, mask):
+        subnet = IPNetwork("{}/{}".format(destination, mask))
+        route = next(route for route in self.static_routes if route.dest == subnet)
+        self.static_routes.remove(route)
 
     def get_vlan(self, number):
         return next((vlan for vlan in self.vlans if vlan.number == number), None)
@@ -99,6 +110,20 @@ class SwitchConfiguration(object):
 class VRF(object):
     def __init__(self, name):
         self.name = name
+
+
+class Route(object):
+    def __init__(self, destination, mask, next_hop):
+        self.dest = IPNetwork("{}/{}".format(destination, mask))
+        self.next_hop = IPAddress(next_hop)
+
+    @property
+    def destination(self):
+        return self.dest.ip
+
+    @property
+    def mask(self):
+        return self.dest.netmask
 
 
 class Vlan(object):
