@@ -124,8 +124,8 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             elif "route".startswith(args[1]):
                 if "static".startswith(args[2]):
                     routes = self.switch_configuration.static_routes
-                    for r in routes:
-                        self.write_line("S        %s [x/y] via %s" % (r.subnet.ip, r.ip))
+                    for route in routes:
+                        self.write_line("S        {0} [x/y] via {1}".format(route.destination, route.next_hop))
                 self.write_line("")
 
     def do_copy(self, source_url, destination_url):
@@ -184,7 +184,7 @@ def strip_leading_slash(dest_file):
 
 
 def build_static_routes(route):
-    return "ip route %s %s %s" % (route.prefix, route.mask, route.ip)
+    return "ip route {0} {1} {2}".format(route.destination, route.mask, route.next_hop)
 
 def build_running_vlan(vlan):
     data = [
