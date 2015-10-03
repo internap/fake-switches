@@ -17,6 +17,7 @@ import threading
 from fake_switches.brocade.brocade_core import BrocadeSwitchCore
 from fake_switches.cisco.cisco_core import CiscoSwitchCore
 from fake_switches.dell.dell_core import DellSwitchCore
+from fake_switches.dell10g.dell_core import Dell10GSwitchCore
 from fake_switches.juniper.juniper_core import JuniperSwitchCore
 from fake_switches.juniper.juniper_qfx_copper_core import JuniperQfxCopperSwitchCore
 from fake_switches.ssh_service import SwitchSshService
@@ -40,6 +41,10 @@ dell_switch_ip = "127.0.0.1"
 dell_switch_telnet_port = 11010
 dell_switch_ssh_port = 11009
 dell_privileged_password = 'DeLL'
+dell10g_switch_ip = "127.0.0.1"
+dell10g_switch_telnet_port = 11011
+dell10g_switch_ssh_port = 11012
+dell10g_privileged_password = 'DeLL10G'
 
 
 class ThreadedReactor(threading.Thread):
@@ -114,6 +119,19 @@ class ThreadedReactor(threading.Thread):
         SwitchTelnetService(dell_switch_ip, telnet_port=dell_switch_telnet_port, switch_core=switch_core,
                             users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
         SwitchSshService(dell_switch_ip, ssh_port=dell_switch_ssh_port, switch_core=switch_core,
+                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+
+        switch_core = Dell10GSwitchCore(
+            SwitchConfiguration(dell10g_switch_ip, name="my_switch", privileged_passwords=[dell10g_privileged_password],
+                                ports=[
+                                    Port("tengigabitethernet 0/0/1"),
+                                    Port("tengigabitethernet 0/0/2"),
+                                    Port("tengigabitethernet 1/0/1"),
+                                    Port("tengigabitethernet 1/0/2")
+                                ]))
+        SwitchTelnetService(dell10g_switch_ip, telnet_port=dell10g_switch_telnet_port, switch_core=switch_core,
+                            users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+        SwitchSshService(dell10g_switch_ip, ssh_port=dell10g_switch_ssh_port, switch_core=switch_core,
                          users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         cls._threaded_reactor.start()
