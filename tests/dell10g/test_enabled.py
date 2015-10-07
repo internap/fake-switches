@@ -15,10 +15,9 @@
 import unittest
 
 from flexmock import flexmock_teardown
-from dell import remove_bond
 
 from tests.dell10g import enable, assert_running_config_contains_in_order, \
-    configuring_vlan, ssh_protocol_factory, telnet_protocol_factory, configuring, add_vlan, create_bond
+    configuring_vlan, ssh_protocol_factory, telnet_protocol_factory, configuring, add_vlan
 from tests.util.protocol_util import with_protocol
 
 
