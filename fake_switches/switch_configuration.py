@@ -156,6 +156,7 @@ class Port(object):
         self.ip_helpers = []
         self.lldp_transmit = None
         self.lldp_receive = None
+        self.lldp_med = None
         self.lldp_med_transmit_capabilities = None
         self.lldp_med_transmit_network_policy = None
         self.spanning_tree = None

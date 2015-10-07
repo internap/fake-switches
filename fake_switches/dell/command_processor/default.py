@@ -13,12 +13,14 @@
 # limitations under the License.
 
 from fake_switches.dell.command_processor.enabled import \
-    EnabledCommandProcessor
+    DellEnabledCommandProcessor
 from fake_switches.command_processing.base_command_processor import \
     BaseCommandProcessor
 
 
 class DellDefaultCommandProcessor(BaseCommandProcessor):
+    enabled_command_processor = DellEnabledCommandProcessor
+
     def get_prompt(self):
         return "\n" + "%s>" % self.switch_configuration.name
 
@@ -31,7 +33,7 @@ class DellDefaultCommandProcessor(BaseCommandProcessor):
         self.replace_input = False
         if line == "" or line in self.switch_configuration.privileged_passwords:
             self.write_line("")
-            self.move_to(EnabledCommandProcessor)
+            self.move_to(self.enabled_command_processor)
         else:
             self.write("Incorrect Password!")
 

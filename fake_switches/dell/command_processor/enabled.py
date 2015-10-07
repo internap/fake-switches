@@ -21,7 +21,9 @@ from fake_switches.dell.command_processor.config import \
 from fake_switches.switch_configuration import VlanPort, AggregatedPort
 
 
-class EnabledCommandProcessor(BaseCommandProcessor):
+class DellEnabledCommandProcessor(BaseCommandProcessor):
+    configure_command_processor = DellConfigCommandProcessor
+
     def get_prompt(self):
         return "%s#" % self.switch_configuration.name
 
@@ -46,7 +48,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         self.show_prompt()
 
     def do_configure(self, *_):
-        self.move_to(DellConfigCommandProcessor)
+        self.move_to(self.configure_command_processor)
 
     def do_show(self, *args):
         if "running-config".startswith(args[0]):
