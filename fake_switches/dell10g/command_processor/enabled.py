@@ -15,7 +15,7 @@
 from fake_switches.dell.command_processor.enabled import DellEnabledCommandProcessor, to_vlan_ranges
 from fake_switches.dell10g.command_processor.config import \
     Dell10GConfigCommandProcessor
-from fake_switches.switch_configuration import VlanPort
+from fake_switches.switch_configuration import VlanPort, AggregatedPort
 
 
 class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
@@ -65,11 +65,7 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
                 self.write_line('!Cut-through mode is configured as disabled')
                 self.write_line('!')
                 self.write_line('configure')
-                for vlan in self.switch_configuration.vlans:
-                    self.write_line('vlan {}'.format(vlan.number))
-                    if vlan.name is not None:
-                        self.write_line('name {}'.format(vlan.name))
-                    self.write_line('exit')
+                self.write_vlans()
                 for port in self.switch_configuration.ports:
                     port_config = self.get_port_configuration(port)
 
@@ -96,11 +92,31 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
                         self.write_line("")
                     self.write_line("")
                 else:
-                    self.write_line("\nERROR: Invalid input!\n")
+                    self.write_line("")
+                    self.write_line("An invalid interface has been used for this function")
+
         elif "vlan".startswith(args[0]):
             self.show_vlans()
         elif "interfaces".startswith(args[0]) and "status".startswith(args[1]):
             self.show_interfaces_status()
+
+    def write_vlans(self):
+        named_vlans = []
+        other_vlans = []
+        for v in self.switch_configuration.vlans:
+            if v.name is not None:
+                named_vlans.append(v)
+            else:
+                other_vlans.append(v)
+
+        for vlan in named_vlans:
+            self.write_line('vlan {}'.format(vlan.number))
+            if vlan.name is not None:
+                self.write_line('name {}'.format(vlan.name))
+            self.write_line('exit')
+
+        self.write_line('vlan {}'.format(to_vlan_ranges([v.number for v in other_vlans])))
+        self.write_line('exit')
 
     def show_interfaces_status(self):
 
@@ -110,10 +126,25 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
         self.write_line("--------- ------------------------- ----- ------ ------- ---- ------ ---------")
 
         for port in self.switch_configuration.ports:
-            self.write_line(
-                "Te{name: <7} {desc: <25} {vlan: <5} {duplex: <6} {speed: <7} {neg: <4} {state: <6} {flow}".format(
-                    name=port.name.split(" ")[-1], desc=port.description[:25] if port.description else "", vlan="",
-                    duplex="Full", speed="10000", neg="Auto", state="Up", flow="Active"))
+            if not isinstance(port, AggregatedPort):
+                self.write_line(
+                    "Te{name: <7} {desc: <25} {vlan: <5} {duplex: <6} {speed: <7} {neg: <4} {state: <6} {flow}".format(
+                        name=port.name.split(" ")[-1], desc=port.description[:25] if port.description else "", vlan="",
+                        duplex="Full", speed="10000", neg="Auto", state="Up", flow="Active"))
+
+        self.write_line("")
+        self.write_line("")
+
+        self.write_line("Port    Description                    Vlan  Link")
+        self.write_line("Channel                                      State")
+        self.write_line("------- ------------------------------ ----- -------")
+
+        for port in self.switch_configuration.ports:
+            if isinstance(port, AggregatedPort):
+                self.write_line(
+                    "Po{name: <7} {desc: <28} {vlan: <5} {state}".format(
+                        name=port.name.split(" ")[-1], desc=port.description[:28] if port.description else "",
+                        vlan="trnk", state="Up"))
 
         self.write_line("")
 

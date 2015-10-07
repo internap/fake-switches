@@ -24,8 +24,30 @@ class Dell10GConfigCommandProcessor(DellConfigCommandProcessor):
 
     def do_vlan(self, raw_number, *_):
         number = int(raw_number)
-        vlan = self.switch_configuration.get_vlan(number)
-        if not vlan:
-            vlan = self.switch_configuration.new("Vlan", number)
-            self.switch_configuration.add_vlan(vlan)
-        self.move_to(Dell10GConfigureVlanCommandProcessor, vlan)
+        if number < 1 or number > 4094:
+            self.write_line("")
+            self.write_line("")
+            self.write_line("          Failure Information")
+            self.write_line("---------------------------------------")
+            self.write_line("   VLANs failed to be configured : 1")
+            self.write_line("---------------------------------------")
+            self.write_line("   VLAN             Error")
+            self.write_line("---------------------------------------")
+            self.write_line("VLAN {: <9} ERROR: VLAN ID is out of range".format(number))
+        else:
+            vlan = self.switch_configuration.get_vlan(number)
+            if not vlan:
+                vlan = self.switch_configuration.new("Vlan", number)
+                self.switch_configuration.add_vlan(vlan)
+            self.move_to(Dell10GConfigureVlanCommandProcessor, vlan)
+
+    def do_no_vlan(self, number, *args):
+        vlan = self.switch_configuration.get_vlan(int(number))
+        if vlan:
+            self.switch_configuration.remove_vlan(vlan)
+        else:
+            self.write_line("")
+            self.write_line("These VLANs do not exist:  {}.".format(number))
+
+    def show_unknown_interface_error_message(self):
+        self.write_line("An invalid interface has been used for this function")

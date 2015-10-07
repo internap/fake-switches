@@ -109,6 +109,33 @@ def configuring_interface(t, interface, do):
     t.read("my_switch#")
 
 
+def create_bond(t, bond_id):
+    t.write("configure")
+    t.readln("")
+    t.read("my_switch(config)#")
+    t.write("interface port-channel {}".format(bond_id))
+    t.readln("")
+    t.read("my_switch(config-if-Po{})#".format(bond_id))
+    t.write("exit")
+    t.readln("")
+    t.read("my_switch(config)#")
+    t.write("exit")
+    t.readln("")
+    t.read("my_switch#")
+
+
+def remove_bond(t, bond_id):
+    t.write("configure")
+    t.readln("")
+    t.read("my_switch(config)#")
+    t.write("no interface port-channel {}".format(bond_id))
+    t.readln("")
+    t.read("my_switch(config)#")
+    t.write("exit")
+    t.readln("")
+    t.read("my_switch#")
+
+
 def assert_interface_configuration(t, interface, config):
     t.write("show running-config interface {}".format(interface))
     for line in config:

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from fake_switches.dell.command_processor.config_interface import DellConfigInterfaceCommandProcessor, parse_vlan_list
+from fake_switches.switch_configuration import AggregatedPort
 
 
 class Dell10GConfigInterfaceCommandProcessor(DellConfigInterfaceCommandProcessor):
@@ -26,7 +27,10 @@ class Dell10GConfigInterfaceCommandProcessor(DellConfigInterfaceCommandProcessor
 
     def get_prompt(self):
         short_name = self.port.name.split(' ')[1]
-        return "{}(config-if-Te{})#".format(self.switch_configuration.name, short_name)
+        return "{}(config-if-{}{})#".format(
+            self.switch_configuration.name,
+            "Po" if isinstance(self.port, AggregatedPort) else "Te",
+            short_name)
 
     def configure_lldp_port(self, args, target_value):
         if "transmit".startswith(args[0]):
@@ -88,7 +92,9 @@ class Dell10GConfigInterfaceCommandProcessor(DellConfigInterfaceCommandProcessor
         self.write_line("")
 
     def do_no_switchport(self, *args):
-        if "access".startswith(args[0]):
+        if "mode".startswith(args[0]):
+            self.set_switchport_mode("access")
+        elif "access".startswith(args[0]):
             if "vlan".startswith(args[1]):
                 self.print_vlan_warning()
                 self.port.access_vlan = None

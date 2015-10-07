@@ -80,9 +80,12 @@ class ConfigCommandProcessor(BaseCommandProcessor):
                 self.switch_configuration.add_port(new_int)
                 self.move_to(self.config_interface_processor, new_int)
             else:
-                self.write_line("              ^")
-                self.write_line("% Invalid input detected at '^' marker (not such interface)")
-                self.write_line("")
+                self.show_unknown_interface_error_message()
+
+    def show_unknown_interface_error_message(self):
+        self.write_line("              ^")
+        self.write_line("% Invalid input detected at '^' marker (not such interface)")
+        self.write_line("")
 
     def make_aggregated_port(self, interface_name):
         return self.switch_configuration.new("AggregatedPort", interface_name.capitalize())

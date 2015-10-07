@@ -15,9 +15,10 @@
 import unittest
 
 from flexmock import flexmock_teardown
+from dell import remove_bond
 
 from tests.dell10g import enable, assert_running_config_contains_in_order, \
-    configuring_vlan, ssh_protocol_factory, telnet_protocol_factory, configuring, add_vlan
+    configuring_vlan, ssh_protocol_factory, telnet_protocol_factory, configuring, add_vlan, create_bond
 from tests.util.protocol_util import with_protocol
 
 
@@ -26,7 +27,7 @@ class Dell10GEnabledTest(unittest.TestCase):
     protocol_factory = None
 
     def setUp(self):
-        self.protocol = self.protocol_factory()
+        self.protocol = ssh_protocol_factory()
 
     def tearDown(self):
         flexmock_teardown()
@@ -124,10 +125,9 @@ class Dell10GEnabledTest(unittest.TestCase):
     def test_show_running_config_on_ethernet_port_that_does_not_exists(self, t):
         enable(t)
 
-        t.write("show running-config interface ethernet 99/99/99")
+        t.write("show running-config interface tengigabitethernet 99/99/99")
         t.readln("")
-        t.read("ERROR: Invalid input!")
-        t.readln("")
+        t.read("An invalid interface has been used for this function")
         t.readln("")
         t.read("my_switch#")
 

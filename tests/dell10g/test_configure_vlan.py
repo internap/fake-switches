@@ -36,20 +36,21 @@ class Dell10GConfigureVlanTest(unittest.TestCase):
     def test_configuring_a_vlan(self, t):
         enable(t)
 
-        add_vlan(t, 1234)
+        add_vlan(t, 1000)
+        add_vlan(t, 1001)
+        add_vlan(t, 2000)
+        configuring_vlan(t, 2000, do="name shizzle")
         assert_running_config_contains_in_order(t, [
-            "vlan 1234",
-            "exit"
+            "vlan 2000",
+            "name shizzle",
+            "exit",
+            "vlan 1,1000-1001",
+            "exit",
         ])
 
-        configuring_vlan(t, 1234, do="name abcedf")
-        assert_running_config_contains_in_order(t, [
-            "vlan 1234",
-            "name abcedf",
-            "exit"
-        ])
-
-        configuring(t, do="no vlan 1234")
+        configuring(t, do="no vlan 1000")
+        configuring(t, do="no vlan 1001")
+        configuring(t, do="no vlan 2000")
 
 
 class Dell10GConfigureVlanSshTest(Dell10GConfigureVlanTest):

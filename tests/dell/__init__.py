@@ -176,7 +176,7 @@ def remove_bond(t, bond_id):
     t.write("configure")
     t.readln("")
     t.read("my_switch(config)#")
-    t.write("backdoor remove port-channel {}".format(bond_id))
+    t.write("no interface port-channel {}".format(bond_id))
     t.readln("")
     t.read("my_switch(config)#")
     t.write("exit")

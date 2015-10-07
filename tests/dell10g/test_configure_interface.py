@@ -18,7 +18,8 @@ from flexmock import flexmock_teardown
 from hamcrest import assert_that, is_not, has_item
 
 from tests.dell10g import enable, assert_interface_configuration, assert_running_config_contains_in_order, \
-    get_running_config, configuring_interface, ssh_protocol_factory, telnet_protocol_factory, add_vlan, configuring
+    get_running_config, configuring_interface, ssh_protocol_factory, telnet_protocol_factory, add_vlan, configuring, \
+    remove_bond, create_bond
 from tests.util.protocol_util import with_protocol
 
 
@@ -406,11 +407,10 @@ class Dell10GConfigureInterfaceTest(unittest.TestCase):
             "switchport mode trunk",
         ])
 
-        configuring_interface(t, "tengigabitethernet 0/0/1", do="switchport mode access")
+        configuring_interface(t, "tengigabitethernet 0/0/1", do="no switchport mode")
         assert_interface_configuration(t, 'tengigabitethernet 0/0/1', [
             ""
         ])
-
 
         t.write("configure")
         t.readln("")
@@ -638,6 +638,7 @@ class Dell10GConfigureInterfaceTest(unittest.TestCase):
         enable(t)
 
         configuring_interface(t, "tengigabitethernet 0/0/1", do="description \"longer name than whats allowed\"")
+        create_bond(t, 43)
 
         t.write("show interfaces status")
         t.readln("")
@@ -649,9 +650,17 @@ class Dell10GConfigureInterfaceTest(unittest.TestCase):
         t.readln("Te1/0/1                                   Full   10000   Auto Up     Active")
         t.readln("Te1/0/2                                   Full   10000   Auto Up     Active")
         t.readln("")
+        t.readln("")
+        t.readln("Port    Description                    Vlan  Link")
+        t.readln("Channel                                      State")
+        t.readln("------- ------------------------------ ----- -------")
+        t.readln("Po43                                   trnk  Up")
+        t.readln("")
         t.read("my_switch#")
 
         configuring_interface(t, "tengigabitethernet 0/0/1", do="no description")
+
+        remove_bond(t, 43)
 
 
 class Dell10GConfigureInterfaceSshTest(Dell10GConfigureInterfaceTest):
