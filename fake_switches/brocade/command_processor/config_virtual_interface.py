@@ -56,6 +56,9 @@ class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
                 self.port.access_group_in = args[1]
             elif "out".startswith(args[2]):
                 self.port.access_group_out = args[1]
+            self.write_line("Warning: An undefined or zero length ACL has been applied. "
+                            "Filtering will not occur for the specified interface VE {} (outbound)."
+                            .format(self.port.vlan_id))
 
         if "vrrp-extended".startswith(args[0]):
             if "vrid".startswith(args[1]):

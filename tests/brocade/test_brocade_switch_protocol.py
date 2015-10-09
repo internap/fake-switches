@@ -435,8 +435,8 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         enable(t)
 
         create_interface_vlan(t, "2999")
-        configuring_interface_vlan(t, "2999", do="ip access-group SHNITZLE in")
-        configuring_interface_vlan(t, "2999", do="ip access-group WHIZZLE out")
+        configuring_access_group_interface_vlan(t, "2999", do="ip access-group SHNITZLE in")
+        configuring_access_group_interface_vlan(t, "2999", do="ip access-group WHIZZLE out")
 
         assert_interface_configuration(t, "ve 2999", [
             "interface ve 2999",
@@ -520,8 +520,8 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
 
         create_interface_vlan(t, "2999")
         configuring_interface_vlan(t, "2999", do="ip address 2.2.2.2/24")
-        configuring_interface_vlan(t, "2999", do="ip access-group SHNITZLE in")
-        configuring_interface_vlan(t, "2999", do="ip access-group WHIZZLE out")
+        configuring_access_group_interface_vlan(t, "2999", do="ip access-group SHNITZLE in")
+        configuring_access_group_interface_vlan(t, "2999", do="ip access-group WHIZZLE out")
 
         create_interface_vlan(t, "3000")
         configuring_interface_vlan(t, "3000", do="port-name howdy")
@@ -1253,6 +1253,23 @@ def configuring_interface_vlan(t, vlan, do):
 
     t.write(do)
 
+    t.read("SSH@my_switch(config-vif-%s)#" % vlan)
+    t.write("exit")
+    t.read("SSH@my_switch(config)#")
+    t.write("exit")
+    t.read("SSH@my_switch#")
+
+
+def configuring_access_group_interface_vlan(t, vlan, do):
+    t.write("configure terminal")
+    t.read("SSH@my_switch(config)#")
+    t.write("interface ve %s" % vlan)
+    t.read("SSH@my_switch(config-vif-%s)#" % vlan)
+
+    t.write(do)
+
+    t.readln("Warning: An undefined or zero length ACL has been applied. "
+             "Filtering will not occur for the specified interface VE {} (outbound).".format(vlan))
     t.read("SSH@my_switch(config-vif-%s)#" % vlan)
     t.write("exit")
     t.read("SSH@my_switch(config)#")
