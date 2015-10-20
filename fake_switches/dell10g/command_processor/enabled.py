@@ -26,7 +26,7 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
         if port.shutdown:
             conf.append('shutdown')
         if port.description:
-            conf.append("description '{}'".format(port.description))
+            conf.append("description \"{}\"".format(port.description))
         if port.mode and port.mode != "access":
             conf.append('switchport mode {}'.format(port.mode))
         if port.access_vlan:
