@@ -152,6 +152,66 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         remove_vlan(t, "123")
 
     @with_protocol
+    def test_remove_a_ports_from_a_vlan_should_print_an_error(self, t):
+        enable(t)
+
+        create_vlan(t, "123")
+
+        t.write("configure terminal")
+        t.read("SSH@my_switch(config)#")
+        t.write("vlan 123")
+        t.read("SSH@my_switch(config-vlan-123)#")
+
+        t.write("no untagged ethernet 1/1")
+        t.readln("Error: ports ethe 1/1 are not untagged members of vlan 123")
+        t.read("SSH@my_switch(config-vlan-123)#")
+
+        t.write("no tagged ethernet 1/1")
+        t.readln("Error: ports ethe 1/1 are not tagged members of vlan 123")
+        t.read("SSH@my_switch(config-vlan-123)#")
+
+        t.write("exit")
+        t.read("SSH@my_switch(config)#")
+        t.write("exit")
+        t.read("SSH@my_switch#")
+
+    @with_protocol
+    def test_unknown_ports_when_tagging_prints_an_error(self, t):
+        enable(t)
+
+        create_vlan(t, "123")
+
+        t.write("configure terminal")
+        t.read("SSH@my_switch(config)#")
+        t.write("vlan 123")
+        t.read("SSH@my_switch(config-vlan-123)#")
+
+        t.write("untagged ethernet 1/99")
+        t.readln("Invalid input -> 1/99")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config-vlan-123)#")
+
+        t.write("tagged ethernet 1/99")
+        t.readln("Invalid input -> 1/99")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config-vlan-123)#")
+
+        t.write("no untagged ethernet 1/99")
+        t.readln("Invalid input -> 1/99")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config-vlan-123)#")
+
+        t.write("no tagged ethernet 1/99")
+        t.readln("Invalid input -> 1/99")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config-vlan-123)#")
+
+        t.write("exit")
+        t.read("SSH@my_switch(config)#")
+        t.write("exit")
+        t.read("SSH@my_switch#")
+
+    @with_protocol
     def test_command_interface_tagged_with_native_vlan(self, t):
         enable(t)
         create_vlan(t, "123")
