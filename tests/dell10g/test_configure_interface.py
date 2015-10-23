@@ -23,9 +23,8 @@ from tests.dell10g import enable, assert_interface_configuration, assert_running
 from tests.util.protocol_util import with_protocol
 
 
-class Dell10GConfigureInterfaceTest(unittest.TestCase):
-    __test__ = False
-    protocol_factory = None
+class Dell10GConfigureInterfaceSshTest(unittest.TestCase):
+    protocol_factory = ssh_protocol_factory
 
     def setUp(self):
         self.protocol = self.protocol_factory()
@@ -77,17 +76,17 @@ class Dell10GConfigureInterfaceTest(unittest.TestCase):
         enable(t)
         configuring_interface(t, "tengigabitethernet 0/0/1", do='description "hello WORLD"')
         assert_interface_configuration(t, "tengigabitethernet 0/0/1", [
-            "description 'hello WORLD'"
+            "description \"hello WORLD\""
         ])
 
         configuring_interface(t, "tengigabitethernet 0/0/1", do="description 'We dont know yet'")
         assert_interface_configuration(t, "tengigabitethernet 0/0/1", [
-            "description 'We dont know yet'"
+            "description \"We dont know yet\""
         ])
 
         configuring_interface(t, "tengigabitethernet 0/0/1", do='description YEEEAH')
         assert_interface_configuration(t, "tengigabitethernet 0/0/1", [
-            "description 'YEEEAH'"
+            "description \"YEEEAH\""
         ])
 
         configuring_interface(t, "tengigabitethernet 0/0/1", do='no description')
@@ -663,11 +662,5 @@ class Dell10GConfigureInterfaceTest(unittest.TestCase):
         remove_bond(t, 43)
 
 
-class Dell10GConfigureInterfaceSshTest(Dell10GConfigureInterfaceTest):
-    __test__ = True
-    protocol_factory = ssh_protocol_factory
-
-
-class Dell10GConfigureInterfaceTelnetTest(Dell10GConfigureInterfaceTest):
-    __test__ = True
+class Dell10GConfigureInterfaceTelnetTest(Dell10GConfigureInterfaceSshTest):
     protocol_factory = telnet_protocol_factory
