@@ -36,7 +36,9 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         elif "interfaces".startswith(args[0]):
             self.show_int(args)
         elif "vlan".startswith(args[0]):
-            if "brief".startswith(args[1]):
+            if args[1].isdigit():
+                self._show_vlan(int(args[1]))
+            elif "brief".startswith(args[1]):
                 self.show_vlan_brief()
             elif "ethernet".startswith(args[1]):
                 self.show_vlan_int(args)
@@ -98,8 +100,8 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             if tagged_ports:
                 self.write_line(" tagged %s" % to_port_ranges(tagged_ports))
 
-            vif = next((p for p in self.switch_configuration.ports if isinstance(p, VlanPort) and p.vlan_id == vlan.number), False)
-            if vif:
+            vif = self.get_interface_vlan_for(vlan)
+            if vif is not None:
                 self.write_line(" router-interface %s" % vif.name)
 
             self.write_line("!")
@@ -196,6 +198,44 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         else:
             self.write_line("Invalid input -> %s" % args[2])
             self.write_line("Type ? for a list")
+
+    def _show_vlan(self, vlan_id):
+        vlan = self.switch_configuration.get_vlan(vlan_id)
+        if vlan is None:
+            self.write_line("Error: vlan {} is not configured".format(vlan_id))
+        else:
+            vif = self.get_interface_vlan_for(vlan)
+
+            self.write_line("")
+            self.write_line("PORT-VLAN {}, Name {}, Priority Level -, Priority Force 0, Creation Type STATIC".format(
+                vlan_id, vlan.name if vlan.name is not None else "[None]"))
+            self.write_line("Topo HW idx    : 81    Topo SW idx: 257    Topo next vlan: 0")
+            self.write_line("L2 protocols   : STP")
+            self.write_line("Associated Virtual Interface Id: {}".format(
+                "NONE" if vif is None else vif.name.split(" ")[-1]))
+            self.write_line("----------------------------------------------------------")
+            self.write_line("No ports associated with VLAN")
+            self.write_line("Arp Inspection: 0")
+            self.write_line("DHCP Snooping: 0")
+            self.write_line("IPv4 Multicast Snooping: Disabled")
+            self.write_line("IPv6 Multicast Snooping: Disabled")
+            self.write_line("")
+
+            if vif is None:
+                self.write_line("No Virtual Interfaces configured for this vlan")
+            else:
+                self.write_line("Ve{} is down, line protocol is down".format(vif.name.split(" ")[-1]))
+                self.write_line("  Type is Vlan (Vlan Id: {})".format(vlan_id))
+                self.write_line("  Hardware is Virtual Ethernet, address is 748e.f8a7.1b01 (bia 748e.f8a7.1b01)")
+                self.write_line("  No port name")
+                self.write_line("  Vlan id: {}".format(vlan_id))
+                self.write_line("  Internet address is 0.0.0.0/0, IP MTU 1500 bytes, encapsulation ethernet")
+                self.write_line("  Configured BW 0 kbps")
+
+    def get_interface_vlan_for(self, vlan):
+        return next((p for p in self.switch_configuration.ports
+                     if isinstance(p, VlanPort) and p.vlan_id == vlan.number),
+                    None)
 
 
 def port_index(port):

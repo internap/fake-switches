@@ -371,6 +371,14 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         t.read("SSH@my_switch(config)#")
         t.write("vlan 2999")
         t.read("SSH@my_switch(config-vlan-2999)#")
+        t.write("router interface ve 2999")
+        t.readln("Invalid input -> interface ve 2999")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config-vlan-2999)#")
+        t.write("rout patate 2999")
+        t.readln("Invalid input -> patate 2999")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config-vlan-2999)#")
         t.write("router-interface ve 2999")
         t.read("SSH@my_switch(config-vlan-2999)#")
         t.write("router-interface ve 3000")
@@ -1150,6 +1158,60 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
 
         configuring(t, do="no interface ve 2995")
         remove_vlan(t, "2995")
+
+    @with_protocol
+    def test_show_vlan(self, t):
+        enable(t)
+
+        t.write("show vlan 1600")
+        t.readln("Error: vlan 1600 is not configured")
+        t.read("SSH@my_switch#")
+
+        create_vlan(t, "1600")
+
+        t.write("show vlan 1600")
+        t.readln("")
+        t.readln("PORT-VLAN 1600, Name [None], Priority Level -, Priority Force 0, Creation Type STATIC")
+        t.readln("Topo HW idx    : 81    Topo SW idx: 257    Topo next vlan: 0")
+        t.readln("L2 protocols   : STP")
+        t.readln("Associated Virtual Interface Id: NONE")
+        t.readln("----------------------------------------------------------")
+        t.readln("No ports associated with VLAN")
+        t.readln("Arp Inspection: 0")
+        t.readln("DHCP Snooping: 0")
+        t.readln("IPv4 Multicast Snooping: Disabled")
+        t.readln("IPv6 Multicast Snooping: Disabled")
+        t.readln("")
+        t.readln("No Virtual Interfaces configured for this vlan")
+        t.read("SSH@my_switch#")
+
+        create_vlan(t, "1600", name="Shizzle")
+        configuring_vlan(t, "1600", do="router-interface ve 999")
+
+        t.write("show vlan 1600")
+        t.readln("")
+        t.readln("PORT-VLAN 1600, Name Shizzle, Priority Level -, Priority Force 0, Creation Type STATIC")
+        t.readln("Topo HW idx    : 81    Topo SW idx: 257    Topo next vlan: 0")
+        t.readln("L2 protocols   : STP")
+        t.readln("Associated Virtual Interface Id: 999")
+        t.readln("----------------------------------------------------------")
+        t.readln("No ports associated with VLAN")
+        t.readln("Arp Inspection: 0")
+        t.readln("DHCP Snooping: 0")
+        t.readln("IPv4 Multicast Snooping: Disabled")
+        t.readln("IPv6 Multicast Snooping: Disabled")
+        t.readln("")
+        t.readln("Ve999 is down, line protocol is down")
+        t.readln("  Type is Vlan (Vlan Id: 1600)")
+        t.readln("  Hardware is Virtual Ethernet, address is 748e.f8a7.1b01 (bia 748e.f8a7.1b01)")
+        t.readln("  No port name")
+        t.readln("  Vlan id: 1600")
+        t.readln("  Internet address is 0.0.0.0/0, IP MTU 1500 bytes, encapsulation ethernet")
+        t.readln("  Configured BW 0 kbps")
+        t.read("SSH@my_switch#")
+
+        configuring_vlan(t, "1600", do="no router-interface 999")
+        remove_vlan(t, "1600")
 
 
 def enable(t):

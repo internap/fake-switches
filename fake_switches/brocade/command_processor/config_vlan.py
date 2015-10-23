@@ -66,16 +66,20 @@ class ConfigVlanCommandProcessor(BaseCommandProcessor):
             port.trunk_native_vlan = None
 
     def do_router_interface(self, *args):
-        actual_ve = next(
-            (p for p in self.switch_configuration.ports if isinstance(p, VlanPort) and p.vlan_id == self.vlan.number),
-            False)
-        if not actual_ve:
-            name = " ".join(args)
-            self.switch_configuration.add_port(self.switch_configuration.new("VlanPort", self.vlan.number,
-                                                                             name))
+        if len(args) != 2 or args[0] != "ve":
+            self.write_line("Invalid input -> {}".format(" ".join(args)))
+            self.write_line("Type ? for a list")
         else:
-            self.write_line("Error: VLAN: %s  already has router-interface %s" % (
-                self.vlan.number, split_port_name(actual_ve.name)[1]))
+            actual_ve = next(
+                (p for p in self.switch_configuration.ports if isinstance(p, VlanPort) and p.vlan_id == self.vlan.number),
+                False)
+            if not actual_ve:
+                name = "ve {}".format(args[1])
+                self.switch_configuration.add_port(self.switch_configuration.new("VlanPort", self.vlan.number,
+                                                                                 name))
+            else:
+                self.write_line("Error: VLAN: %s  already has router-interface %s" % (
+                    self.vlan.number, split_port_name(actual_ve.name)[1]))
 
     def do_no_router_interface(self, *_):
         self.switch_configuration.remove_port(next(
