@@ -38,6 +38,10 @@ class ConfigVlanCommandProcessor(BaseCommandProcessor):
     def do_no_untagged(self, *args):
         port = self.switch_configuration.get_port_by_partial_name(" ".join(args))
 
+        if port.access_vlan != self.vlan.number and port.trunk_native_vlan != self.vlan.number:
+            self.write_line("Error: ports ethe {} are not untagged members of vlan {}".format(args[1], self.vlan.number))
+            return
+
         if port.trunk_vlans is None:
             port.access_vlan = None
         else:
@@ -58,6 +62,10 @@ class ConfigVlanCommandProcessor(BaseCommandProcessor):
 
     def do_no_tagged(self, *args):
         port = self.switch_configuration.get_port_by_partial_name(" ".join(args))
+        if port.trunk_vlans is None or self.vlan.number not in port.trunk_vlans:
+            self.write_line("Error: ports ethe {} are not tagged members of vlan {}".format(args[1], self.vlan.number))
+            return
+
         port.trunk_vlans.remove(self.vlan.number)
         if len(port.trunk_vlans) == 0:
             port.trunk_vlans = None
