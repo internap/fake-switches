@@ -174,6 +174,40 @@ class Dell10GEnabledTest(unittest.TestCase):
         configuring(t, do="no vlan 100")
         configuring(t, do="no vlan 1000")
 
+    @with_protocol
+    def test_show_vlan_id(self, t):
+        enable(t)
+
+        add_vlan(t, 1000)
+
+        t.write("show vlan id 500")
+        t.readln("")
+        t.readln("ERROR: This VLAN does not exist.")
+        t.readln("")
+        t.read("my_switch#")
+
+        t.write("show vlan id 1000")
+        t.readln("")
+        t.readln("VLAN   Name                             Ports          Type")
+        t.readln("-----  ---------------                  -------------  --------------")
+        t.readln("1000   VLAN1000                                        Static")
+        t.readln("")
+        t.read("my_switch#")
+
+        t.write("show vlan id bleh")
+        t.readln("                     ^")
+        t.readln("Invalid input. Please specify an integer in the range 1 to 4093.")
+        t.readln("")
+        t.read("my_switch#")
+
+        t.write("show vlan id")
+        t.readln("")
+        t.readln("Command not found / Incomplete command. Use ? to list commands.")
+        t.readln("")
+        t.read("my_switch#")
+
+        configuring(t, do="no vlan 1000")
+
 
 class Dell10GEnabledSshTest(Dell10GEnabledTest):
     __test__ = True
