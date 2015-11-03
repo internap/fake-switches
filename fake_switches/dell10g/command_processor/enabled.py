@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fake_switches.dell.command_processor.enabled import DellEnabledCommandProcessor, to_vlan_ranges
+from fake_switches.dell.command_processor.enabled import DellEnabledCommandProcessor, to_vlan_ranges, _is_vlan_id
 from fake_switches.dell10g.command_processor.config import \
     Dell10GConfigCommandProcessor
 from fake_switches.switch_configuration import VlanPort, AggregatedPort
@@ -96,7 +96,22 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
                     self.write_line("An invalid interface has been used for this function")
 
         elif "vlan".startswith(args[0]):
-            self.show_vlans()
+            if len(args) == 1:
+                self.show_vlans(self.switch_configuration.vlans)
+            elif args[1] == "id":
+                if not _is_vlan_id(args[2]):
+                    self.write_line("                     ^")
+                    self.write_line("Invalid input. Please specify an integer in the range 1 to 4093.")
+                    self.write_line("")
+                else:
+                    vlan = self.switch_configuration.get_vlan(int(args[2]))
+                    if vlan is None:
+                        self.write_line("")
+                        self.write_line("ERROR: This VLAN does not exist.")
+                        self.write_line("")
+                    else:
+                        self.show_vlans([vlan])
+
         elif "interfaces".startswith(args[0]) and "status".startswith(args[1]):
             self.show_interfaces_status()
 
@@ -148,13 +163,13 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
 
         self.write_line("")
 
-    def show_vlans(self):
+    def show_vlans(self, vlans):
 
         self.write_line("")
         self.write_line("VLAN   Name                             Ports          Type")
         self.write_line("-----  ---------------                  -------------  --------------")
 
-        for vlan in self.switch_configuration.vlans:
+        for vlan in vlans:
             self.write_line("{number: <5}  {name: <32} {ports: <13}  {type}".format(
                 number=vlan.number, name=vlan_name(vlan), ports="",
                 type="Default" if vlan.number == 1 else "Static"))
