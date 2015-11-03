@@ -265,6 +265,12 @@ class DellEnabledTest(unittest.TestCase):
         t.readln("")
         t.read("my_switch#")
 
+        t.write("show vlan id")
+        t.readln("")
+        t.readln("Command not found / Incomplete command. Use ? to list commands.")
+        t.readln("")
+        t.read("my_switch#")
+
         unconfigure_vlan(t, 1000)
 
 

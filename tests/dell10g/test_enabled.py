@@ -200,8 +200,13 @@ class Dell10GEnabledTest(unittest.TestCase):
         t.readln("")
         t.read("my_switch#")
 
-        configuring(t, do="no vlan 1000")
+        t.write("show vlan id")
+        t.readln("")
+        t.readln("Command not found / Incomplete command. Use ? to list commands.")
+        t.readln("")
+        t.read("my_switch#")
 
+        configuring(t, do="no vlan 1000")
 
 
 class Dell10GEnabledSshTest(Dell10GEnabledTest):

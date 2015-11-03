@@ -99,7 +99,11 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
             if len(args) == 1:
                 self.show_vlans(self.switch_configuration.vlans)
             elif args[1] == "id":
-                if not _is_vlan_id(args[2]):
+                if len(args) < 3:
+                    self.write_line("")
+                    self.write_line("Command not found / Incomplete command. Use ? to list commands.")
+                    self.write_line("")
+                elif not _is_vlan_id(args[2]):
                     self.write_line("                     ^")
                     self.write_line("Invalid input. Please specify an integer in the range 1 to 4093.")
                     self.write_line("")
