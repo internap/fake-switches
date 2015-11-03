@@ -91,13 +91,23 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
                 else:
                     self.write_line("\nERROR: Invalid input!\n")
         elif "vlan".startswith(args[0]):
-            vlan_lines = []
-            for vlan in self.switch_configuration.vlans:
-                vlan_lines.append("%-5s  %-32s %-13s  %-8s  %-13s" % (
-                    vlan.number, vlan_name(vlan), "",
-                    "Default" if vlan.number == 1 else "Static", "Required"))
+            if len(args) == 1:
+                self.show_vlan_page(self.switch_configuration.vlans[:])
+            elif args[1] == "id":
+                if not _is_vlan_id(args[2]):
+                    self.write_line("                     ^")
+                    self.write_line("Invalid input. Please specify an integer in the range 1 to 4093.")
+                    self.write_line("")
+                else:
+                    vlan = self.switch_configuration.get_vlan(int(args[2]))
+                    if vlan is None:
+                        self.write_line("")
+                        self.write_line("ERROR: This VLAN does not exist.")
+                        self.write_line("")
+                    else:
+                        self.show_vlan_page([vlan])
 
-            self.show_vlan_page(vlan_lines)
+
         elif "interfaces".startswith(args[0]) and "status".startswith(args[1]):
             self.show_page(self.get_interfaces_status_output())
 
@@ -178,22 +188,27 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
         ]
         return output_lines
 
-    def show_vlan_page(self, lines):
+    def show_vlan_page(self, vlans):
         lines_per_pages = 18
         self.write_line("")
         self.write_line("VLAN       Name                         Ports          Type      Authorization")
         self.write_line("-----  ---------------                  -------------  -----     -------------")
 
-        line = 0
-        while len(lines) > 0 and line < lines_per_pages:
-            self.write_line(lines.pop(0))
-            line += 1
+        line_count = 0
+        while len(vlans) > 0 and line_count < lines_per_pages:
+            vlan = vlans.pop(0)
+
+            self.write_line("{number: <5}  {name: <32} {ports: <13}  {type: <8}  {auth: <13}".format(
+                number=vlan.number, name=vlan_name(vlan), ports="",
+                type="Default" if vlan.number == 1 else "Static", auth="Required"))
+
+            line_count += 1
 
         self.write_line("")
 
-        if len(lines) > 0:
+        if len(vlans) > 0:
             self.write("--More-- or (q)uit")
-            self.on_keystroke(self.continue_vlan_pages, lines)
+            self.on_keystroke(self.continue_vlan_pages, vlans)
 
     def continue_vlan_pages(self, lines, _):
         self.write_line("\r                     ")
@@ -249,3 +264,11 @@ def to_range_string(range_array):
     else:
         return "%s-%s" % (range_array[0], range_array[-1])
 
+
+def _is_vlan_id(text):
+    try:
+        number = int(text)
+    except ValueError:
+        return False
+
+    return 1 <= number <= 4093

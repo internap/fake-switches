@@ -239,6 +239,34 @@ class DellEnabledTest(unittest.TestCase):
         unconfigure_vlan(t, 300)
         unconfigure_vlan(t, 4000)
 
+    @with_protocol
+    def test_show_vlan_id(self, t):
+        enable(t)
+
+        configuring_vlan(t, 1000)
+
+        t.write("show vlan id 500")
+        t.readln("")
+        t.readln("ERROR: This VLAN does not exist.")
+        t.readln("")
+        t.read("my_switch#")
+
+        t.write("show vlan id 1000")
+        t.readln("")
+        t.readln("VLAN       Name                         Ports          Type      Authorization")
+        t.readln("-----  ---------------                  -------------  -----     -------------")
+        t.readln("1000                                                   Static    Required     ")
+        t.readln("")
+        t.read("my_switch#")
+
+        t.write("show vlan id bleh")
+        t.readln("                     ^")
+        t.readln("Invalid input. Please specify an integer in the range 1 to 4093.")
+        t.readln("")
+        t.read("my_switch#")
+
+        unconfigure_vlan(t, 1000)
+
 
 class DellEnabledSshTest(DellEnabledTest):
     __test__ = True
