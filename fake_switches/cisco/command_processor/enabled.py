@@ -18,7 +18,7 @@ import re
 from fake_switches.command_processing.switch_tftp_parser import SwitchTftpParser
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 from fake_switches.cisco.command_processor.config import ConfigCommandProcessor
-from fake_switches.switch_configuration import VlanPort
+from fake_switches.switch_configuration import VlanPort, AggregatedPort
 from fake_switches import group_sequences
 
 
@@ -92,6 +92,38 @@ class EnabledCommandProcessor(BaseCommandProcessor):
                 self.write_line("Primary Secondary Type              Ports")
                 self.write_line("------- --------- ----------------- ------------------------------------------")
                 self.write_line("")
+        elif "etherchannel".startswith(args[0]) and len(args) == 2 and "summary".startswith(args[1]):
+            ports = sorted(self.switch_configuration.ports, key=lambda x: x.name)
+            port_channels = sorted(
+                [p for p in ports if isinstance(p, AggregatedPort)],
+                key=port_channel_number)
+            self.write_line("Flags:  D - down        P - bundled in port-channel")
+            self.write_line("        I - stand-alone s - suspended")
+            self.write_line("        H - Hot-standby (LACP only)")
+            self.write_line("        R - Layer3      S - Layer2")
+            self.write_line("        U - in use      f - failed to allocate aggregator")
+            self.write_line("")
+            self.write_line("        M - not in use, minimum links not met")
+            self.write_line("        u - unsuitable for bundling")
+            self.write_line("        w - waiting to be aggregated")
+            self.write_line("        d - default port")
+            self.write_line("")
+            self.write_line("")
+            self.write_line("Number of channel-groups in use: {}".format(len(port_channels)))
+            self.write_line("Number of aggregators:           {}".format(len(port_channels)))
+            self.write_line("")
+            self.write_line("Group  Port-channel  Protocol    Ports")
+            self.write_line("------+-------------+-----------+-----------------------------------------------")
+            for port_channel in port_channels:
+                members = [short_name(p) for p in ports
+                           if p.aggregation_membership == port_channel.name]
+                self.write_line(
+                    "{: <6} {: <13} {: <11} {}".format(
+                        port_channel_number(port_channel),
+                        "{}(S{})".format(short_name(port_channel), "U" if members else ""),
+                        "  LACP",
+                        "  ".join("{}(P)".format(m) for m in members)))
+            self.write_line("")
         elif "ip".startswith(args[0]):
             if "interface".startswith(args[1]):
                 if_list = None
@@ -272,3 +304,11 @@ def to_range_string(array_range):
     else:
         return "%s-%s" % (array_range[0], array_range[-1])
 
+
+def port_channel_number(port):
+    return int(re.match(r'(.*?)(\d+$)', port.name).groups()[1])
+
+
+def short_name(port):
+    if_type, if_number = re.match(r'([^0-9]*)([0-9].*$)', port.name).groups()
+    return if_type[:2] + if_number
