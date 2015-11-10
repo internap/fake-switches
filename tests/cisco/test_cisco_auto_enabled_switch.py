@@ -30,7 +30,7 @@ class TestCiscoAutoEnabledSwitchProtocol(unittest.TestCase):
         t.read("my_switch#")
 
     def create_client(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 class TestCiscoSwitchProtocolSSH(TestCiscoAutoEnabledSwitchProtocol):

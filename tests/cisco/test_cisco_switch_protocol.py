@@ -452,6 +452,28 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
             "end"
         ])
 
+        t.write("show etherchannel summary")
+        t.readln("Flags:  D - down        P - bundled in port-channel")
+        t.readln("        I - stand-alone s - suspended")
+        t.readln("        H - Hot-standby (LACP only)")
+        t.readln("        R - Layer3      S - Layer2")
+        t.readln("        U - in use      f - failed to allocate aggregator")
+        t.readln("")
+        t.readln("        M - not in use, minimum links not met")
+        t.readln("        u - unsuitable for bundling")
+        t.readln("        w - waiting to be aggregated")
+        t.readln("        d - default port")
+        t.readln("")
+        t.readln("")
+        t.readln("Number of channel-groups in use: 1")
+        t.readln("Number of aggregators:           1")
+        t.readln("")
+        t.readln("Group  Port-channel  Protocol    Ports")
+        t.readln("------+-------------+-----------+-----------------------------------------------")
+        t.readln("1      Po1(S)          LACP      ")
+        t.readln("")
+        t.read("my_switch#")
+
         configuring(t, do="no interface port-channel 1")
 
         t.write("show run int po1")
@@ -487,6 +509,28 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
             "interface Port-channel2",
             "end"
         ])
+
+        t.write("show etherchannel summary")
+        t.readln("Flags:  D - down        P - bundled in port-channel")
+        t.readln("        I - stand-alone s - suspended")
+        t.readln("        H - Hot-standby (LACP only)")
+        t.readln("        R - Layer3      S - Layer2")
+        t.readln("        U - in use      f - failed to allocate aggregator")
+        t.readln("")
+        t.readln("        M - not in use, minimum links not met")
+        t.readln("        u - unsuitable for bundling")
+        t.readln("        w - waiting to be aggregated")
+        t.readln("        d - default port")
+        t.readln("")
+        t.readln("")
+        t.readln("Number of channel-groups in use: 1")
+        t.readln("Number of aggregators:           1")
+        t.readln("")
+        t.readln("Group  Port-channel  Protocol    Ports")
+        t.readln("------+-------------+-----------+-----------------------------------------------")
+        t.readln("2      Po2(SU)         LACP      Fa0/1(P)")
+        t.readln("")
+        t.read("my_switch#")
 
         configuring(t, do="no interface port-channel 2")
 
