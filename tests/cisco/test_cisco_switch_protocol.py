@@ -545,14 +545,14 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
     def test_port_channel_is_not_automatically_created_when_adding_a_port_to_it_if_its_already_created(self, t):
         enable(t)
 
-        create_port_channel_interface(t, '4')
+        create_port_channel_interface(t, '14')
 
         t.write("configure terminal")
         t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
         t.read("my_switch(config)#")
         t.write("interface FastEthernet0/1")
         t.read("my_switch(config-if)#")
-        t.write("channel-group 4 mode active")
+        t.write("channel-group 14 mode active")
         t.read("my_switch(config-if)#")
         t.write("exit")
         t.read("my_switch(config)#")
@@ -561,18 +561,18 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
 
         assert_interface_configuration(t, "fa0/1", [
             "interface FastEthernet0/1",
-            " channel-group 4 mode active",
+            " channel-group 14 mode active",
             "end"
         ])
 
-        configuring_interface(t, interface="fa0/1", do="no channel-group 4 mode on")
+        configuring_interface(t, interface="fa0/1", do="no channel-group 14 mode on")
 
         assert_interface_configuration(t, "fa0/1", [
             "interface FastEthernet0/1",
             "end"
         ])
 
-        configuring(t, do="no interface port-channel 4")
+        configuring(t, do="no interface port-channel 14")
 
     @with_protocol
     def test_setting_secondary_ips(self, t):
