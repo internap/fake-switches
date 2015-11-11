@@ -246,7 +246,7 @@ def build_running_interface(port):
     if port.shutdown:
         data.append(" shutdown")
     if port.aggregation_membership:
-        data.append(" channel-group %s mode active" % port.aggregation_membership[-1])
+        data.append(" channel-group %s mode active" % last_number(port.aggregation_membership))
     if port.vrf:
         data.append(" ip vrf forwarding %s" % port.vrf.name)
     if isinstance(port, VlanPort):
@@ -306,7 +306,11 @@ def to_range_string(array_range):
 
 
 def port_channel_number(port):
-    return int(re.match(r'(.*?)(\d+$)', port.name).groups()[1])
+    return last_number(port.name)
+
+
+def last_number(text):
+    return int(re.match(r'(.*?)(\d+$)', text).groups()[1])
 
 
 def short_name(port):
