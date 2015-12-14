@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/internaphosting/fake-switches.svg?branch=master)](https://travis-ci.org/internaphosting/fake-switches)
+[![Build Status](https://travis-ci.org/internap/fake-switches.svg?branch=master)](https://travis-ci.org/internap/fake-switches)
 [![PyPI version](https://badge.fury.io/py/fake-switches.svg)](http://badge.fury.io/py/fake-switches)
 
 Fake-switches
