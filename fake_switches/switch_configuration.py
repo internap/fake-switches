@@ -106,6 +106,12 @@ class SwitchConfiguration(object):
                 if port.vrf and port.vrf.name == name:
                     port.vrf = None
 
+    def get_physical_ports(self):
+        return [p for p in self.ports if not (isinstance(p, VlanPort) or isinstance(p, AggregatedPort))]
+
+    def get_vlan_ports(self):
+        return [p for p in self.ports if isinstance(p, VlanPort)]
+
 
 class VRF(object):
     def __init__(self, name):
