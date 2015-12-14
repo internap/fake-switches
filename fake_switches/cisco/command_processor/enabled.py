@@ -15,12 +15,12 @@
 from functools import partial
 
 import re
+import textwrap
 from fake_switches.command_processing.switch_tftp_parser import SwitchTftpParser
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 from fake_switches.cisco.command_processor.config import ConfigCommandProcessor
 from fake_switches.switch_configuration import VlanPort, AggregatedPort
 from fake_switches import group_sequences
-
 
 
 class EnabledCommandProcessor(BaseCommandProcessor):
@@ -159,6 +159,8 @@ class EnabledCommandProcessor(BaseCommandProcessor):
                     for route in routes:
                         self.write_line("S        {0} [x/y] via {1}".format(route.destination, route.next_hop))
                 self.write_line("")
+        elif "version".startswith(args[0]):
+            self.show_version()
 
     def do_copy(self, source_url, destination_url):
         dest_protocol, dest_file = destination_url.split(":")
@@ -210,6 +212,11 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         self.write_line("Current configuration : %i bytes" % (len("\n".join(all_data)) + 1))
         [self.write_line(l) for l in all_data]
 
+    def show_version(self):
+        self.write_line(version_text(
+            vlan_port_count=len(self.switch_configuration.get_vlan_ports()),
+            port_count=len(self.switch_configuration.get_physical_ports()),
+        ))
 
 def strip_leading_slash(dest_file):
     return dest_file[1:]
@@ -316,3 +323,66 @@ def last_number(text):
 def short_name(port):
     if_type, if_number = re.match(r'([^0-9]*)([0-9].*$)', port.name).groups()
     return if_type[:2] + if_number
+
+
+def version_text(**kwargs):
+    return textwrap.dedent("""
+        Cisco IOS Software, C3750 Software (C3750-IPSERVICESK9-M), Version 12.2(58)SE2, RELEASE SOFTWARE (fc1)
+        Technical Support: http://www.cisco.com/techsupport
+        Copyright (c) 1986-2011 by Cisco Systems, Inc.
+        Compiled Thu 21-Jul-11 01:53 by prod_rel_team
+
+        ROM: Bootstrap program is C3750 boot loader
+        BOOTLDR: C3750 Boot Loader (C3750-HBOOT-M) Version 12.2(44)SE5, RELEASE SOFTWARE (fc1)
+
+        co-dr2.staging uptime is 1 year, 18 weeks, 5 days, 1 hour, 11 minutes
+        System returned to ROM by power-on
+        System image file is "flash:c3750-ipservicesk9-mz.122-58.SE2.bin"
+
+
+        This product contains cryptographic features and is subject to United
+        States and local country laws governing import, export, transfer and
+        use. Delivery of Cisco cryptographic products does not imply
+        third-party authority to import, export, distribute or use encryption.
+        Importers, exporters, distributors and users are responsible for
+        compliance with U.S. and local country laws. By using this product you
+        agree to comply with applicable laws and regulations. If you are unable
+        to comply with U.S. and local laws, return this product immediately.
+
+        A summary of U.S. laws governing Cisco cryptographic products may be found at:
+        http://www.cisco.com/wwl/export/crypto/tool/stqrg.html
+
+        If you require further assistance please contact us by sending email to
+        export@cisco.com.
+
+        cisco WS-C3750G-24TS-1U (PowerPC405) processor (revision H0) with 131072K bytes of memory.
+        Processor board ID FOC1530X2F7
+        Last reset from power-on
+        {vlan_port_count} Virtual Ethernet interfaces
+        {port_count} Gigabit Ethernet interfaces
+        The password-recovery mechanism is enabled.
+
+        512K bytes of flash-simulated non-volatile configuration memory.
+        Base ethernet MAC Address       : 64:AE:0C:DA:BE:00
+        Motherboard assembly number     : 73-10219-09
+        Power supply part number        : 341-0098-02
+        Motherboard serial number       : FOC153019Z6
+        Power supply serial number      : ALD153000BB
+        Model revision number           : H0
+        Motherboard revision number     : A0
+        Model number                    : WS-C3750G-24TS-S1U
+        System serial number            : FOC1530X2F7
+        Top Assembly Part Number        : 800-26859-03
+        Top Assembly Revision Number    : C0
+        Version ID                      : V05
+        CLEI Code Number                : COMB600BRA
+        Hardware Board Revision Number  : 0x09
+
+
+        Switch Ports Model              SW Version            SW Image
+        ------ ----- -----              ----------            ----------
+        *    1 {port_count: <5} WS-C3750G-24TS-1U  12.2(58)SE2           C3750-IPSERVICESK9-M
+
+
+        Configuration register is 0xF
+        """.format(**kwargs))[1:]
