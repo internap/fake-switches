@@ -114,6 +114,8 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
 
         elif "interfaces".startswith(args[0]) and "status".startswith(args[1]):
             self.show_page(self.get_interfaces_status_output())
+        elif "version".startswith(args[0]):
+            self.show_version()
 
     def get_port_configuration(self, port):
         conf = []
@@ -243,6 +245,24 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
         if not self.awaiting_keystroke:
             self.write_line("")
             self.show_prompt()
+
+    def show_version(self):
+        self.write_line("")
+        self.write_line("Image Descriptions")
+        self.write_line("")
+        self.write_line(" image1 : default image")
+        self.write_line(" image2 :")
+        self.write_line("")
+        self.write_line("")
+        self.write_line(" Images currently available on Flash")
+        self.write_line("")
+        self.write_line("--------------------------------------------------------------------")
+        self.write_line(" unit      image1      image2     current-active        next-active")
+        self.write_line("--------------------------------------------------------------------")
+        self.write_line("")
+        self.write_line("    1     3.3.7.3     3.3.7.3             image1             image1")
+        self.write_line("    2     3.3.7.3    3.3.13.1             image1             image1")
+        self.write_line("")
 
 
 def vlan_name(vlan):

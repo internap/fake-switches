@@ -24,7 +24,7 @@ from tests.util.protocol_util import with_protocol
 
 class DellEnabledTest(unittest.TestCase):
     __test__ = False
-    protocol_factory = None
+    protocol_factory = ssh_protocol_factory
 
     def setUp(self):
         self.protocol = self.protocol_factory()
@@ -272,6 +272,31 @@ class DellEnabledTest(unittest.TestCase):
         t.read("my_switch#")
 
         unconfigure_vlan(t, 1000)
+
+    @with_protocol
+    def test_show_version(self, t):
+        enable(t)
+
+        t.write("show version")
+
+        t.readln("")
+        t.readln("Image Descriptions")
+        t.readln("")
+        t.readln(" image1 : default image")
+        t.readln(" image2 :")
+        t.readln("")
+        t.readln("")
+        t.readln(" Images currently available on Flash")
+        t.readln("")
+        t.readln("--------------------------------------------------------------------")
+        t.readln(" unit      image1      image2     current-active        next-active")
+        t.readln("--------------------------------------------------------------------")
+        t.readln("")
+        t.readln("    1     3.3.7.3     3.3.7.3             image1             image1")
+        t.readln("    2     3.3.7.3    3.3.13.1             image1             image1")
+        t.readln("")
+
+        t.read("my_switch#")
 
 
 class DellEnabledSshTest(DellEnabledTest):
