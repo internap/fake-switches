@@ -1273,6 +1273,34 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         configuring_vlan(t, "1600", do="no router-interface 999")
         remove_vlan(t, "1600")
 
+    @with_protocol
+    def test_show_version(self, t):
+        enable(t)
+
+        t.write("show version")
+
+        t.readln("System: NetIron CER (Serial #: 1P2539K036,  Part #: 40-1000617-02)")
+        t.readln("License: RT_SCALE, ADV_SVCS_PREM (LID: XXXXXXXXXX)")
+        t.readln("Boot     : Version 5.8.0T185 Copyright (c) 1996-2014 Brocade Communications Systems, Inc.")
+        t.readln("Compiled on May 18 2015 at 13:03:00 labeled as ceb05800")
+        t.readln(" (463847 bytes) from boot flash")
+        t.readln("Monitor  : Version 5.8.0T185 Copyright (c) 1996-2014 Brocade Communications Systems, Inc.")
+        t.readln("Compiled on May 18 2015 at 13:03:00 labeled as ceb05800")
+        t.readln(" (463847 bytes) from code flash")
+        t.readln("IronWare : Version 5.8.0bT183 Copyright (c) 1996-2014 Brocade Communications Systems, Inc.")
+        t.readln("Compiled on May 21 2015 at 09:20:22 labeled as ce05800b")
+        t.readln(" (17563175 bytes) from Primary")
+        t.readln("CPLD Version: 0x00000010")
+        t.readln("Micro-Controller Version: 0x0000000d")
+        t.readln("Extended route scalability")
+        t.readln("PBIF Version: 0x0162")
+        t.readln("800 MHz Power PC processor 8544 (version 8021/0023) 400 MHz bus")
+        t.readln("512 KB Boot Flash (MX29LV040C), 64 MB Code Flash (MT28F256J3)")
+        t.readln("2048 MB DRAM")
+        t.readln("System uptime is 109 days 4 hours 39 minutes 4 seconds")
+
+        t.read("SSH@my_switch#")
+
 
 def enable(t):
     t.write("enable")

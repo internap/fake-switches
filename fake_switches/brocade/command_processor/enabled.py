@@ -45,14 +45,15 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             else:
                 self.write_line("Invalid input -> %s" % args[1])
                 self.write_line("Type ? for a list")
-        elif "route".startswith(args[1]):
-            if "static".startswith(args[2]):
-                routes = self.switch_configuration.static_routes
-                if routes:
-                    self.write_line("        Destination        Gateway        Port          Cost          Type Uptime src-vrf")
-                for n, route in enumerate(routes):
-                    self.write_line("{index:<8}{destination:<18} {next_hop:}".format(index=n+1, destination=route.dest, next_hop=route.next_hop))
+        elif "ip".startswith(args[0]) and "route".startswith(args[1]) and "static".startswith(args[2]):
+            routes = self.switch_configuration.static_routes
+            if routes:
+                self.write_line("        Destination        Gateway        Port          Cost          Type Uptime src-vrf")
+            for n, route in enumerate(routes):
+                self.write_line("{index:<8}{destination:<18} {next_hop:}".format(index=n+1, destination=route.dest, next_hop=route.next_hop))
             self.write_line("")
+        elif "version".startswith(args[0]):
+            self.show_version()
 
     def do_ncopy(self, protocol, url, filename, target):
         try:
@@ -236,6 +237,27 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         return next((p for p in self.switch_configuration.ports
                      if isinstance(p, VlanPort) and p.vlan_id == vlan.number),
                     None)
+
+    def show_version(self):
+        self.write_line("System: NetIron CER (Serial #: 1P2539K036,  Part #: 40-1000617-02)")
+        self.write_line("License: RT_SCALE, ADV_SVCS_PREM (LID: XXXXXXXXXX)")
+        self.write_line("Boot     : Version 5.8.0T185 Copyright (c) 1996-2014 Brocade Communications Systems, Inc.")
+        self.write_line("Compiled on May 18 2015 at 13:03:00 labeled as ceb05800")
+        self.write_line(" (463847 bytes) from boot flash")
+        self.write_line("Monitor  : Version 5.8.0T185 Copyright (c) 1996-2014 Brocade Communications Systems, Inc.")
+        self.write_line("Compiled on May 18 2015 at 13:03:00 labeled as ceb05800")
+        self.write_line(" (463847 bytes) from code flash")
+        self.write_line("IronWare : Version 5.8.0bT183 Copyright (c) 1996-2014 Brocade Communications Systems, Inc.")
+        self.write_line("Compiled on May 21 2015 at 09:20:22 labeled as ce05800b")
+        self.write_line(" (17563175 bytes) from Primary")
+        self.write_line("CPLD Version: 0x00000010")
+        self.write_line("Micro-Controller Version: 0x0000000d")
+        self.write_line("Extended route scalability")
+        self.write_line("PBIF Version: 0x0162")
+        self.write_line("800 MHz Power PC processor 8544 (version 8021/0023) 400 MHz bus")
+        self.write_line("512 KB Boot Flash (MX29LV040C), 64 MB Code Flash (MT28F256J3)")
+        self.write_line("2048 MB DRAM")
+        self.write_line("System uptime is 109 days 4 hours 39 minutes 4 seconds")
 
 
 def port_index(port):
