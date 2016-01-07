@@ -268,7 +268,7 @@ def build_running_interface(port):
             data.append(" ip access-group %s in" % port.access_group_in)
         if port.access_group_out:
             data.append(" ip access-group %s out" % port.access_group_out)
-        if "no ip redirects" in port.vendor_specific:
+        if port.ip_redirect is False:
             data.append(" no ip redirects")
         for vrrp in port.vrrps:
             group = vrrp.group_id
