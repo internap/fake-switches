@@ -88,6 +88,9 @@ class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
                 else:
                     self.write_line("UDP: Errno(7) Duplicate helper address")
 
+        if "redirect".startswith(args[0]):
+            self.port.ip_redirect = True
+
     def do_no_ip(self, *args):
         if "address".startswith(args[0]):
             deleting_ip = IPNetwork(args[1])
@@ -138,3 +141,6 @@ class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
                     self.port.ip_helpers.remove(ip_address)
                 else:
                     self.write_line("UDP: Errno(10) Helper address not configured")
+
+        if "redirect".startswith(args[0]):
+            self.port.ip_redirect = False

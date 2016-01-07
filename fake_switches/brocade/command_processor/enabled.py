@@ -323,6 +323,8 @@ def get_port_attributes(port):
                 attributes.append(" exit")
         for ip_address in port.ip_helpers:
             attributes.append("ip helper-address %s" % ip_address)
+        if port.ip_redirect is False:
+            attributes.append(" no ip redirect")
 
     return attributes
 
