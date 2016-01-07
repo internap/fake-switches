@@ -51,7 +51,7 @@ class ProtocolTester(object):
         self.login()
 
     def disconnect(self):
-        pass
+        self.child.close()
 
     def get_ssh_connect_command(self):
         pass
