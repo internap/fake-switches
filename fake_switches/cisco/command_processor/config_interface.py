@@ -126,7 +126,7 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                 else:
                     self.write_line("%% VRF %s not configured." % args[2])
         if "redirects".startswith(args[0]):
-            del self.port.vendor_specific["no ip redirects"]
+            self.port.ip_redirect = True
 
         if "helper-address".startswith(args[0]):
             if len(args) == 1:
@@ -165,7 +165,7 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
             if "forwarding".startswith(args[1]):
                 self.port.vrf = None
         if "redirects".startswith(args[0]):
-            self.port.vendor_specific["no ip redirects"] = True
+            self.port.ip_redirect = False
 
         if "helper-address".startswith(args[0]):
             if len(args) > 2:

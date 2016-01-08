@@ -1301,6 +1301,27 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
 
         t.read("SSH@my_switch#")
 
+    @with_protocol
+    def test_ip_redirect(self, t):
+        enable(t)
+
+        create_interface_vlan(t, "1201")
+        configuring_interface_vlan(t, "1201", do="no ip redirect")
+
+        assert_interface_configuration(t, "ve 1201", [
+            "interface ve 1201",
+            "  no ip redirect",
+            "!"
+        ])
+
+        configuring_interface_vlan(t, "1201", do="ip redirect")
+
+        assert_interface_configuration(t, "ve 1201", [
+            "interface ve 1201",
+            "!"
+        ])
+
+        remove_vlan(t, "1201")
 
 def enable(t):
     t.write("enable")
