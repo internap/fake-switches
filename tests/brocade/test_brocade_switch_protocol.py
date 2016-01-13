@@ -1310,7 +1310,7 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
 
         assert_interface_configuration(t, "ve 1201", [
             "interface ve 1201",
-            "  no ip redirect",
+            " no ip redirect",
             "!"
         ])
 
