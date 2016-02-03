@@ -50,6 +50,12 @@ class SSHDemoAvatar(avatar.ConchUser):
     def closed(self):
         pass
 
+    def windowChanged(newWindowSize):
+        pass
+
+    def eofReceived(self):
+        pass
+
 
 class SSHDemoRealm:
     implements(portal.IRealm)
