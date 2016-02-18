@@ -206,16 +206,29 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             self.write_line("Error: vlan {} is not configured".format(vlan_id))
         else:
             vif = self.get_interface_vlan_for(vlan)
+            ports = self.get_interface_ports_for(vlan)
 
             self.write_line("")
             self.write_line("PORT-VLAN {}, Name {}, Priority Level -, Priority Force 0, Creation Type STATIC".format(
                 vlan_id, vlan.name if vlan.name is not None else "[None]"))
             self.write_line("Topo HW idx    : 81    Topo SW idx: 257    Topo next vlan: 0")
             self.write_line("L2 protocols   : STP")
+            if len(ports["tagged"]) > 0:
+                self.write_line("Statically tagged Ports    : {}".format(to_port_ranges(ports["tagged"])))
+            if len(ports["untagged"]) > 0:
+                self.write_line("Untagged Ports : {}".format(to_port_ranges(ports["untagged"])))
             self.write_line("Associated Virtual Interface Id: {}".format(
                 "NONE" if vif is None else vif.name.split(" ")[-1]))
             self.write_line("----------------------------------------------------------")
-            self.write_line("No ports associated with VLAN")
+            if len(ports["untagged"]) == 0 and len(ports["tagged"]) == 0:
+                self.write_line("No ports associated with VLAN")
+            else:
+                self.write_line("Port  Type      Tag-Mode  Protocol  State")
+                for port in ports["untagged"]:
+                    self.write_line("{}   PHYSICAL  UNTAGGED  STP       DISABLED".format(split_port_name(port.name)[1]))
+                for port in ports["tagged"]:
+                    self.write_line("{}   PHYSICAL  TAGGED    STP       DISABLED".format(split_port_name(port.name)[1]))
+
             self.write_line("Arp Inspection: 0")
             self.write_line("DHCP Snooping: 0")
             self.write_line("IPv4 Multicast Snooping: Disabled")
@@ -258,6 +271,16 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         self.write_line("512 KB Boot Flash (MX29LV040C), 64 MB Code Flash (MT28F256J3)")
         self.write_line("2048 MB DRAM")
         self.write_line("System uptime is 109 days 4 hours 39 minutes 4 seconds")
+
+    def get_interface_ports_for(self, vlan):
+        vlan_ports = {"tagged": [], "untagged": []}
+        for port in self.switch_configuration.ports:
+            if not isinstance(port, VlanPort):
+                if port.access_vlan == vlan.number or port.trunk_native_vlan == vlan.number:
+                    vlan_ports["untagged"].append(port)
+                elif port.trunk_vlans and vlan.number in port.trunk_vlans:
+                    vlan_ports["tagged"].append(port)
+        return vlan_ports
 
 
 def port_index(port):
