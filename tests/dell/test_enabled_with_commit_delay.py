@@ -20,12 +20,12 @@ from hamcrest import assert_that, less_than, greater_than
 
 from tests.dell import enable
 from tests.util.protocol_util import with_protocol, SshTester
-from util.global_reactor import COMMIT_DELAY, dell_switch_ip, dell_switch__with_commit_delay_ssh_port
+from tests.util.global_reactor import COMMIT_DELAY, dell_switch_ip, dell_switch_with_commit_delay_ssh_port
 
 
 class DellEnabledWithCommitDelayTest(unittest.TestCase):
     def setUp(self):
-        self.protocol = SshTester("ssh", dell_switch_ip, dell_switch__with_commit_delay_ssh_port, 'root', 'root')
+        self.protocol = SshTester("ssh", dell_switch_ip, dell_switch_with_commit_delay_ssh_port, 'root', 'root')
 
     def tearDown(self):
         flexmock_teardown()

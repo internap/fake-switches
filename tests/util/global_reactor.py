@@ -46,7 +46,7 @@ juniper_qfx_copper_switch_netconf_port = 11008
 dell_switch_ip = "127.0.0.1"
 dell_switch_telnet_port = 11010
 dell_switch_ssh_port = 11009
-dell_switch__with_commit_delay_ssh_port = 12009
+dell_switch_with_commit_delay_ssh_port = 12009
 dell_privileged_password = 'DeLL'
 dell10g_switch_ip = "127.0.0.1"
 dell10g_switch_telnet_port = 11011
@@ -200,7 +200,7 @@ class ThreadedReactor(threading.Thread):
                                     Port("ethernet 1/xg1"),
                                     Port("ethernet 2/xg1")
                                 ], commit_delay=COMMIT_DELAY))
-        SwitchSshService(dell_switch_ip, ssh_port=dell_switch__with_commit_delay_ssh_port, switch_core=switch_core,
+        SwitchSshService(dell_switch_ip, ssh_port=dell_switch_with_commit_delay_ssh_port, switch_core=switch_core,
                          users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         cls._threaded_reactor.start()
