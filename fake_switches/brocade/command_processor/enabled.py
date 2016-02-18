@@ -67,7 +67,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         pass
 
     def do_write(self, *args):
-        pass
+        self.switch_configuration.commit()
 
     def do_exit(self):
         self.is_done = True

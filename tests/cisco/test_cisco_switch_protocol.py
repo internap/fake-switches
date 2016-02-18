@@ -1144,6 +1144,8 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
         enable(t)
 
         t.write("write memory")
+        t.readln("Building configuration...")
+        t.readln("OK")
         t.read("my_switch#")
 
     @with_protocol

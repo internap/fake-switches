@@ -181,7 +181,9 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         pass
 
     def do_write(self, *args):
-        pass
+        self.write_line("Building configuration...")
+        self.switch_configuration.commit()
+        self.write_line("OK")
 
     def do_exit(self):
         self.is_done = True
