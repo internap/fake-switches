@@ -11,12 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from time import sleep
 from netaddr import IPNetwork, IPAddress
 
 import re
 
+
 class SwitchConfiguration(object):
-    def __init__(self, ip, name="", auto_enabled=False, privileged_passwords=None, ports=None, vlans=None, objects_overrides=None):
+    def __init__(self, ip, name="", auto_enabled=False, privileged_passwords=None, ports=None, vlans=None, objects_overrides=None, commit_delay=0):
         self.ip = ip
         self.name = name
         self.privileged_passwords = privileged_passwords or []
@@ -35,6 +37,7 @@ class SwitchConfiguration(object):
             "VlanPort": VlanPort,
             "AggregatedPort": AggregatedPort,
         }
+        self.commit_delay = commit_delay
 
         if vlans:
             [self.add_vlan(v) for v in vlans]
@@ -111,6 +114,9 @@ class SwitchConfiguration(object):
 
     def get_vlan_ports(self):
         return [p for p in self.ports if isinstance(p, VlanPort)]
+
+    def commit(self):
+        sleep(self.commit_delay)
 
 
 class VRF(object):

@@ -42,6 +42,7 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
         self.write_line("")
         self.write_line("")
         if character == 'y':
+            self.switch_configuration.commit()
             self.write_line("Configuration Saved!")
         else:
             self.write_line("Configuration Not Saved!")
