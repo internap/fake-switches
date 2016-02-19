@@ -139,11 +139,16 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             self.write_line("")
 
     def show_int(self, args):
+        ports = []
         if len(args) > 1:
-            ports = [self.switch_configuration.get_port_by_partial_name(" ".join(args[1:]))]
+            port = self.switch_configuration.get_port_by_partial_name(" ".join(args[1:]))
+            if port:
+                ports.append(port)
         else:
             ports = self.switch_configuration.ports
-
+        if not ports:
+            name, number = split_port_name(" ".join(args[1:]))
+            self.write_line("Error - invalid interface {}".format(number))
         for port in ports:
             if isinstance(port, VlanPort):
                 _, port_id = split_port_name(port.name)
