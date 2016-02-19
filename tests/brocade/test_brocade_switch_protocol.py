@@ -1408,11 +1408,11 @@ def create_vlan(t, vlan, name=None):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
     if name:
-        t.write("vlan %s name %s" % (vlan, name))
-        t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+        t.write("vlan {} name {}".format(vlan, name))
+        t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
     else:
-        t.write("vlan %s" % vlan)
-        t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+        t.write("vlan {}".format(vlan))
+        t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1422,7 +1422,7 @@ def create_vlan(t, vlan, name=None):
 def remove_vlan(t, vlan):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("no vlan %s" % vlan)
+    t.write("no vlan {}".format(vlan))
     t.read("SSH@my_switch(config)#")
     t.write("exit")
     t.read("SSH@my_switch#")
@@ -1431,10 +1431,10 @@ def remove_vlan(t, vlan):
 def set_interface_untagged_on_vlan(t, interface, vlan):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("vlan %s" % vlan)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
-    t.write("untagged %s" % interface)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+    t.write("vlan {}".format(vlan))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
+    t.write("untagged {}".format(interface))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1444,10 +1444,10 @@ def set_interface_untagged_on_vlan(t, interface, vlan):
 def unset_interface_untagged_on_vlan(t, interface, vlan):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("vlan %s" % vlan)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
-    t.write("no untagged %s" % interface)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+    t.write("vlan {}".format(vlan))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
+    t.write("no untagged {}".format(interface))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1457,10 +1457,10 @@ def unset_interface_untagged_on_vlan(t, interface, vlan):
 def set_interface_tagged_on_vlan(t, interface, vlan):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("vlan %s" % vlan)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
-    t.write("tagged %s" % interface)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+    t.write("vlan {}".format(vlan))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
+    t.write("tagged {}".format(interface))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1470,10 +1470,10 @@ def set_interface_tagged_on_vlan(t, interface, vlan):
 def unset_interface_tagged_on_vlan(t, interface, vlan):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("vlan %s" % vlan)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
-    t.write("no tagged %s" % interface)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+    t.write("vlan {}".format(vlan))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
+    t.write("no tagged {}".format(interface))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1483,10 +1483,10 @@ def unset_interface_tagged_on_vlan(t, interface, vlan):
 def remove_interface_from_vlan(t, interface, vlan):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("vlan %s" % vlan)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
-    t.write("no untagged %s" % interface)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+    t.write("vlan {}".format(vlan))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
+    t.write("no untagged {}".format(interface))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1494,7 +1494,7 @@ def remove_interface_from_vlan(t, interface, vlan):
 
 
 def assert_interface_configuration(t, interface, config):
-    t.write("show running-config interface %s " % interface)
+    t.write("show running-config interface {} ".format(interface))
     for line in config:
         t.readln(line)
     t.readln("")
@@ -1504,12 +1504,12 @@ def assert_interface_configuration(t, interface, config):
 def configuring_interface(t, interface, do):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("interface ethe %s" % interface)
-    t.read("SSH@my_switch(config-if-e1000-%s)#" % interface)
+    t.write("interface ethe {}".format(interface))
+    t.read("SSH@my_switch(config-if-e1000-{})#".format(interface))
 
     t.write(do)
 
-    t.read("SSH@my_switch(config-if-e1000-%s)#" % interface)
+    t.read("SSH@my_switch(config-if-e1000-{})#".format(interface))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1519,12 +1519,12 @@ def configuring_interface(t, interface, do):
 def configuring_interface_vlan(t, vlan, do):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("interface ve %s" % vlan)
-    t.read("SSH@my_switch(config-vif-%s)#" % vlan)
+    t.write("interface ve {}".format(vlan))
+    t.read("SSH@my_switch(config-vif-{})#".format(vlan))
 
     t.write(do)
 
-    t.read("SSH@my_switch(config-vif-%s)#" % vlan)
+    t.read("SSH@my_switch(config-vif-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1534,14 +1534,14 @@ def configuring_interface_vlan(t, vlan, do):
 def configuring_access_group_interface_vlan(t, vlan, do):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("interface ve %s" % vlan)
-    t.read("SSH@my_switch(config-vif-%s)#" % vlan)
+    t.write("interface ve {}".format(vlan))
+    t.read("SSH@my_switch(config-vif-{})#".format(vlan))
 
     t.write(do)
 
     t.readln("Warning: An undefined or zero length ACL has been applied. "
              "Filtering will not occur for the specified interface VE {} (outbound).".format(vlan))
-    t.read("SSH@my_switch(config-vif-%s)#" % vlan)
+    t.read("SSH@my_switch(config-vif-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1551,16 +1551,16 @@ def configuring_access_group_interface_vlan(t, vlan, do):
 def configuring_interface_vlan_vrrp(t, vlan, group, do):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("interface ve %s" % vlan)
-    t.read("SSH@my_switch(config-vif-%s)#" % vlan)
-    t.write("ip vrrp vrid %s" % group)
-    t.read("SSH@my_switch(config-vif-%s-vrid-%s)#" % (vlan, group))
+    t.write("interface ve {}".format(vlan))
+    t.read("SSH@my_switch(config-vif-{})#".format(vlan))
+    t.write("ip vrrp vrid {}".format(group))
+    t.read("SSH@my_switch(config-vif-{}-vrid-{})#".format(vlan, group))
 
     t.write(do)
 
-    t.read("SSH@my_switch(config-vif-%s-vrid-%s)#" % (vlan, group))
+    t.read("SSH@my_switch(config-vif-{}-vrid-{})#".format(vlan, group))
     t.write("exit")
-    t.read("SSH@my_switch(config-vif-%s)#" % vlan)
+    t.read("SSH@my_switch(config-vif-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1570,12 +1570,12 @@ def configuring_interface_vlan_vrrp(t, vlan, group, do):
 def configuring_vlan(t, vlan, do):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("vlan %s" % vlan)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+    t.write("vlan {}".format(vlan))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
 
     t.write(do)
 
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
@@ -1596,10 +1596,10 @@ def configuring(t, do):
 def create_interface_vlan(t, vlan):
     t.write("configure terminal")
     t.read("SSH@my_switch(config)#")
-    t.write("vlan %s" % vlan)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
-    t.write("router-interface ve %s" % vlan)
-    t.read("SSH@my_switch(config-vlan-%s)#" % vlan)
+    t.write("vlan {}".format(vlan))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
+    t.write("router-interface ve {}".format(vlan))
+    t.read("SSH@my_switch(config-vlan-{})#".format(vlan))
     t.write("exit")
     t.read("SSH@my_switch(config)#")
     t.write("exit")
