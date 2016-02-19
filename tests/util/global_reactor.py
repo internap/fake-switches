@@ -37,7 +37,6 @@ brocade_switch_ip = "127.0.0.1"
 brocade_switch_ssh_port = 11006
 brocade_privileged_password = 'Br0cad3'
 brocade_switch_with_commit_delay_ssh_port = 12006
-brocade_privileged_password = 'Br0cad3'
 juniper_switch_ip = "127.0.0.1"
 juniper_switch_netconf_port = 11007
 juniper_switch_netconf_with_commit_delay_port = 12007
