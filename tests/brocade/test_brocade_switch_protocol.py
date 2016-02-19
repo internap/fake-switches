@@ -152,6 +152,14 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         remove_vlan(t, "123")
 
     @with_protocol
+    def test_command_interface_tagged_with_native_default_vlan(self, t):
+        enable(t)
+
+        t.write("show interface ethe 1/25")
+        t.readln("Error - invalid interface 1/25")
+        t.read("SSH@my_switch#")
+
+    @with_protocol
     def test_remove_a_ports_from_a_vlan_should_print_an_error(self, t):
         enable(t)
 
