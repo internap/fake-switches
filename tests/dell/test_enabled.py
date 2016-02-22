@@ -18,7 +18,7 @@ from flexmock import flexmock_teardown
 
 from tests.dell import enable, assert_running_config_contains_in_order, \
     configuring_vlan, configuring_interface_vlan, unconfigure_vlan, \
-    ssh_protocol_factory, telnet_protocol_factory
+    ssh_protocol_factory, telnet_protocol_factory, configuring_a_vlan_on_interface, configuring_interface
 from tests.util.protocol_util import with_protocol
 
 
@@ -270,6 +270,47 @@ class DellEnabledTest(unittest.TestCase):
         t.readln("Command not found / Incomplete command. Use ? to list commands.")
         t.readln("")
         t.read("my_switch#")
+
+        unconfigure_vlan(t, 1000)
+
+    @with_protocol
+    def test_show_vlan_id_with_ports(self, t):
+        enable(t)
+
+        configuring_vlan(t, 1000)
+        configuring_interface(t, "ethernet 1/g1", do="switchport mode access")
+        configuring_a_vlan_on_interface(t, "ethernet 1/g1", do="switchport access vlan 1000")
+
+        t.write("show vlan id 1000")
+        t.readln("")
+        t.readln("VLAN       Name                         Ports          Type      Authorization")
+        t.readln("-----  ---------------                  -------------  -----     -------------")
+        t.readln("1000                                    1/g1           Static    Required     ")
+        t.readln("")
+        t.read("my_switch#")
+
+        configuring_interface(t, "ethernet 1/g1", do="switchport mode trunk")
+        t.write("show vlan id 1000")
+        t.readln("")
+        t.readln("VLAN       Name                         Ports          Type      Authorization")
+        t.readln("-----  ---------------                  -------------  -----     -------------")
+        t.readln("1000                                                   Static    Required     ")
+        t.readln("")
+        t.read("my_switch#")
+
+        configuring_a_vlan_on_interface(t, "ethernet 1/g1", do="switchport trunk allowed vlan add 1000")
+        configuring_interface(t, "ethernet 1/g2", do="switchport mode trunk")
+        configuring_a_vlan_on_interface(t, "ethernet 1/g2", do="switchport trunk allowed vlan add 1000")
+        t.write("show vlan id 1000")
+        t.readln("")
+        t.readln("VLAN       Name                         Ports          Type      Authorization")
+        t.readln("-----  ---------------                  -------------  -----     -------------")
+        t.readln("1000                                    1/g1-1/g2      Static    Required     ")
+        t.readln("")
+        t.read("my_switch#")
+
+        configuring_interface(t, "ethernet 1/g1", do="switchport mode access")
+        configuring_interface(t, "ethernet 1/g2", do="switchport mode access")
 
         unconfigure_vlan(t, 1000)
 

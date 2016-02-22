@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
 
 from fake_switches import group_sequences
 
@@ -204,9 +205,10 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
         line_count = 0
         while len(vlans) > 0 and line_count < lines_per_pages:
             vlan = vlans.pop(0)
+            ports_string = self._build_port_strings(self.get_ports_for_vlan(vlan))
 
             self.write_line("{number: <5}  {name: <32} {ports: <13}  {type: <8}  {auth: <13}".format(
-                number=vlan.number, name=vlan_name(vlan), ports="",
+                number=vlan.number, name=vlan_name(vlan), ports=ports_string,
                 type="Default" if vlan.number == 1 else "Static", auth="Required"))
 
             line_count += 1
@@ -216,6 +218,31 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
         if len(vlans) > 0:
             self.write("--More-- or (q)uit")
             self.on_keystroke(self.continue_vlan_pages, vlans)
+
+    def get_ports_for_vlan(self, vlan):
+        ports = []
+        for port in self.switch_configuration.ports:
+            if not isinstance(port, VlanPort):
+                if (port.trunk_vlans and vlan.number in port.trunk_vlans) \
+                        or vlan.number == port.access_vlan \
+                        or vlan == port.trunk_native_vlan:
+                    ports.append(port)
+        return ports
+
+    def _build_port_strings(self, ports):
+        port_range_list = group_sequences(ports, are_in_sequence=lambda a, b: _get_interface_number(a.name) + 1 == _get_interface_number(b.name))
+
+        out = []
+        for port_range in port_range_list:
+            if len(port_range) == 1:
+                out.append(_get_interface_identifier_from_name(port_range[0].name))
+            else:
+                out.append("1/g{}-1/g{}".format(_get_interface_number(port_range[0].name), _get_interface_number(port_range[-1].name)))
+
+        out_str = ",".join(out)
+        if len(out_str) > 13:
+            raise NotImplementedError("Ports are not implemented for more than one line (13 char)")
+        return out_str
 
     def continue_vlan_pages(self, lines, _):
         self.write_line("\r                     ")
@@ -297,3 +324,13 @@ def _is_vlan_id(text):
         return False
 
     return 1 <= number <= 4093
+
+
+def _get_interface_number(interface_name):
+    re_port_number = re.compile('\d/g(\d)')
+    port_number = _get_interface_identifier_from_name(interface_name)
+    return int(re_port_number.match(port_number).group(1))
+
+
+def _get_interface_identifier_from_name(name):
+    return name.split(" ")[-1]
