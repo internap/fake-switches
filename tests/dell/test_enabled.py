@@ -309,8 +309,20 @@ class DellEnabledTest(unittest.TestCase):
         t.readln("")
         t.read("my_switch#")
 
+        configuring_interface(t, "ethernet 1/xg1", do="switchport mode trunk")
+        configuring_a_vlan_on_interface(t, "ethernet 1/xg1", do="switchport trunk allowed vlan add 1000")
+        t.write("show vlan id 1000")
+        t.readln("")
+        t.readln("VLAN       Name                         Ports          Type      Authorization")
+        t.readln("-----  ---------------                  -------------  -----     -------------")
+        t.readln("1000                                    1/g1-1/g2,     Static    Required     ")
+        t.readln("                                        1/xg1                                 ")
+        t.readln("")
+        t.read("my_switch#")
+
         configuring_interface(t, "ethernet 1/g1", do="switchport mode access")
         configuring_interface(t, "ethernet 1/g2", do="switchport mode access")
+        configuring_interface(t, "ethernet 1/xg1", do="switchport mode access")
 
         unconfigure_vlan(t, 1000)
 
