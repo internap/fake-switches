@@ -226,9 +226,7 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
         ports = []
         for port in self.switch_configuration.ports:
             if not isinstance(port, VlanPort):
-                if (port.trunk_vlans and vlan.number in port.trunk_vlans) \
-                        or port.access_vlan == vlan.number \
-                        or port.trunk_native_vlan == vlan.number:
+                if (port.trunk_vlans and vlan.number in port.trunk_vlans) or port.access_vlan == vlan.number:
                     ports.append(port)
         return ports
 
