@@ -1,4 +1,4 @@
-# Copyright 2015 Internap.
+# Copyright 2015-2016 Internap.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from fake_switches.juniper.juniper_core import JuniperSwitchCore
-from fake_switches.juniper.juniper_qfx_copper_netconf_datastore import JuniperQfxCopperNetconfDatastore
+from fake_switches.juniperQfxCopper.juniper_qfx_copper_netconf_datastore import JuniperQfxCopperNetconfDatastore
 
 
 class JuniperQfxCopperSwitchCore(JuniperSwitchCore):

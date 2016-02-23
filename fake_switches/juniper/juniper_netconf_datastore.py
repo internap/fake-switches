@@ -1,4 +1,4 @@
-# Copyright 2015 Internap.
+# Copyright 2015-2016 Internap.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -192,6 +192,8 @@ class JuniperNetconfDatastore(object):
                     }
                 }})
 
+        self.apply_trunk_native_vlan_patch(interface_data, port)
+
         return interface_data
 
     def parse_interfaces(self, conf, etree_conf):
@@ -256,12 +258,11 @@ class JuniperNetconfDatastore(object):
                 port.vendor_specific["has-ethernet-switching"] = True
 
                 port.mode = resolve_new_value(port_attributes, self.PORT_MODE_TAG, port.mode)
-                port.trunk_native_vlan = resolve_new_value(port_attributes, "native-vlan-id", port.trunk_native_vlan,
-                                                           transformer=int)
 
                 if resolve_operation(first(port_attributes.xpath("vlan"))) == "delete":
                     port.access_vlan = None
                     port.trunk_vlans = None
+                    port.trunk_native_vlan = None
                 else:
                     for member in port_attributes.xpath("vlan/members"):
                         if resolve_operation(member) == "delete":
@@ -278,6 +279,9 @@ class JuniperNetconfDatastore(object):
                                 if port.trunk_vlans is None:
                                     port.trunk_vlans = []
                                 port.trunk_vlans += parse_range(member.text)
+
+            if port.trunk_native_vlan is None :
+                port.trunk_native_vlan = self.parse_native_vlan(interface_node, port)
 
         if isinstance(port, AggregatedPort):
             port.speed = resolve_new_value(interface_node, "aggregated-ether-options/link-speed", port.speed)
@@ -306,6 +310,17 @@ class JuniperNetconfDatastore(object):
                 vlan.description = resolve_new_value(vlan_node, "description", vlan.description)
 
         return handled_elements
+
+    def parse_native_vlan(self, interface_node, port):
+        if len(interface_node.xpath("unit/family/ethernet-switching/native-vlan-id")) == 1 and interface_node.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text is not None:
+            port_attributes = first(interface_node.xpath("unit/family/ethernet-switching"))
+            return resolve_new_value(port_attributes, "native-vlan-id", port.trunk_native_vlan,
+                              transformer=int)
+        return None
+
+    def apply_trunk_native_vlan_patch(self, interface_data, port):
+        pass
+
 
 def validate(configuration):
     vlan_list = [vlan.number for vlan in configuration.vlans]
