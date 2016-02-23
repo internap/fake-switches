@@ -385,6 +385,58 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
         }))
         assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
 
+    def test_interface_trunk_native_vlan_merge(self):
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN2995"},
+                    {"vlan-id": "2995"}]},
+                {"vlan": [
+                    {"name": "VLAN2996"},
+                    {"vlan-id": "2996"}]},
+                {"vlan": [
+                    {"name": "VLAN2997"},
+                    {"vlan-id": "2997"}]},
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"native-vlan-id": "2996"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                self.PORT_MODE_TAG: "trunk",
+                                "vlan": [
+                                    {"members": "2995"},
+                                    {"members": "2997"},
+                                ]}}}]}]}})
+        self.nc.commit()
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"native-vlan-id": "2996"},
+                    ]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/3"}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
+
+        int003 = result.xpath("data/configuration/interfaces/interface")[0]
+        assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
+
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
+                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"vlans": {}}}
+        }))
+        assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
+
     def test_assigning_unknown_native_vlan_raises(self):
         self.edit({
             "interfaces": {
@@ -603,6 +655,49 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
         int002 = result.xpath("data/configuration/interfaces/interface")[0]
         assert_that(int002.xpath("enable"), has_length(0))
         assert_that(int002.xpath("disable"), has_length(0))
+
+    def test_set_interface_trunk_native_vlan_id(self):
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN2996"},
+                    {"vlan-id": "2996"}]}
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/2"},
+                    {"native-vlan-id": "2996"}]}})
+
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
+
+        int002 = result.xpath("data/configuration/interfaces/interface")[0]
+
+        assert_that(int002.xpath("name")[0].text, equal_to("ge-0/0/2"))
+        assert_that(int002.xpath("native-vlan-id")[0].text, equal_to("2996"))
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/2"},
+                    {"native-vlan-id": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
+
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
+
+        int002 = result.xpath("data/configuration/interfaces/interface")[0]
+
+        assert_that(int002.xpath("native-vlan-id"), has_length(0))
 
     def test_create_aggregated_port(self):
         self.edit({

@@ -175,9 +175,6 @@ class JuniperNetconfDatastore(object):
             if port.mode is not None:
                 ethernet_switching[self.PORT_MODE_TAG] = port.mode
 
-            if port.trunk_native_vlan is not None:
-                ethernet_switching["native-vlan-id"] = str(port.trunk_native_vlan)
-
             vlans = port.trunk_vlans or []
             if port.access_vlan: vlans.append(port.access_vlan)
 
@@ -192,7 +189,7 @@ class JuniperNetconfDatastore(object):
                     }
                 }})
 
-        self.apply_trunk_native_vlan_patch(interface_data, port)
+        self.apply_trunk_native_vlan(interface_data, port)
 
         return interface_data
 
@@ -280,8 +277,7 @@ class JuniperNetconfDatastore(object):
                                     port.trunk_vlans = []
                                 port.trunk_vlans += parse_range(member.text)
 
-            if port.trunk_native_vlan is None :
-                port.trunk_native_vlan = self.parse_native_vlan(interface_node, port)
+            port.trunk_native_vlan = self.parse_trunk_native_vlan(interface_node, port)
 
         if isinstance(port, AggregatedPort):
             port.speed = resolve_new_value(interface_node, "aggregated-ether-options/link-speed", port.speed)
@@ -311,15 +307,17 @@ class JuniperNetconfDatastore(object):
 
         return handled_elements
 
-    def parse_native_vlan(self, interface_node, port):
+    def parse_trunk_native_vlan(self, interface_node, port):
         if len(interface_node.xpath("unit/family/ethernet-switching/native-vlan-id")) == 1 and interface_node.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text is not None:
             port_attributes = first(interface_node.xpath("unit/family/ethernet-switching"))
             return resolve_new_value(port_attributes, "native-vlan-id", port.trunk_native_vlan,
                               transformer=int)
         return None
 
-    def apply_trunk_native_vlan_patch(self, interface_data, port):
-        pass
+    def apply_trunk_native_vlan(self, interface_data, port):
+        if port.vendor_specific["has-ethernet-switching"]:
+            if port.trunk_native_vlan is not None:
+                interface_data[1]['unit']['family']['ethernet-switching']['native-vlan-id'] = str(port.trunk_native_vlan)
 
 
 def validate(configuration):

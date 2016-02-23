@@ -21,17 +21,14 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
 
         self.PORT_MODE_TAG = "interface-mode"
 
-    def apply_trunk_native_vlan_patch(self, interface_data, port):
+    def apply_trunk_native_vlan(self, interface_data, port):
         if port.trunk_native_vlan is not None:
-            ethernet_switching = interface_data[1]["unit"]["family"]["ethernet-switching"]
-            native_vlan = ethernet_switching["native-vlan-id"]
-            del ethernet_switching["native-vlan-id"]
-
             interface_data.append(interface_data[1])
-            interface_data[1] = {"native-vlan-id": native_vlan}
+            interface_data[1] = {"native-vlan-id": str(port.trunk_native_vlan)}
 
-    def parse_native_vlan(self, interface_node, port):
-        if len(interface_node.xpath("native-vlan-id")) == 1 and interface_node.xpath("native-vlan-id")[0].text is not None:
+    def parse_trunk_native_vlan(self, interface_node, port):
+        native_vlan_id_node = interface_node.xpath("native-vlan-id")
+        if len(native_vlan_id_node) == 1 and native_vlan_id_node[0].text is not None:
             return resolve_new_value(interface_node, "native-vlan-id", port.trunk_native_vlan,
                                  transformer=int)
         return None
