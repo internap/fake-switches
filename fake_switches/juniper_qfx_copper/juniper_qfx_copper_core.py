@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from fake_switches.juniper.juniper_core import JuniperSwitchCore
-from fake_switches.juniperQfxCopper.juniper_qfx_copper_netconf_datastore import JuniperQfxCopperNetconfDatastore
+from fake_switches.juniper_qfx_copper.juniper_qfx_copper_netconf_datastore import JuniperQfxCopperNetconfDatastore
 
 
 class JuniperQfxCopperSwitchCore(JuniperSwitchCore):
