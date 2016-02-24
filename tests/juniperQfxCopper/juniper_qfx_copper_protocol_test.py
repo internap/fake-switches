@@ -401,14 +401,13 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
             "interfaces": {
                 "interface": [
                     {"name": "ge-0/0/3"},
-                    {"native-vlan-id": "2996"},
+                    {"native-vlan-id": "2995"},
                     {"unit": [
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
                                 self.PORT_MODE_TAG: "trunk",
                                 "vlan": [
-                                    {"members": "2995"},
                                     {"members": "2997"},
                                 ]}}}]}]}})
         self.nc.commit()
@@ -437,6 +436,59 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
         }))
         assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
 
+    def test_display_interface_with_description_and_trunk_native_vlan(self):
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN2995"},
+                    {"vlan-id": "2995"}]},
+                {"vlan": [
+                    {"name": "VLAN2996"},
+                    {"vlan-id": "2996"}]},
+                {"vlan": [
+                    {"name": "VLAN2997"},
+                    {"vlan-id": "2997"}]},
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"description": "I see what you did there!"},
+                    {"native-vlan-id": "2996"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                self.PORT_MODE_TAG: "trunk",
+                                "vlan": [
+                                    {"members": "2995"},
+                                    {"members": "2997"},
+                                ]}}}]}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/3"}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
+
+        int003 = result.xpath("data/configuration/interfaces/interface")[0]
+        assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
+        assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
+        assert_that(int003.xpath("description")[0].text, equal_to("I see what you did there!"))
+
+        assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")), has_length(2)
+
+        members = int003.xpath("unit/family/ethernet-switching/vlan/members")
+        assert_that(members[0].text, equal_to("2995"))
+        assert_that(members[1].text, equal_to("2997"))
+
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
+                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"vlans": {}}}
+        }))
+        assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
+
     def test_assigning_unknown_native_vlan_raises(self):
         self.edit({
             "interfaces": {
@@ -447,6 +499,36 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
 
         with self.assertRaises(RPCError):
             self.nc.commit()
+
+    def test_display_interface_trunk_native_vlan_and_no_ethernet_switching(self):
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN2996"},
+                    {"vlan-id": "2996"}]}
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"native-vlan-id": "2996"}
+                    ]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/3"}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
+
+        int003 = result.xpath("data/configuration/interfaces/interface")[0]
+        assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
+        assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
+
+        self.cleanup(vlan("VLAN2996"), interface("ge-0/0/3"))
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"vlans": {}}}
+        }))
+        assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
 
     def test_set_spanning_tree_options(self):
         self.edit({

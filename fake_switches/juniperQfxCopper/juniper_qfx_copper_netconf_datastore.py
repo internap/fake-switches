@@ -23,8 +23,7 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
 
     def apply_trunk_native_vlan(self, interface_data, port):
         if port.trunk_native_vlan is not None:
-            interface_data.append(interface_data[1])
-            interface_data[1] = {"native-vlan-id": str(port.trunk_native_vlan)}
+            interface_data.append({"native-vlan-id": str(port.trunk_native_vlan)})
 
     def parse_trunk_native_vlan(self, interface_node, port):
         native_vlan_id_node = interface_node.xpath("native-vlan-id")

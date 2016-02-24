@@ -317,7 +317,15 @@ class JuniperNetconfDatastore(object):
     def apply_trunk_native_vlan(self, interface_data, port):
         if port.vendor_specific["has-ethernet-switching"]:
             if port.trunk_native_vlan is not None:
-                interface_data[1]['unit']['family']['ethernet-switching']['native-vlan-id'] = str(port.trunk_native_vlan)
+                if not "unit" in interface_data[-1]:
+                    interface_data.append({"unit": {
+                        "family":{
+                            "ethernet-switching": {
+                                "native-vlan-id": str(port.trunk_native_vlan)
+                            }
+                        }}})
+                else:
+                    interface_data[-1]['unit']['family']['ethernet-switching']['native-vlan-id'] = str(port.trunk_native_vlan)
 
 
 def validate(configuration):
