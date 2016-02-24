@@ -14,20 +14,22 @@
 
 import unittest
 
-from hamcrest import assert_that, has_length, has_items, equal_to, is_, is_not
-
+from fake_switches.netconf import dict_2_etree, XML_TEXT, XML_ATTRIBUTES
+from hamcrest import assert_that, has_length, equal_to, has_items, is_, is_not
 from ncclient import manager
 from ncclient.operations import RPCError
 from tests import contains_regex
-from tests.util.global_reactor import juniper_switch_ip, juniper_switch_netconf_port
-from fake_switches.netconf import dict_2_etree, XML_ATTRIBUTES, XML_TEXT
+
+from tests.util.global_reactor import juniper_qfx_copper_switch_ip, \
+    juniper_qfx_copper_switch_netconf_port
 
 
-class JuniperBaseProtocolTest(unittest.TestCase):
+class JuniperQfxCopperProtocolTest(unittest.TestCase):
+
     def setUp(self):
         self.nc = self.create_client()
 
-        self.PORT_MODE_TAG = "port-mode"
+        self.PORT_MODE_TAG = "interface-mode"
 
     def tearDown(self):
         try:
@@ -37,8 +39,8 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
     def create_client(self):
         return manager.connect(
-            host=juniper_switch_ip,
-            port=juniper_switch_netconf_port,
+            host=juniper_qfx_copper_switch_ip,
+            port=juniper_qfx_copper_switch_netconf_port,
             username="root",
             password="root",
             hostkey_verify=False,
@@ -47,13 +49,13 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
     def test_capabilities(self):
         assert_that(self.nc.server_capabilities, has_items(
-            "urn:ietf:params:xml:ns:netconf:base:1.0",
-            "urn:ietf:params:xml:ns:netconf:capability:candidate:1.0",
-            "urn:ietf:params:xml:ns:netconf:capability:confirmed-commit:1.0",
-            "urn:ietf:params:xml:ns:netconf:capability:validate:1.0",
-            "urn:ietf:params:xml:ns:netconf:capability:url:1.0?protocol=http,ftp,file",
-            "http://xml.juniper.net/netconf/junos/1.0",
-            "http://xml.juniper.net/dmi/system/1.0",
+                "urn:ietf:params:xml:ns:netconf:base:1.0",
+                "urn:ietf:params:xml:ns:netconf:capability:candidate:1.0",
+                "urn:ietf:params:xml:ns:netconf:capability:confirmed-commit:1.0",
+                "urn:ietf:params:xml:ns:netconf:capability:validate:1.0",
+                "urn:ietf:params:xml:ns:netconf:capability:url:1.0?protocol=http,ftp,file",
+                "http://xml.juniper.net/netconf/junos/1.0",
+                "http://xml.juniper.net/dmi/system/1.0",
         ))
 
     def test_get_running_config(self):
@@ -61,7 +63,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
         conf = result._NCElement__result.xml
         assert_that(conf, contains_regex(
-            '<configuration xmlns="http://xml.juniper.net/xnm/1.1/xnm" junos:commit-localtime="[^"]*" junos:commit-seconds="[^"]*" junos:commit-user="[^"]*">'))
+                '<configuration xmlns="http://xml.juniper.net/xnm/1.1/xnm" junos:commit-localtime="[^"]*" junos:commit-seconds="[^"]*" junos:commit-user="[^"]*">'))
 
         assert_that(result.xpath("data/configuration/interfaces/interface/unit/family/ethernet-switching"),
                     has_length(4))
@@ -293,20 +295,6 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
         self.cleanup(vlan("VLAN2995"), interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
 
-    def test_assigning_unknown_vlan_raises(self):
-        self.edit({
-            "interfaces": {
-                "interface": [
-                    {"name": "ge-0/0/3"},
-                    {"unit": [
-                        {"name": "0"},
-                        {"family": {
-                            "ethernet-switching": {
-                                "vlan": {"members": "2000"}}}}]}]}})
-
-        with self.assertRaises(RPCError):
-            self.nc.commit()
-
     def test_assigning_unknown_vlan_in_a_range_raises(self):
         self.edit({
             "vlans": {
@@ -326,7 +314,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         with self.assertRaises(RPCError):
             self.nc.commit()
 
-    def test_assigning_unknown_native_vlan_raises(self):
+    def test_assigning_unknown_vlan_raises(self):
         self.edit({
             "interfaces": {
                 "interface": [
@@ -335,7 +323,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                "native-vlan-id": "2000"}}}]}]}})
+                                "vlan": {"members": "2000"}}}}]}]}})
 
         with self.assertRaises(RPCError):
             self.nc.commit()
@@ -356,12 +344,12 @@ class JuniperBaseProtocolTest(unittest.TestCase):
             "interfaces": {
                 "interface": [
                     {"name": "ge-0/0/3"},
+                    {"native-vlan-id": "2996"},
                     {"unit": [
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
                                 self.PORT_MODE_TAG: "trunk",
-                                "native-vlan-id": "2996",
                                 "vlan": [
                                     {"members": "2995"},
                                     {"members": "2997"},
@@ -377,10 +365,10 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         int003 = result.xpath("data/configuration/interfaces/interface")[0]
 
         assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
-        assert_that(int003.xpath("unit/family/ethernet-switching/*"), has_length(3))
+        assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
+        assert_that(int003.xpath("unit/family/ethernet-switching/*"), has_length(2))
         assert_that(int003.xpath("unit/family/ethernet-switching/{}".format(self.PORT_MODE_TAG))[0].text,
                     equal_to("trunk"))
-        assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("2996"))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(2))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2995"))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[1].text, equal_to("2997"))
@@ -405,7 +393,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2997"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "native-vlan-id", "vlan"]))
+                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -427,12 +415,12 @@ class JuniperBaseProtocolTest(unittest.TestCase):
             "interfaces": {
                 "interface": [
                     {"name": "ge-0/0/3"},
+                    {"native-vlan-id": "2995"},
                     {"unit": [
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
                                 self.PORT_MODE_TAG: "trunk",
-                                "native-vlan-id": "2995",
                                 "vlan": [
                                     {"members": "2997"},
                                 ]}}}]}]}})
@@ -442,15 +430,8 @@ class JuniperBaseProtocolTest(unittest.TestCase):
             "interfaces": {
                 "interface": [
                     {"name": "ge-0/0/3"},
-                    {"unit": [
-                        {"name": "0"},
-                        {"family": {
-                            "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk",
-                                "native-vlan-id": "2996",
-                                "vlan": [
-                                    {"members": "2997"},
-                                ]}}}]}]}})
+                    {"native-vlan-id": "2996"},
+                    ]}})
         self.nc.commit()
 
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
@@ -460,10 +441,10 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
 
         int003 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("2996"))
+        assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan", "native-vlan-id"]))
+                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -486,12 +467,12 @@ class JuniperBaseProtocolTest(unittest.TestCase):
                 "interface": [
                     {"name": "ge-0/0/3"},
                     {"description": "I see what you did there!"},
+                    {"native-vlan-id": "2996"},
                     {"unit": [
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
                                 self.PORT_MODE_TAG: "trunk",
-                                "native-vlan-id": "2996",
                                 "vlan": [
                                     {"members": "2995"},
                                     {"members": "2997"},
@@ -506,6 +487,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
         int003 = result.xpath("data/configuration/interfaces/interface")[0]
         assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
+        assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
         assert_that(int003.xpath("description")[0].text, equal_to("I see what you did there!"))
 
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")), has_length(2)
@@ -513,16 +495,26 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         members = int003.xpath("unit/family/ethernet-switching/vlan/members")
         assert_that(members[0].text, equal_to("2995"))
         assert_that(members[1].text, equal_to("2997"))
-        assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("2996"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan", "native-vlan-id"]))
+                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
         assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
 
-    def test_display_interface_trunk_native_vlan_and_no_vlan_members_or_trunk_mode(self):
+    def test_assigning_unknown_native_vlan_raises(self):
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"native-vlan-id": "2000"}
+                    ]}})
+
+        with self.assertRaises(RPCError):
+            self.nc.commit()
+
+    def test_display_interface_trunk_native_vlan_and_no_ethernet_switching(self):
         self.edit({
             "vlans": [
                 {"vlan": [
@@ -532,12 +524,8 @@ class JuniperBaseProtocolTest(unittest.TestCase):
             "interfaces": {
                 "interface": [
                     {"name": "ge-0/0/3"},
-                    {"unit": [
-                        {"name": "0"},
-                        {"family": {
-                            "ethernet-switching": {
-                                "native-vlan-id": "2996"
-                            }}}]}]}})
+                    {"native-vlan-id": "2996"}
+                    ]}})
         self.nc.commit()
 
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
@@ -548,9 +536,9 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
         int003 = result.xpath("data/configuration/interfaces/interface")[0]
         assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
-        assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("2996"))
+        assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
 
-        self.cleanup(vlan("VLAN2996"), interface("ge-0/0/3", ["native-vlan-id"]))
+        self.cleanup(vlan("VLAN2996"), interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -740,7 +728,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         assert_that(int002.xpath("disable"), has_length(0))
 
         self.edit({"interfaces": {
-        "interface": [{"name": "ge-0/0/2"}, {"enable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
+            "interface": [{"name": "ge-0/0/2"}, {"enable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
         self.nc.commit()
 
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
@@ -754,7 +742,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         self.nc.commit()
 
         self.edit({"interfaces": {
-        "interface": [{"name": "ge-0/0/2"}, {"disable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
+            "interface": [{"name": "ge-0/0/2"}, {"disable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
         self.nc.commit()
 
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
@@ -763,6 +751,49 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         int002 = result.xpath("data/configuration/interfaces/interface")[0]
         assert_that(int002.xpath("enable"), has_length(0))
         assert_that(int002.xpath("disable"), has_length(0))
+
+    def test_set_interface_trunk_native_vlan_id(self):
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN2996"},
+                    {"vlan-id": "2996"}]}
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/2"},
+                    {"native-vlan-id": "2996"}]}})
+
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
+
+        int002 = result.xpath("data/configuration/interfaces/interface")[0]
+
+        assert_that(int002.xpath("name")[0].text, equal_to("ge-0/0/2"))
+        assert_that(int002.xpath("native-vlan-id")[0].text, equal_to("2996"))
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/2"},
+                    {"native-vlan-id": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
+
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
+
+        int002 = result.xpath("data/configuration/interfaces/interface")[0]
+
+        assert_that(int002.xpath("native-vlan-id"), has_length(0))
 
     def test_create_aggregated_port(self):
         self.edit({
@@ -996,12 +1027,13 @@ def vlan(vlan_name):
     return m
 
 
-def interface(interface_name, fields=None):
+def interface(interface_name, fields=None, native_vlan_id=None):
     if fields is not None:
         def m(edit):
             edit({"interfaces": {
                 "interface": [
                     {"name": interface_name},
+                    {"native-vlan-id": {XML_ATTRIBUTES: {"operation": "delete"}}},
                     {"unit": [
                         {"name": "0"},
                         {"family": {
@@ -1022,6 +1054,7 @@ def reset_interface(interface_name):
         edit({"interfaces": {
             "interface": [{XML_ATTRIBUTES: {"operation": "replace"}},
                           {"name": interface_name},
+                          {"native-vlan-id": ""},
                           {"unit": [
                               {"name": "0"},
                               {"family": {

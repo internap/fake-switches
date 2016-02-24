@@ -19,7 +19,7 @@ from fake_switches.cisco.cisco_core import CiscoSwitchCore
 from fake_switches.dell.dell_core import DellSwitchCore
 from fake_switches.dell10g.dell_core import Dell10GSwitchCore
 from fake_switches.juniper.juniper_core import JuniperSwitchCore
-from fake_switches.juniper.juniper_qfx_copper_core import JuniperQfxCopperSwitchCore
+from fake_switches.juniper_qfx_copper.juniper_qfx_copper_core import JuniperQfxCopperSwitchCore
 from fake_switches.ssh_service import SwitchSshService
 from fake_switches.switch_configuration import SwitchConfiguration, Port
 from fake_switches.telnet_service import SwitchTelnetService
