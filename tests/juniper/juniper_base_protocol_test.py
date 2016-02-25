@@ -340,6 +340,38 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         with self.assertRaises(RPCError):
             self.nc.commit()
 
+    def test_trunk_mode_allows_no_vlan_members(self):
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN2995"},
+                    {"vlan-id": "2995"}]},
+                {"vlan": [
+                    {"name": "VLAN2996"},
+                    {"vlan-id": "2996"}]},
+                {"vlan": [
+                    {"name": "VLAN2997"},
+                    {"vlan-id": "2997"}]},
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"native-vlan-id": "2996"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                self.PORT_MODE_TAG: "trunk"
+                                }}}]}]}})
+        self.nc.commit()
+
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
+                     interface("ge-0/0/3", [self.PORT_MODE_TAG]))
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"vlans": {}}}
+        }))
+        assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
+
     def test_trunk_mode(self):
         self.edit({
             "vlans": [
@@ -403,6 +435,19 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         int003 = result.xpath("data/configuration/interfaces/interface")[0]
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(1))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2997"))
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "vlan": [
+                                    {"members": {XML_TEXT: "2997", XML_ATTRIBUTES: {"operation": "delete"}}},
+                                ]}}}]}]}})
+        self.nc.commit()
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
                      interface("ge-0/0/3", [self.PORT_MODE_TAG, "native-vlan-id", "vlan"]))
@@ -890,7 +935,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         assert_that(int002.xpath("disable"), has_length(1))
 
         self.edit({"interfaces": {
-        "interface": [{"name": "ge-0/0/2"}, {"disable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
+            "interface": [{"name": "ge-0/0/2"}, {"disable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
         self.nc.commit()
 
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {

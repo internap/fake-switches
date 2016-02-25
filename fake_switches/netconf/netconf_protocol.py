@@ -1,4 +1,4 @@
-# Copyright 2015 Internap.
+# Copyright 2015-2016 Internap.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ import re
 from twisted.internet.protocol import Protocol
 from lxml import etree
 from fake_switches.netconf import dict_2_etree, NS_BASE_1_0, normalize_operation_name, SimpleDatastore, \
-    Response, OperationNotSupported, NetconfError
+    Response, OperationNotSupported, NetconfError, FailingCommitResults
 from fake_switches.netconf.capabilities import Base1_0
 
 
@@ -77,6 +77,8 @@ class NetconfProtocol(Protocol):
                     self.reply(message_id, getattr(capability, operation_name)(operation))
                 except NetconfError as e:
                     self.reply(message_id, error_to_response(e))
+                except FailingCommitResults as e:
+                    self.reply(message_id, commit_results_error_to_response(e))
                 handled = True
 
         if not handled:
@@ -98,17 +100,26 @@ class NetconfProtocol(Protocol):
         self.transport.write(etree.tostring(etree_root, pretty_print=True) + "]]>]]>\n")
 
 
-def error_to_response(error):
+def error_to_rpcerror_dict(error):
     error_specs = {
         "error-message": error.message
     }
 
+    if error.path: error_specs["error-path"] = error.path
     if error.type: error_specs["error-type"] = error.type
     if error.tag: error_specs["error-tag"] = error.tag
     if error.severity: error_specs["error-severity"] = error.severity
     if error.info: error_specs["error-info"] = error.info
+    return {"rpc-error": error_specs}
 
-    return Response(dict_2_etree({"rpc-error": error_specs}))
+
+def error_to_response(error):
+    return Response(dict_2_etree(error_to_rpcerror_dict(error)))
+
+
+def commit_results_error_to_response(commit_results_error):
+    return Response(dict_2_etree({'commit-results': [error_to_rpcerror_dict(e) for e in commit_results_error.netconf_errors]}))
+
 
 def remove_namespaces(xml_root):
     xml_root.tag = unqualify(xml_root.tag)

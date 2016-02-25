@@ -265,10 +265,21 @@ class XmlEqualsToMatcher(BaseMatcher):
         self.compare_children(node, actual_node)
 
     def compare_children(self, expected, actual):
-        for i, node in enumerate(expected):
-            actual_node = actual[i]
+        assert_that(actual, has_length(len(expected)))
+        tested_nodes = []
+        for node in expected:
+            actual_node = get_children_by_unqualified_tag(unqualify(node.tag), actual, excluding=tested_nodes)
             self.compare_nodes(actual_node, node)
+            tested_nodes.append(actual_node)
 
 
 def unqualify(tag):
     return re.sub("\{[^\}]*\}", "", tag)
+
+
+def get_children_by_unqualified_tag(tag, node, excluding):
+    for child in node:
+        if child not in excluding and unqualify(child.tag) == tag:
+            return child
+
+    raise AssertionError("Missing element {} in {}".format(tag, to_xml(node, pretty_print=True)))
