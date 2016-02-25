@@ -1042,9 +1042,11 @@ def interface(interface_name, fields=None, native_vlan_id=None):
     else:
         def m(edit):
             edit({"interfaces": {
-                "interface": {
+                "interface": [{
                     "name": interface_name,
-                    XML_ATTRIBUTES: {"operation": "delete"}}}})
+                    XML_ATTRIBUTES: {"operation": "delete"}},
+                    {"native-vlan-id": {XML_ATTRIBUTES: {"operation": "delete"}}}
+                ]}})
 
     return m
 
