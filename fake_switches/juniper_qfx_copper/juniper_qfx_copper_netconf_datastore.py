@@ -30,4 +30,4 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
         if len(native_vlan_id_node) == 1 and native_vlan_id_node[0].text is not None:
             return resolve_new_value(interface_node, "native-vlan-id", port.trunk_native_vlan,
                                  transformer=int)
-        return None
+        return port.trunk_native_vlan
