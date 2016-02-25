@@ -255,6 +255,11 @@ class JuniperNetconfDatastore(object):
                 port.vendor_specific["has-ethernet-switching"] = True
 
                 port.mode = resolve_new_value(port_attributes, self.PORT_MODE_TAG, port.mode)
+                if port.mode == "access":
+                    port.trunk_vlans = None
+                    port.trunk_native_vlan = None
+                else:
+                    port.access_vlan = None
 
                 if resolve_operation(first(port_attributes.xpath("vlan"))) == "delete":
                     port.access_vlan = None
