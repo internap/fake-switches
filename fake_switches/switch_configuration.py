@@ -189,7 +189,7 @@ class VRRP(object):
         self.timers_hold = False
         self.priority = None
         self.track = {}
-        self.preempt = True
+        self.preempt = None
         self.preempt_delay_minimum = None
         self.activated = None
         self.advertising = None

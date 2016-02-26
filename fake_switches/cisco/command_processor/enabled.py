@@ -274,9 +274,13 @@ def build_running_interface(port):
             data.append(" no ip redirects")
         for vrrp in port.vrrps:
             group = vrrp.group_id
-            for i, ip_address in enumerate(vrrp.ip_addresses):
-                data.append(" standby {group} ip {ip_address}{secondary}".format(group=group, ip_address=ip_address,
-                                                                                 secondary=' secondary' if i > 0 else ''))
+            if vrrp.ip_addresses is not None:
+                if len(vrrp.ip_addresses) == 0:
+                    data.append(" standby {group} ip".format(group=group))
+                else:
+                    for i, ip_address in enumerate(vrrp.ip_addresses):
+                        data.append(" standby {group} ip {ip_address}{secondary}".format(
+                                group=group, ip_address=ip_address, secondary=' secondary' if i > 0 else ''))
             if vrrp.timers_hello is not None and vrrp.timers_hold is not None:
                 data.append(" standby {group} timers {hello_time} {hold_time}".format(group=group, hello_time=vrrp.timers_hello, hold_time=vrrp.timers_hold))
             if vrrp.priority is not None:
