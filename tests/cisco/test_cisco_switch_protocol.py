@@ -361,6 +361,7 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
     def test_setup_an_interface(self, t):
         enable(t)
 
+        create_vlan(t, "2999")
         create_interface_vlan(t, "2999")
         assert_interface_configuration(t, "Vlan2999", [
             "interface Vlan2999",
@@ -444,6 +445,150 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
         t.readln("% Invalid input detected at '^' marker.")
         t.readln("")
         t.read("my_switch#")
+
+        remove_vlan(t, "2999")
+
+    @with_protocol
+    def test_partial_standby_properties(self, t):
+        enable(t)
+
+        create_vlan(t, "2999")
+        create_interface_vlan(t, "2999")
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            "end"])
+
+        configuring_interface_vlan(t, "2999", do='standby 1 timers 5 15')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            " standby 1 timers 5 15",
+            "end"])
+        configuring_interface_vlan(t, "2999", do="no standby 1 timers")
+
+        configuring_interface_vlan(t, "2999", do='standby 1 priority 110')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            " standby 1 priority 110",
+            "end"])
+        configuring_interface_vlan(t, "2999", do="no standby 1 priority")
+
+        configuring_interface_vlan(t, "2999", do='standby 1 preempt delay minimum 60')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            " standby 1 preempt delay minimum 60",
+            "end"])
+        configuring_interface_vlan(t, "2999", do="no standby 1 preempt")
+
+        configuring_interface_vlan(t, "2999", do='standby 1 authentication VLAN2999')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            " standby 1 authentication VLAN2999",
+            "end"])
+        configuring_interface_vlan(t, "2999", do="no standby 1 authentication")
+
+        configuring_interface_vlan(t, "2999", do='standby 1 track 10 decrement 50')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            " standby 1 track 10 decrement 50",
+            "end"])
+        configuring_interface_vlan(t, "2999", do="no standby 1 track 10")
+
+        configuring(t, do="no interface vlan 2999")
+        remove_vlan(t, "2999")
+
+    @with_protocol
+    def test_partial_standby_ip_definition(self, t):
+        enable(t)
+
+        create_vlan(t, "2999")
+        create_interface_vlan(t, "2999")
+
+        configuring_interface_vlan(t, "2999", do='standby 1 ip')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            " standby 1 ip",
+            "end"])
+        configuring_interface_vlan(t, "2999", do='no standby 1 ip')
+
+        t.write("configure terminal")
+        t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
+        t.read("my_switch(config)#")
+        t.write("interface vlan 2999")
+        t.read("my_switch(config-if)#")
+
+        t.write("standby 1 ip 1..1.1")
+        t.readln(" ^")
+        t.readln("% Invalid input detected at '^' marker.")
+        t.readln("")
+        t.read("my_switch(config-if)#")
+
+        t.write("standby 1 ip 1.1.1.1")
+        t.readln("% Warning: address is not within a subnet on this interface")
+
+        t.read("my_switch(config-if)#")
+        t.write("exit")
+        t.read("my_switch(config)#")
+        t.write("exit")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            "end"])
+
+        configuring_interface_vlan(t, "2999", do="ip address 1.1.1.2 255.255.255.0")
+
+        t.write("configure terminal")
+        t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
+        t.read("my_switch(config)#")
+        t.write("interface vlan 2999")
+        t.read("my_switch(config-if)#")
+
+        t.write("standby 1 ip 2.1.1.1")
+        t.readln("% Warning: address is not within a subnet on this interface")
+
+        t.read("my_switch(config-if)#")
+        t.write("exit")
+        t.read("my_switch(config)#")
+        t.write("exit")
+        t.read("my_switch#")
+
+        configuring_interface_vlan(t, "2999", do='standby 1 ip 1.1.1.1')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " ip address 1.1.1.2 255.255.255.0",
+            " standby 1 ip 1.1.1.1",
+            "end"])
+
+        configuring_interface_vlan(t, "2999", do='standby 1 ip')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " ip address 1.1.1.2 255.255.255.0",
+            " standby 1 ip 1.1.1.1",
+            "end"])
+
+        configuring_interface_vlan(t, "2999", do="no ip address 1.1.1.2 255.255.255.0")
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            " standby 1 ip 1.1.1.1",
+            "end"])
+
+        configuring_interface_vlan(t, "2999", do='no standby 1 ip 1.1.1.1')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            "end"])
+
+        configuring(t, do="no interface vlan 2999")
+        remove_vlan(t, "2999")
 
     @with_protocol
     def test_creating_a_port_channel(self, t):

@@ -187,7 +187,25 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
             self.port.vrrps.append(vrrp)
 
         if "ip".startswith(command):
-            vrrp.ip_addresses = vrrp.ip_addresses + [args[0], ] if vrrp.ip_addresses is not None and len(args) > 1 else [args[0]]
+            if len(args) == 0:
+                vrrp.ip_addresses = vrrp.ip_addresses or []
+            else:
+                ip = _parse_ip(args[0])
+                if ip is not None:
+                    in_networks = any(ip in net for net in self.port.ips)
+                    if in_networks:
+                        vrrp.ip_addresses = vrrp.ip_addresses or []
+                        if len(args) > 1 and "secondary".startswith(args[1]):
+                            vrrp.ip_addresses.append(ip)
+                        else:
+                            vrrp.ip_addresses = [ip] + vrrp.ip_addresses[1:]
+                    else:
+                        self.write_line("% Warning: address is not within a subnet on this interface")
+
+                else:
+                    self.write_line(" ^")
+                    self.write_line("% Invalid input detected at '^' marker.")
+                    self.write_line("")
 
         if "timers".startswith(command):
             vrrp.timers_hello = args[0]
@@ -221,10 +239,12 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
             args = cmd_args[1:]
 
             if "ip".startswith(command):
-                if args is None:
-                    vrrp.ip_addresses = []
+                if len(args) == 0:
+                    vrrp.ip_addresses = None
                 else:
-                    vrrp.ip_addresses.remove(args[0])
+                    vrrp.ip_addresses.remove(IPAddress(args[0]))
+                    if len(vrrp.ip_addresses) == 0:
+                        vrrp.ip_addresses = None
 
             if "authentication".startswith(command):
                 vrrp.authentication = None
@@ -240,11 +260,11 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                 del vrrp.track[args[0]]
 
             if "preempt".startswith(command):
-                if "delay".startswith(args[0]):
+                if len(args) > 0 and "delay".startswith(args[0]):
                     vrrp.preempt_delay_minimum = None
                 else:
                     vrrp.preempt_delay_minimum = None
-                    vrrp.preempt = False
+                    vrrp.preempt = None
 
     def do_exit(self):
         self.is_done = True
@@ -269,3 +289,9 @@ def parse_vlan_list(param):
 
     return vlans
 
+
+def _parse_ip(ip):
+    try:
+        return IPAddress(ip)
+    except:
+        return None
