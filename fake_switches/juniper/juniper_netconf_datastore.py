@@ -189,7 +189,7 @@ class JuniperNetconfDatastore(object):
                     }
                 }})
 
-        self.apply_trunk_native_vlan(interface_data, port)
+            self.apply_trunk_native_vlan(interface_data, port)
 
         return interface_data
 
@@ -255,11 +255,15 @@ class JuniperNetconfDatastore(object):
                 port.vendor_specific["has-ethernet-switching"] = True
 
                 port.mode = resolve_new_value(port_attributes, self.PORT_MODE_TAG, port.mode)
+                if port.mode == "access":
+                    port.trunk_vlans = None
+                    port.trunk_native_vlan = None
+                else:
+                    port.access_vlan = None
 
                 if resolve_operation(first(port_attributes.xpath("vlan"))) == "delete":
                     port.access_vlan = None
                     port.trunk_vlans = None
-                    port.trunk_native_vlan = None
                 else:
                     for member in port_attributes.xpath("vlan/members"):
                         if resolve_operation(member) == "delete":
@@ -277,7 +281,10 @@ class JuniperNetconfDatastore(object):
                                     port.trunk_vlans = []
                                 port.trunk_vlans += parse_range(member.text)
 
-            port.trunk_native_vlan = self.parse_trunk_native_vlan(interface_node, port)
+            if resolve_operation(first(self.get_trunk_native_vlan_node(interface_node))) == "delete":
+                port.trunk_native_vlan = None
+            else:
+                port.trunk_native_vlan = self.parse_trunk_native_vlan(interface_node, port)
 
         if isinstance(port, AggregatedPort):
             port.speed = resolve_new_value(interface_node, "aggregated-ether-options/link-speed", port.speed)
@@ -312,7 +319,7 @@ class JuniperNetconfDatastore(object):
             port_attributes = first(interface_node.xpath("unit/family/ethernet-switching"))
             return resolve_new_value(port_attributes, "native-vlan-id", port.trunk_native_vlan,
                               transformer=int)
-        return None
+        return port.trunk_native_vlan
 
     def apply_trunk_native_vlan(self, interface_data, port):
         if port.vendor_specific["has-ethernet-switching"]:
@@ -326,6 +333,9 @@ class JuniperNetconfDatastore(object):
                         }}})
                 else:
                     interface_data[-1]['unit']['family']['ethernet-switching']['native-vlan-id'] = str(port.trunk_native_vlan)
+
+    def get_trunk_native_vlan_node(self, interface_node):
+        return interface_node.xpath("unit/family/ethernet-switching/native-vlan-id")
 
 
 def validate(configuration):

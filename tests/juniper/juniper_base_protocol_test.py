@@ -469,6 +469,168 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         }))
         assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
 
+    def test_interface_set_trunk_native_vlan_then_set_members_after(self):
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN2995"},
+                    {"vlan-id": "2995"}]},
+                {"vlan": [
+                    {"name": "VLAN2996"},
+                    {"vlan-id": "2996"}]},
+                {"vlan": [
+                    {"name": "VLAN2997"},
+                    {"vlan-id": "2997"}]},
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                self.PORT_MODE_TAG: "trunk"
+                            }}}]}]}})
+        self.nc.commit()
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "native-vlan-id": "2995"
+                            }}}]}]}})
+        self.nc.commit()
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "vlan": [
+                                    {"members": "2997"},
+                                ]}}}]}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/3"}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
+
+        int003 = result.xpath("data/configuration/interfaces/interface")[0]
+        assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("2995"))
+
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
+                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan", "native-vlan-id"]))
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"vlans": {}}}
+        }))
+        assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
+
+    def test_passing_from_trunk_mode_to_access_gets_rid_of_stuff_in_trunk_mode(self):
+
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN1100"},
+                    {"vlan-id": "1100"}]},
+                {"vlan": [
+                    {"name": "VLAN1200"},
+                    {"vlan-id": "1200"}]},
+                {"vlan": [
+                    {"name": "VLAN1300"},
+                    {"vlan-id": "1300"}]},
+                {"vlan": [
+                    {"name": "VLAN1400"},
+                    {"vlan-id": "1400"}]},
+            ]})
+        self.nc.commit()
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                self.PORT_MODE_TAG: "trunk"
+                            }}}]}]}})
+        self.nc.commit()
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "native-vlan-id": "1200"
+                            }}}]}]}})
+        self.nc.commit()
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "vlan": [
+                                    {"members": "1100"},
+                                    {"members": "1300"},
+                                    {"members": "1400"},
+                                ]}}}]}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/3"}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
+
+        int003 = result.xpath("data/configuration/interfaces/interface")[0]
+        assert_that(int003.xpath("unit/family/ethernet-switching/port-mode")[0].text, equal_to("trunk"))
+        assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("1200"))
+        assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(3))
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                self.PORT_MODE_TAG: "access"
+                            }}}]}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/3"}}}}
+        }))
+
+        int003 = result.xpath("data/configuration/interfaces/interface")[0]
+        assert_that(int003.xpath("unit/family/ethernet-switching/port-mode")[0].text, equal_to("access"))
+        assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id"), has_length(0))
+        assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(0))
+
+        self.cleanup(vlan("VLAN1100"), vlan("VLAN1200"), vlan("VLAN1300"), vlan("VLAN1400"),
+                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan", "native-vlan-id"]))
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"vlans": {}}}
+        }))
+        assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
+
     def test_display_interface_with_description_and_trunk_native_vlan(self):
         self.edit({
             "vlans": [
