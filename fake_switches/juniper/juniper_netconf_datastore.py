@@ -133,7 +133,7 @@ class JuniperNetconfDatastore(object):
         if port.description is not None:
             interface_data.append({"description": port.description})
 
-        if port.shutdown is not None and port.shutdown:
+        if port.shutdown:
             interface_data.append({"disable": ""})
 
         if isinstance(port, AggregatedPort):
