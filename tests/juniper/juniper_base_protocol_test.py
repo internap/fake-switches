@@ -878,7 +878,6 @@ class JuniperBaseProtocolTest(unittest.TestCase):
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
 
         int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("enable"), has_length(0))
         assert_that(int002.xpath("disable"), has_length(0))
 
         self.edit({"interfaces": {"interface": [{"name": "ge-0/0/2"}, {"disable": ""}]}})
@@ -888,32 +887,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
 
         int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("enable"), has_length(0))
         assert_that(int002.xpath("disable"), has_length(1))
-
-        self.edit({"interfaces": {"interface": [{"name": "ge-0/0/2"}, {"enable": ""}]}})
-        self.nc.commit()
-
-        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
-            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
-
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("enable"), has_length(1))
-        assert_that(int002.xpath("disable"), has_length(0))
-
-        self.edit({"interfaces": {
-        "interface": [{"name": "ge-0/0/2"}, {"enable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
-        self.nc.commit()
-
-        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
-            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
-
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("enable"), has_length(0))
-        assert_that(int002.xpath("disable"), has_length(0))
-
-        self.edit({"interfaces": {"interface": [{"name": "ge-0/0/2"}, {"disable": ""}]}})
-        self.nc.commit()
 
         self.edit({"interfaces": {
         "interface": [{"name": "ge-0/0/2"}, {"disable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
@@ -923,7 +897,6 @@ class JuniperBaseProtocolTest(unittest.TestCase):
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
 
         int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("enable"), has_length(0))
         assert_that(int002.xpath("disable"), has_length(0))
 
     def test_create_aggregated_port(self):
