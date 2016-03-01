@@ -133,8 +133,8 @@ class JuniperNetconfDatastore(object):
         if port.description is not None:
             interface_data.append({"description": port.description})
 
-        if port.shutdown is not None:
-            interface_data.append({("disable" if port.shutdown else "enable"): ""})
+        if port.shutdown is not None and port.shutdown:
+            interface_data.append({"disable": ""})
 
         if isinstance(port, AggregatedPort):
             aggregated_ether_options = {}
@@ -220,10 +220,8 @@ class JuniperNetconfDatastore(object):
     def apply_interface_data(self, interface_node, port):
         port.description = resolve_new_value(interface_node, "description", port.description)
 
-        if first(interface_node.xpath("enable")) is not None:
-            port.shutdown = False if resolve_operation(first(interface_node.xpath("enable"))) != "delete" else None
-        elif first(interface_node.xpath("disable")) is not None:
-            port.shutdown = True if resolve_operation(first(interface_node.xpath("disable"))) != "delete" else None
+        if first(interface_node.xpath("disable")) is not None:
+            port.shutdown = True if resolve_operation(first(interface_node.xpath("disable"))) != "delete" else False
 
         ether_options_attributes = first(interface_node.xpath("ether-options"))
         if ether_options_attributes is not None:
