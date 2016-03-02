@@ -27,8 +27,6 @@ class JuniperBaseProtocolWithCommitDelayTest(unittest.TestCase):
     def setUp(self):
         self.nc = self.create_client()
 
-        self.PORT_MODE_TAG = "port-mode"
-
     def tearDown(self):
         try:
             self.nc.discard_changes()
