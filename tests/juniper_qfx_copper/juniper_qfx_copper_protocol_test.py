@@ -13,12 +13,14 @@
 # limitations under the License.
 
 import unittest
+from lxml import etree
 
 from fake_switches.netconf import dict_2_etree, XML_TEXT, XML_ATTRIBUTES
 from hamcrest import assert_that, has_length, equal_to, has_items, is_, is_not
 from ncclient import manager
 from ncclient.operations import RPCError
 from tests import contains_regex
+from tests.netconf.netconf_protocol_test import xml_equals_to
 
 from tests.util.global_reactor import juniper_qfx_copper_switch_ip, \
     juniper_qfx_copper_switch_netconf_port
@@ -328,6 +330,65 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
         with self.assertRaises(RPCError):
             self.nc.commit()
 
+    def test_trunk_mode_does_not_allow_no_vlan_members(self):
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN2995"},
+                    {"vlan-id": "2995"}]},
+                {"vlan": [
+                    {"name": "VLAN2996"},
+                    {"vlan-id": "2996"}]},
+                {"vlan": [
+                    {"name": "VLAN2997"},
+                    {"vlan-id": "2997"}]},
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"native-vlan-id": "2996"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                self.PORT_MODE_TAG: "trunk"
+                                }}}]}]}})
+        with self.assertRaises(RPCError) as context:
+            self.nc.commit()
+
+            assert_that(etree.tostring(context.exception._raw.xpath('/*/*')[0]), xml_equals_to(
+        """<?xml version="1.0" encoding="UTF-8"?><commit-results xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns:junos="http://xml.juniper.net/junos/11.4R1/junos">
+<rpc-error>
+  <error-tag>operation-failed</error-tag>
+  <error-message>
+For trunk interface, please ensure either vlan members is configured or inner-vlan-id-list is configured
+</error-message>
+  <error-severity>error</error-severity>
+  <error-path>
+[edit interfaces ge-0/0/3 unit 0 family]
+</error-path>
+  <error-type>protocol</error-type>
+  <error-info>
+    <bad-element>ethernet-switching</bad-element>
+  </error-info>
+</rpc-error>
+<rpc-error>
+  <error-severity>error</error-severity>
+  <error-tag>operation-failed</error-tag>
+  <error-type>protocol</error-type>
+  <error-message>
+configuration check-out failed
+</error-message>
+</rpc-error>
+</commit-results>"""))
+
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
+                         interface("ge-0/0/3", [self.PORT_MODE_TAG]))
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"vlans": {}}}
+        }))
+        assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
+
     def test_trunk_mode(self):
         self.edit({
             "vlans": [
@@ -470,7 +531,10 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk"
+                                self.PORT_MODE_TAG: "trunk",
+                                "vlan": [
+                                    {"members": "2996"}
+                                ]
                             }}}]}]}})
         self.nc.commit()
 
@@ -503,6 +567,9 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
 
         int003 = result.xpath("data/configuration/interfaces/interface")[0]
         assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2995"))
+        assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(2))
+        assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2996"))
+        assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[1].text, equal_to("2997"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
                      interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
@@ -534,30 +601,12 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
             "interfaces": {
                 "interface": [
                     {"name": "ge-0/0/3"},
+                    {"native-vlan-id": "1200"},
                     {"unit": [
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk"
-                            }}}]}]}})
-        self.nc.commit()
-
-        self.edit({
-            "interfaces": {
-                "interface": [
-                    {"name": "ge-0/0/3"},
-                    {"native-vlan-id": "1200"}
-                    ]}})
-        self.nc.commit()
-
-        self.edit({
-            "interfaces": {
-                "interface": [
-                    {"name": "ge-0/0/3"},
-                    {"unit": [
-                        {"name": "0"},
-                        {"family": {
-                            "ethernet-switching": {
+                                self.PORT_MODE_TAG: "trunk",
                                 "vlan": [
                                     {"members": "1100"},
                                     {"members": "1300"},

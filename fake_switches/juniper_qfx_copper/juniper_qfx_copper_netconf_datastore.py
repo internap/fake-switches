@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fake_switches.juniper.juniper_netconf_datastore import JuniperNetconfDatastore, resolve_new_value
+from fake_switches.juniper.juniper_netconf_datastore import JuniperNetconfDatastore, resolve_new_value, port_is_in_trunk_mode
+from fake_switches.netconf import FailingCommitResults, TrunkShouldHaveVlanMembers, ConfigurationCheckOutFailed
 
 
 class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
@@ -34,3 +35,11 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
 
     def get_trunk_native_vlan_node(self, interface_node):
         return interface_node.xpath("native-vlan-id")
+
+    def _validate(self, configuration):
+        for port in configuration.ports:
+            if port_is_in_trunk_mode(port) and \
+                    (port.trunk_vlans is None or len(port.trunk_vlans) == 0):
+                raise FailingCommitResults([TrunkShouldHaveVlanMembers(interface=port.name),
+                                            ConfigurationCheckOutFailed()])
+        return super(JuniperQfxCopperNetconfDatastore, self)._validate(configuration)

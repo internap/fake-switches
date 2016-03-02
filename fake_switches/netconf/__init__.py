@@ -1,4 +1,4 @@
-# Copyright 2015 Internap.
+# Copyright 2015-2016 Internap.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -101,12 +101,13 @@ def unqualify(lxml_element):
 
 
 class NetconfError(Exception):
-    def __init__(self, msg, severity="error", err_type=None, tag=None, info=None):
+    def __init__(self, msg, severity="error", err_type=None, tag=None, info=None, path=None):
         super(NetconfError, self).__init__(msg)
         self.severity = severity
         self.type = err_type
         self.tag = tag
         self.info = info
+        self.path = path
 
 
 class AlreadyLocked(NetconfError):
@@ -132,6 +133,29 @@ class OperationNotSupported(NetconfError):
             err_type="protocol",
             tag="operation-not-supported"
         )
+
+
+class TrunkShouldHaveVlanMembers(NetconfError):
+    def __init__(self, interface):
+        super(TrunkShouldHaveVlanMembers, self).__init__(msg='\nFor trunk interface, please ensure either vlan members is configured or inner-vlan-id-list is configured\n',
+                                                         severity='error',
+                                                         err_type='protocol',
+                                                         tag='operation-failed',
+                                                         info={'bad-element': 'ethernet-switching'},
+                                                         path='\n[edit interfaces {} unit 0 family]\n'.format(interface))
+
+class ConfigurationCheckOutFailed(NetconfError):
+    def __init__(self):
+        super(ConfigurationCheckOutFailed, self).__init__(msg='\nconfiguration check-out failed\n',
+                                                          severity='error',
+                                                          err_type='protocol',
+                                                          tag='operation-failed',
+                                                          info=None)
+
+
+class FailingCommitResults(Exception):
+    def __init__(self, netconf_errors):
+        self.netconf_errors = netconf_errors
 
 
 def xml_equals(actual_node, node):

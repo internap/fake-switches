@@ -73,7 +73,7 @@ class JuniperNetconfDatastore(object):
         raise_for_unused_nodes(etree_conf, handled_elements)
 
     def commit_candidate(self):
-        validate(self.configurations[CANDIDATE])
+        self._validate(self.configurations[CANDIDATE])
         for updated_vlan in self.configurations[CANDIDATE].vlans:
             actual_vlan = self.configurations[RUNNING].get_vlan_by_name(updated_vlan.name)
             if not actual_vlan:
@@ -265,14 +265,14 @@ class JuniperNetconfDatastore(object):
                 else:
                     for member in port_attributes.xpath("vlan/members"):
                         if resolve_operation(member) == "delete":
-                            if port.mode is None or port.mode == "access":
+                            if port_is_in_access_mode(port):
                                 port.access_vlan = None
                             else:
                                 port.trunk_vlans.remove(int(member.text))
                                 if len(port.trunk_vlans) == 0:
                                     port.trunk_vlans = None
                         else:
-                            if port.mode is None or port.mode == "access":
+                            if port_is_in_access_mode(port):
                                 port.access_vlan = parse_range(member.text)[0]
                             else:
                                 if port.trunk_vlans is None:
@@ -335,19 +335,18 @@ class JuniperNetconfDatastore(object):
     def get_trunk_native_vlan_node(self, interface_node):
         return interface_node.xpath("unit/family/ethernet-switching/native-vlan-id")
 
+    def _validate(self, configuration):
+        vlan_list = [vlan.number for vlan in configuration.vlans]
 
-def validate(configuration):
-    vlan_list = [vlan.number for vlan in configuration.vlans]
-
-    for port in configuration.ports:
-        if port.access_vlan is not None and port.access_vlan not in vlan_list:
-            raise UnknownVlan(port.access_vlan, port.name, 0)
-        if port.trunk_native_vlan is not None and port.trunk_native_vlan not in vlan_list:
-            raise UnknownVlan(port.trunk_native_vlan, port.name, 0)
-        if port.trunk_vlans is not None:
-            for trunk_vlan in port.trunk_vlans:
-                if trunk_vlan not in vlan_list:
-                    raise UnknownVlan(trunk_vlan, port.name, 0)
+        for port in configuration.ports:
+            if port.access_vlan is not None and port.access_vlan not in vlan_list:
+                raise UnknownVlan(port.access_vlan, port.name, 0)
+            if port.trunk_native_vlan is not None and port.trunk_native_vlan not in vlan_list:
+                raise UnknownVlan(port.trunk_native_vlan, port.name, 0)
+            if port.trunk_vlans is not None:
+                for trunk_vlan in port.trunk_vlans:
+                    if trunk_vlan not in vlan_list:
+                        raise UnknownVlan(trunk_vlan, port.name, 0)
 
 
 def vlan_to_etree(vlan):
@@ -503,3 +502,9 @@ def get_or_create_interface(if_list, port):
 
     return existing
 
+
+def port_is_in_access_mode(port):
+    return port.mode is None or port.mode == "access"
+
+def port_is_in_trunk_mode(port):
+    return not port_is_in_access_mode(port)
