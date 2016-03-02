@@ -288,7 +288,7 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
 
         assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
         assert_that(int003.xpath("unit/family/ethernet-switching/*"), has_length(2))
-        assert_that(int003.xpath("unit/family/ethernet-switching/")[0].text,
+        assert_that(int003.xpath("unit/family/ethernet-switching/interface-mode")[0].text,
                     equal_to("access"))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(1))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2995"))
