@@ -31,8 +31,6 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
     def setUp(self):
         self.nc = self.create_client()
 
-        self.PORT_MODE_TAG = "interface-mode"
-
     def tearDown(self):
         try:
             self.nc.discard_changes()
@@ -274,7 +272,7 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "access",
+                                "interface-mode": "access",
                                 "vlan": [
                                     {"members": "2995"},
                                 ]}}}]}]}})
@@ -290,12 +288,12 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
 
         assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
         assert_that(int003.xpath("unit/family/ethernet-switching/*"), has_length(2))
-        assert_that(int003.xpath("unit/family/ethernet-switching/{}".format(self.PORT_MODE_TAG))[0].text,
+        assert_that(int003.xpath("unit/family/ethernet-switching/interface-mode")[0].text,
                     equal_to("access"))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(1))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2995"))
 
-        self.cleanup(vlan("VLAN2995"), interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
+        self.cleanup(vlan("VLAN2995"), interface("ge-0/0/3", ["interface-mode", "vlan"]))
 
     def test_assigning_unknown_vlan_in_a_range_raises(self):
         self.edit({
@@ -310,7 +308,7 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk",
+                                "interface-mode": "trunk",
                                 "vlan": {"members": "2995-2996"}}}}]}]}})
 
         with self.assertRaises(RPCError):
@@ -351,7 +349,7 @@ class JuniperQfxCopperProtocolTest(unittest.TestCase):
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk"
+                                "interface-mode": "trunk"
                                 }}}]}]}})
         with self.assertRaises(RPCError) as context:
             self.nc.commit()
@@ -383,7 +381,7 @@ configuration check-out failed
 </commit-results>"""))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                         interface("ge-0/0/3", [self.PORT_MODE_TAG]))
+                         interface("ge-0/0/3", ["interface-mode"]))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -410,7 +408,7 @@ configuration check-out failed
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk",
+                                "interface-mode": "trunk",
                                 "vlan": [
                                     {"members": "2995"},
                                     {"members": "2997"},
@@ -428,7 +426,7 @@ configuration check-out failed
         assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
         assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
         assert_that(int003.xpath("unit/family/ethernet-switching/*"), has_length(2))
-        assert_that(int003.xpath("unit/family/ethernet-switching/{}".format(self.PORT_MODE_TAG))[0].text,
+        assert_that(int003.xpath("unit/family/ethernet-switching/interface-mode")[0].text,
                     equal_to("trunk"))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(2))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2995"))
@@ -454,7 +452,7 @@ configuration check-out failed
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2997"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
+                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -481,7 +479,7 @@ configuration check-out failed
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk",
+                                "interface-mode": "trunk",
                                 "vlan": [
                                     {"members": "2997"},
                                 ]}}}]}]}})
@@ -505,7 +503,7 @@ configuration check-out failed
         assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
+                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -531,7 +529,7 @@ configuration check-out failed
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk",
+                                "interface-mode": "trunk",
                                 "vlan": [
                                     {"members": "2996"}
                                 ]
@@ -572,7 +570,7 @@ configuration check-out failed
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[1].text, equal_to("2997"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
+                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -606,7 +604,7 @@ configuration check-out failed
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk",
+                                "interface-mode": "trunk",
                                 "vlan": [
                                     {"members": "1100"},
                                     {"members": "1300"},
@@ -633,7 +631,7 @@ configuration check-out failed
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "access"
+                                "interface-mode": "access"
                             }}}]}]}})
         self.nc.commit()
 
@@ -647,7 +645,7 @@ configuration check-out failed
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(0))
 
         self.cleanup(vlan("VLAN1100"), vlan("VLAN1200"), vlan("VLAN1300"), vlan("VLAN1400"),
-                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
+                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -675,7 +673,7 @@ configuration check-out failed
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk",
+                                "interface-mode": "trunk",
                                 "vlan": [
                                     {"members": "2995"},
                                     {"members": "2997"},
@@ -700,7 +698,7 @@ configuration check-out failed
         assert_that(members[1].text, equal_to("2997"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", [self.PORT_MODE_TAG, "vlan"]))
+                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -1027,7 +1025,7 @@ configuration check-out failed
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk",
+                                "interface-mode": "trunk",
                                 "vlan": [
                                     {"members": "2995"},
                                     {"members": "2997"}]}}}]}]}})
@@ -1060,14 +1058,14 @@ configuration check-out failed
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "access"}}}]}]},
+                                "interface-mode": "access"}}}]}]},
                 {"interface": [
                     {"name": "ge-0/0/2"},
                     {"unit": [
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "access"}}}]}]},
+                                "interface-mode": "access"}}}]}]},
             ]})
         self.nc.commit()
 
@@ -1089,7 +1087,7 @@ configuration check-out failed
                         {"name": "0"},
                         {"family": {
                             "ethernet-switching": {
-                                self.PORT_MODE_TAG: "trunk",
+                                "interface-mode": "trunk",
                                 "vlan": [
                                     {"members": "2995"}]}}}]}]},
                 {"interface": [
