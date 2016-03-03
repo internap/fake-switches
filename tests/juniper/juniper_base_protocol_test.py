@@ -918,6 +918,14 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
         assert_that(int002.xpath("description"), has_length(0))
 
+    def test_set_interface_raises_on_unknown_interface(self):
+        with self.assertRaises(RPCError):
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/99"}
+                    ]}})
+
     def test_set_interface_disabling(self):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
