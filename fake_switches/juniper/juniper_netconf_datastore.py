@@ -18,7 +18,7 @@ import re
 from lxml import etree
 
 from fake_switches.netconf import XML_NS, XML_ATTRIBUTES, CANDIDATE, RUNNING, AlreadyLocked, NetconfError, CannotLockUncleanCandidate, first, \
-    UnknownVlan
+    UnknownVlan, UnknownInterface
 from fake_switches.netconf.netconf_protocol import dict_2_etree
 from fake_switches.switch_configuration import AggregatedPort
 
@@ -205,6 +205,9 @@ class JuniperNetconfDatastore(object):
                 port = self.original_configuration.new("AggregatedPort", port_name)
                 port.vendor_specific["has-ethernet-switching"] = True
                 conf.add_port(port)
+
+            if port_name not in [i.name for i in conf.ports]:
+                raise UnknownInterface(interface=port_name)
 
             operation = resolve_operation(interface_node)
             if operation == "delete" and isinstance(port, AggregatedPort):

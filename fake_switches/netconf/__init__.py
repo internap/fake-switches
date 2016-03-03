@@ -125,6 +125,11 @@ class UnknownVlan(NetconfError):
         super(UnknownVlan, self).__init__("No vlan matches vlan tag %s for interface %s.%s" % (vlan, interface, unit))
 
 
+class UnknownInterface(NetconfError):
+    def __init__(self, interface):
+        super(UnknownInterface, self).__init__("Interface {} not found".format(interface))
+
+
 class OperationNotSupported(NetconfError):
     def __init__(self, name):
         super(OperationNotSupported, self).__init__(
