@@ -14,7 +14,8 @@
 
 import unittest
 
-from hamcrest import assert_that, has_length, has_items, equal_to, is_, is_not
+from hamcrest import assert_that, has_length, has_items, equal_to, is_, is_not, contains_string
+
 from ncclient import manager
 from ncclient.operations import RPCError
 from ncclient.xml_ import to_xml
@@ -917,6 +918,46 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         int002 = result.xpath("data/configuration/interfaces/interface")[0]
 
         assert_that(int002.xpath("description"), has_length(0))
+
+    def test_set_interface_raises_on_physical_interface_with_bad_trailing_input(self):
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/43foobar"}
+                    ]}})
+
+        assert_that(str(exc.exception), contains_string("Invalid trailing input 'foobar' in 'ge-0/0/43foobar'"))
+
+    def test_set_interface_raises_for_physical_interface_for_out_of_range_port(self):
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/128"}
+                    ]}})
+
+        assert_that(str(exc.exception), contains_string("Port value outside range 1..127 for '128' in 'ge-0/0/128'"))
+
+    def test_set_interface_raises_on_aggregated_invalid_interface_type(self):
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ae34foobar345"}
+                    ]}})
+
+        assert_that(str(exc.exception), contains_string("Invalid interface type in 'ae34foobar345'"))
+
+    def test_set_interface_raises_on_aggregated_out_of_range_port(self):
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ae34345"}
+                    ]}})
+        assert_that(str(exc.exception), contains_string("Port value outside range 1..999 for '34345' in 'ae34345'"))
+
 
     def test_set_interface_disabling(self):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {

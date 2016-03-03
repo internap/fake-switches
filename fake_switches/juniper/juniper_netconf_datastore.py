@@ -14,11 +14,9 @@
 
 from copy import deepcopy
 import re
-
 from lxml import etree
-
 from fake_switches.netconf import XML_NS, XML_ATTRIBUTES, CANDIDATE, RUNNING, AlreadyLocked, NetconfError, CannotLockUncleanCandidate, first, \
-    UnknownVlan
+    UnknownVlan, InvalidInterfaceType, InvalidTrailingInput, AggregatePortOutOfRange, PhysicalPortOutOfRange
 from fake_switches.netconf.netconf_protocol import dict_2_etree
 from fake_switches.switch_configuration import AggregatedPort
 
@@ -114,7 +112,6 @@ class JuniperNetconfDatastore(object):
             if self.configurations[CANDIDATE].get_port_by_partial_name(p.name) is None:
                 self.configurations[RUNNING].remove_port(p)
 
-
     def lock(self, target):
         if etree.tostring(self.to_etree(RUNNING)) != etree.tostring(self.to_etree(CANDIDATE)):
             raise CannotLockUncleanCandidate()
@@ -205,6 +202,8 @@ class JuniperNetconfDatastore(object):
                 port = self.original_configuration.new("AggregatedPort", port_name)
                 port.vendor_specific["has-ethernet-switching"] = True
                 conf.add_port(port)
+
+            raise_for_invalid_interface(port_name)
 
             operation = resolve_operation(interface_node)
             if operation == "delete" and isinstance(port, AggregatedPort):
@@ -418,6 +417,23 @@ def raise_for_unused_nodes(root, handled_elements):
                 raise BadElement(element.tag)
         else:
             raise_for_unused_nodes(element, handled_elements)
+
+
+def raise_for_invalid_interface(interface):
+    interface_match = re.match(r'^(\w+)-\d/\d/(\d+)(\S*)', interface)
+    if interface_match and interface_match.group(2):
+        if interface_match and interface_match.group(3):
+            raise InvalidTrailingInput(interface_match.group(3), interface)
+
+        if interface_match and int(interface_match.group(2)) > 127:
+            raise PhysicalPortOutOfRange(interface_match.group(2), interface)
+    else:
+        interface_match = re.match(r'^[a-z]+(\S+)', interface)
+        if interface_match and any(c.isalpha() for c in interface_match.group(1)):
+            raise InvalidInterfaceType(interface)
+
+        if interface_match and int(interface_match.group(1)) > 999:
+            raise AggregatePortOutOfRange(interface_match.group(1), interface)
 
 
 def resolve_new_value(node, value_name, actual_value, transformer=None):
