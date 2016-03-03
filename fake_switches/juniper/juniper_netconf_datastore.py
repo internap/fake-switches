@@ -97,7 +97,7 @@ class JuniperNetconfDatastore(object):
                 actual_port.shutdown = updated_port.shutdown
                 actual_port.description = updated_port.description
                 actual_port.access_vlan = updated_port.access_vlan
-                actual_port.trunk_vlans = updated_port.trunk_vlans
+                actual_port.trunk_vlans = deepcopy(updated_port.trunk_vlans)
                 actual_port.trunk_native_vlan = updated_port.trunk_native_vlan
                 actual_port.speed = updated_port.speed
                 actual_port.auto_negotiation = updated_port.auto_negotiation
