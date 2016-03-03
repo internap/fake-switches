@@ -15,12 +15,14 @@
 import unittest
 
 from hamcrest import assert_that, has_length, has_items, equal_to, is_, is_not
-
 from ncclient import manager
 from ncclient.operations import RPCError
-from tests import contains_regex
-from tests.util.global_reactor import juniper_switch_ip, juniper_switch_netconf_port
+from ncclient.xml_ import to_xml
+
 from fake_switches.netconf import dict_2_etree, XML_ATTRIBUTES, XML_TEXT
+from tests import contains_regex
+from tests.netconf.netconf_protocol_test import xml_equals_to
+from tests.util.global_reactor import juniper_switch_ip, juniper_switch_netconf_port
 
 
 class JuniperBaseProtocolTest(unittest.TestCase):
@@ -1144,6 +1146,59 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
         output = result.xpath("configuration-information/configuration-output")[0]
         assert_that(output.text.strip(), is_(""))
+
+    def test_discard_trunk_members_really_works(self):
+
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN10"},
+                    {"vlan-id": "10"}]},
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "port-mode": "trunk",
+                                "vlan": [
+                                    {"members": "10"},
+                                ]}}}]}]}})
+        self.nc.commit()
+
+        before = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": [{"interfaces": {}}, {"vlans": {}}]}
+        }))
+
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN11"},
+                    {"vlan-id": "11"}]},
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "port-mode": "trunk",
+                                "vlan": [
+                                    {"members": "11"},
+                                ]}}}]}]}})
+        self.nc.discard_changes()
+
+        after = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": [{"interfaces": {}}, {"vlans": {}}]}
+        }))
+
+        assert_that(to_xml(before.xpath("data/configuration/vlans")[0]), xml_equals_to(after.xpath("data/configuration/vlans")[0]))
+        assert_that(to_xml(before.xpath("data/configuration/interfaces")[0]), xml_equals_to(after.xpath("data/configuration/interfaces")[0]))
+
+        self.cleanup(vlan("VLAN10"), interface("ge-0/0/3", ["port-mode", "vlan"]))
 
     def edit(self, config):
         result = self.nc.edit_config(target="candidate", config=dict_2_etree({
