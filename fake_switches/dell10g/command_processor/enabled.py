@@ -11,8 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import re
+from collections import namedtuple
 
-from fake_switches.dell.command_processor.enabled import DellEnabledCommandProcessor, to_vlan_ranges, _is_vlan_id
+from fake_switches import group_sequences
+from fake_switches.dell.command_processor.enabled import DellEnabledCommandProcessor, to_vlan_ranges, _is_vlan_id, \
+    _assemble_elements_on_lines
 from fake_switches.dell10g.command_processor.config import \
     Dell10GConfigCommandProcessor
 from fake_switches.switch_configuration import VlanPort, AggregatedPort
@@ -174,11 +178,32 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
         self.write_line("-----  ---------------                  -------------  --------------")
 
         for vlan in vlans:
+            ports_strings = self._build_port_strings(self.get_ports_for_vlan(vlan))
             self.write_line("{number: <5}  {name: <32} {ports: <13}  {type}".format(
-                number=vlan.number, name=vlan_name(vlan), ports="",
+                number=vlan.number, name=vlan_name(vlan), ports=ports_strings[0],
                 type="Default" if vlan.number == 1 else "Static"))
-
+            for port_string in ports_strings[1:]:
+                self.write_line("{number: <5}  {name: <32} {ports: <13}  {type}".format(
+                        number="", name="", ports=port_string, type=""))
         self.write_line("")
+
+    def _build_port_strings(self, ports):
+        port_range_list = group_sequences(ports, are_in_sequence=self._are_in_sequence)
+        port_list = []
+        for port_range in port_range_list:
+            first_details = self._get_interface_details(port_range[0].name)
+            if len(port_range) == 1:
+                port_list.append("Te{}{}".format(first_details.port_prefix, first_details.port))
+            else:
+                port_list.append("Te{0}{1}-{2}".format(first_details.port_prefix, first_details.port, self._get_interface_details(port_range[-1].name).port))
+        return _assemble_elements_on_lines(port_list, max_line_char=13)
+
+    def _get_interface_details(self, interface_name):
+        interface_descriptor = namedtuple('InterfaceDescriptor', "interface port_prefix port")
+        re_port_number = re.compile('(\d/\d/)(\d+)')
+        interface, slot_descriptor = interface_name.split(" ")
+        port_prefix, port = re_port_number.match(slot_descriptor).groups()
+        return interface_descriptor(interface, port_prefix, int(port))
 
     def do_terminal(self, *args):
         self.write_line("")

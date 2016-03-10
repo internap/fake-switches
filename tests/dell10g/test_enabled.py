@@ -17,7 +17,7 @@ import unittest
 from flexmock import flexmock_teardown
 
 from tests.dell10g import enable, assert_running_config_contains_in_order, \
-    configuring_vlan, ssh_protocol_factory, telnet_protocol_factory, configuring, add_vlan
+    configuring_vlan, ssh_protocol_factory, telnet_protocol_factory, configuring, add_vlan, configuring_interface
 from tests.util.protocol_util import with_protocol
 
 
@@ -173,6 +173,66 @@ class Dell10GEnabledTest(unittest.TestCase):
         configuring(t, do="no vlan 17")
         configuring(t, do="no vlan 100")
         configuring(t, do="no vlan 1000")
+
+
+    @with_protocol
+    def test_show_vlan_with_port(self, t):
+        enable(t)
+
+        add_vlan(t, 10)
+
+        configuring_interface(t, "tengigabitethernet 0/0/1", "switchport mode trunk")
+        configuring_interface(t, "tengigabitethernet 0/0/1", "switchport trunk allowed vlan 10")
+
+        t.write("show vlan")
+        t.readln("")
+        t.readln("VLAN   Name                             Ports          Type")
+        t.readln("-----  ---------------                  -------------  --------------")
+        t.readln("1      default                                         Default")
+        t.readln("10     VLAN10                           Te0/0/1        Static")
+        t.readln("")
+        t.read("my_switch#")
+
+        configuring_interface(t, "tengigabitethernet 0/0/1", "switchport trunk allowed vlan remove 10")
+        configuring_interface(t, "tengigabitethernet 0/0/1", "no switchport mode")
+        configuring(t, do="no vlan 10")
+
+    @with_protocol
+    def test_show_vlan_with_ports(self, t):
+        enable(t)
+
+        add_vlan(t, 10)
+        add_vlan(t, 11)
+
+        configuring_interface(t, "tengigabitethernet 0/0/1", "switchport mode trunk")
+        configuring_interface(t, "tengigabitethernet 0/0/2", "switchport mode trunk")
+        configuring_interface(t, "tengigabitethernet 1/0/2", "switchport mode trunk")
+
+        configuring_interface(t, "tengigabitethernet 0/0/1", "switchport trunk allowed vlan 10-11")
+        configuring_interface(t, "tengigabitethernet 0/0/2", "switchport trunk allowed vlan 10")
+        configuring_interface(t, "tengigabitethernet 1/0/2", "switchport trunk allowed vlan 11")
+
+        t.write("show vlan")
+        t.readln("")
+        t.readln("VLAN   Name                             Ports          Type")
+        t.readln("-----  ---------------                  -------------  --------------")
+        t.readln("1      default                                         Default")
+        t.readln("10     VLAN10                           Te0/0/1-2      Static")
+        t.readln("11     VLAN11                           Te0/0/1,       Static")
+        t.readln("                                        Te1/0/2        ")
+        t.readln("")
+        t.read("my_switch#")
+
+        configuring_interface(t, "tengigabitethernet 0/0/1", "no switchport mode")
+        configuring_interface(t, "tengigabitethernet 0/0/2", "no switchport mode")
+        configuring_interface(t, "tengigabitethernet 1/0/2", "no switchport mode")
+
+        configuring_interface(t, "tengigabitethernet 0/0/1", "switchport trunk allowed vlan remove 10,11")
+        configuring_interface(t, "tengigabitethernet 0/0/2", "switchport trunk allowed vlan remove 10")
+        configuring_interface(t, "tengigabitethernet 1/0/2", "switchport trunk allowed vlan remove 11")
+
+        configuring(t, do="no vlan 10")
+        configuring(t, do="no vlan 11")
 
     @with_protocol
     def test_show_vlan_id(self, t):
