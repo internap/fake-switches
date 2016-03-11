@@ -231,15 +231,27 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
         return ports
 
     def _build_port_strings(self, ports):
-        port_range_list = group_sequences(ports, are_in_sequence=_are_in_sequence)
+        port_range_list = group_sequences(ports, are_in_sequence=self._are_in_sequence)
         port_list = []
         for port_range in port_range_list:
-            first_details = _get_interface_details(port_range[0].name)
+            first_details = self._get_interface_details(port_range[0].name)
             if len(port_range) == 1:
                 port_list.append("{}{}".format(first_details.port_prefix, first_details.port))
             else:
-                port_list.append("{0}{1}-{0}{2}".format(first_details.port_prefix, first_details.port, _get_interface_details(port_range[-1].name).port))
+                port_list.append("{0}{1}-{0}{2}".format(first_details.port_prefix, first_details.port, self._get_interface_details(port_range[-1].name).port))
         return _assemble_elements_on_lines(port_list, max_line_char=13)
+
+    def _get_interface_details(self, interface_name):
+        interface_descriptor = namedtuple('InterfaceDescriptor', "interface port_prefix port")
+        re_port_number = re.compile('(\d/[a-zA-Z]+)(\d+)')
+        interface, slot_descriptor = interface_name.split(" ")
+        port_prefix, port = re_port_number.match(slot_descriptor).groups()
+        return interface_descriptor(interface, port_prefix, int(port))
+
+    def _are_in_sequence(self, a, b):
+        details_a = self._get_interface_details(a.name)
+        details_b = self._get_interface_details(b.name)
+        return details_a.port + 1 == details_b.port and details_a.port_prefix == details_b.port_prefix
 
     def continue_vlan_pages(self, lines, _):
         self.write_line("\r                     ")
@@ -321,20 +333,6 @@ def _is_vlan_id(text):
         return False
 
     return 1 <= number <= 4093
-
-
-def _are_in_sequence(a,b):
-    details_a = _get_interface_details(a.name)
-    details_b = _get_interface_details(b.name)
-    return details_a.port + 1 == details_b.port and details_a.port_prefix == details_b.port_prefix
-
-
-def _get_interface_details(interface_name):
-    interface_descriptor = namedtuple('InterfaceDescriptor', "interface port_prefix port")
-    re_port_number = re.compile('(\d/[a-zA-Z]+)(\d+)')
-    interface, slot_descriptor = interface_name.split(" ")
-    port_prefix, port = re_port_number.match(slot_descriptor).groups()
-    return interface_descriptor(interface, port_prefix, int(port))
 
 
 def _assemble_elements_on_lines(elements, max_line_char, separator=','):
