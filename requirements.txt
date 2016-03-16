@@ -1,4 +1,4 @@
 netaddr>=0.7.13
 tftpy>=0.6.1
-Twisted>=11.1.0
+Twisted==15.5.0
 pyasn1>=0.1.7
