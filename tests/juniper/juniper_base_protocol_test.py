@@ -985,6 +985,20 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         int002 = result.xpath("data/configuration/interfaces/interface")[0]
         assert_that(int002.xpath("disable"), has_length(0))
 
+    def test_set_interface_enabling_already_enabled(self):
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
+
+        int002 = result.xpath("data/configuration/interfaces/interface")[0]
+        assert_that(int002.xpath("disable"), has_length(0))
+
+        with self.assertRaises(RPCError) as exc:
+            self.edit({"interfaces": {
+                "interface": [{"name": "ge-0/0/2"}, {"disable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
+            self.nc.commit()
+
+        assert_that(str(exc.exception), is_("statement not found: "))
+
     def test_create_aggregated_port(self):
         self.edit({
             "interfaces": {
