@@ -219,8 +219,11 @@ class JuniperNetconfDatastore(object):
     def apply_interface_data(self, interface_node, port):
         port.description = resolve_new_value(interface_node, "description", port.description)
 
-        if first(interface_node.xpath("disable")) is not None:
-            port.shutdown = True if resolve_operation(first(interface_node.xpath("disable"))) != "delete" else False
+        shutdown_node = first(interface_node.xpath("disable"))
+        if shutdown_node is not None:
+            if port.shutdown is False and resolve_operation(shutdown_node) == "delete":
+                raise NotFound('')
+            port.shutdown = resolve_operation(shutdown_node) != "delete"
 
         ether_options_attributes = first(interface_node.xpath("ether-options"))
         if ether_options_attributes is not None:
