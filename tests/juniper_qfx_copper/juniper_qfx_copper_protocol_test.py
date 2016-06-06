@@ -16,7 +16,7 @@ import unittest
 from lxml import etree
 
 from fake_switches.netconf import dict_2_etree, XML_TEXT, XML_ATTRIBUTES
-from hamcrest import assert_that, has_length, equal_to, has_items, is_, is_not
+from hamcrest import assert_that, has_length, equal_to, has_items, is_, is_not, contains_string
 from ncclient import manager
 from ncclient.operations import RPCError
 from tests import contains_regex
@@ -968,6 +968,15 @@ configuration check-out failed
         int002 = result.xpath("data/configuration/interfaces/interface")[0]
 
         assert_that(int002.xpath("native-vlan-id"), has_length(0))
+
+    def test_set_interface_raises_on_aggregated_out_of_range_port(self):
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ae9000"}
+                    ]}})
+        assert_that(str(exc.exception), contains_string("device value outside range 0..999 for '9000' in 'ae9000'"))
 
     def test_create_aggregated_port(self):
         self.edit({

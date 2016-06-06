@@ -956,8 +956,7 @@ class JuniperBaseProtocolTest(unittest.TestCase):
                     "interface": [
                         {"name": "ae34345"}
                     ]}})
-        assert_that(str(exc.exception), contains_string("Port value outside range 1..999 for '34345' in 'ae34345'"))
-
+        assert_that(str(exc.exception), contains_string("device value outside range 0..127 for '34345' in 'ae34345'"))
 
     def test_set_interface_disabling(self):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {

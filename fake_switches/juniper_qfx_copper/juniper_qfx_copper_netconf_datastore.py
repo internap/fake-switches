@@ -21,6 +21,7 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
         super(JuniperQfxCopperNetconfDatastore, self).__init__(configuration)
 
         self.PORT_MODE_TAG = "interface-mode"
+        self.MAX_AGGREGATED_ETHERNET_INTERFACES = 999
 
     def apply_trunk_native_vlan(self, interface_data, port):
         if port.trunk_native_vlan is not None:
