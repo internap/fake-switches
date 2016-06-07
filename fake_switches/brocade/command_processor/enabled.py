@@ -50,7 +50,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             if routes:
                 self.write_line("        Destination        Gateway        Port          Cost          Type Uptime src-vrf")
             for n, route in enumerate(routes):
-                self.write_line("{index:<8}{destination:<18} {next_hop:}".format(index=n+1, destination=route.dest, next_hop=route.next_hop))
+                self.write_line("{index:<8}{destination:<18} {next_hop:}".format(index=n+1, destination=str(route.dest), next_hop=str(route.next_hop)))
             self.write_line("")
         elif "version".startswith(args[0]):
             self.show_version()
