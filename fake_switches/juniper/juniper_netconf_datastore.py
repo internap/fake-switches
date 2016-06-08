@@ -31,6 +31,7 @@ class JuniperNetconfDatastore(object):
         self.reset()
 
         self.PORT_MODE_TAG = "port-mode"
+        self.MAX_AGGREGATED_ETHERNET_INTERFACES = 127
 
     def reset(self):
         self.configurations = {
@@ -203,7 +204,7 @@ class JuniperNetconfDatastore(object):
                 port.vendor_specific["has-ethernet-switching"] = True
                 conf.add_port(port)
 
-            raise_for_invalid_interface(port_name)
+            raise_for_invalid_interface(port_name, self.MAX_AGGREGATED_ETHERNET_INTERFACES)
 
             operation = resolve_operation(interface_node)
             if operation == "delete" and isinstance(port, AggregatedPort):
@@ -422,7 +423,7 @@ def raise_for_unused_nodes(root, handled_elements):
             raise_for_unused_nodes(element, handled_elements)
 
 
-def raise_for_invalid_interface(interface):
+def raise_for_invalid_interface(interface, max_aggregated_interfaces):
     interface_match = re.match(r'^(\w+)-\d/\d/(\d+)(\S*)', interface)
     if interface_match and interface_match.group(2):
         if interface_match and interface_match.group(3):
@@ -435,8 +436,8 @@ def raise_for_invalid_interface(interface):
         if interface_match and any(c.isalpha() for c in interface_match.group(1)):
             raise InvalidInterfaceType(interface)
 
-        if interface_match and int(interface_match.group(1)) > 999:
-            raise AggregatePortOutOfRange(interface_match.group(1), interface)
+        if interface_match and int(interface_match.group(1)) > max_aggregated_interfaces:
+            raise AggregatePortOutOfRange(interface_match.group(1), interface, max_range=max_aggregated_interfaces)
 
 
 def resolve_new_value(node, value_name, actual_value, transformer=None):

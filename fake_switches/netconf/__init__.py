@@ -126,8 +126,8 @@ class UnknownVlan(NetconfError):
 
 
 class AggregatePortOutOfRange(NetconfError):
-    def __init__(self, port, interface):
-        super(AggregatePortOutOfRange, self).__init__("Port value outside range 1..999 for '{}' in '{}'".format(port, interface))
+    def __init__(self, port, interface, max_range=999):
+        super(AggregatePortOutOfRange, self).__init__("device value outside range 0..{} for '{}' in '{}'".format(max_range, port, interface))
 
 
 class PhysicalPortOutOfRange(NetconfError):
