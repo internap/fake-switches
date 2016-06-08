@@ -102,7 +102,7 @@ class NetconfProtocol(Protocol):
 
 def error_to_rpcerror_dict(error):
     error_specs = {
-        "error-message": error.message
+        "error-message": str(error)
     }
 
     if error.path: error_specs["error-path"] = error.path

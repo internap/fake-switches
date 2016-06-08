@@ -18,13 +18,13 @@ from twisted.cred import portal, checkers
 from twisted.conch import avatar, interfaces as conchinterfaces
 from twisted.conch.ssh import factory, keys, session
 from twisted.conch.insults import insults
-from zope.interface import implements
+import zope.interface
 
 from fake_switches.terminal.ssh import SwitchSSHShell
 
 
 class SSHDemoAvatar(avatar.ConchUser):
-    implements(conchinterfaces.ISession)
+    zope.interface.implements(conchinterfaces.ISession)
 
     def __init__(self, username, switch_core):
         avatar.ConchUser.__init__(self)
@@ -58,7 +58,7 @@ class SSHDemoAvatar(avatar.ConchUser):
 
 
 class SSHDemoRealm:
-    implements(portal.IRealm)
+    zope.interface.implements(portal.IRealm)
 
     def __init__(self, switch_core):
         self.switch_core = switch_core
