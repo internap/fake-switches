@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
 
 from hamcrest import assert_that, has_length, has_items, equal_to, is_, is_not, contains_string
+from tests.juniper import BaseJuniper, vlan
 
 from ncclient import manager
 from ncclient.operations import RPCError
@@ -26,15 +26,7 @@ from tests.netconf.netconf_protocol_test import xml_equals_to
 from tests.util.global_reactor import juniper_switch_ip, juniper_switch_netconf_port
 
 
-class JuniperBaseProtocolTest(unittest.TestCase):
-    def setUp(self):
-        self.nc = self.create_client()
-
-    def tearDown(self):
-        try:
-            self.nc.discard_changes()
-        finally:
-            self.nc.close_session()
+class JuniperBaseProtocolTest(BaseJuniper):
 
     def create_client(self):
         return manager.connect(
@@ -1168,10 +1160,8 @@ class JuniperBaseProtocolTest(unittest.TestCase):
         assert_that(ge001.xpath("ether-options/*"), has_length(1))
         assert_that(ge001.xpath("ether-options/speed/ethernet-10g"), has_length(1))
 
-        ge002 = self.get_interface("ge-0/0/2")
-        assert_that(ge002.xpath("*"), has_length(1))
-        assert_that(ge002.xpath("unit"), has_length(0))
-        assert_that(ge002.xpath("ether-options"), has_length(0))
+        ge002 = self.get_interface("ge-0/0/2", )
+        assert_that(ge002, is_(None))
 
         self.cleanup(vlan("VLAN2995"), interface("ae1"), reset_interface("ge-0/0/1"), reset_interface("ge-0/0/2"))
 
@@ -1254,33 +1244,43 @@ class JuniperBaseProtocolTest(unittest.TestCase):
 
         self.cleanup(vlan("VLAN10"), interface("ge-0/0/3", ["port-mode", "vlan"]))
 
-    def edit(self, config):
-        result = self.nc.edit_config(target="candidate", config=dict_2_etree({
-            "config": {
-                "configuration": config
-            }
-        }))
-        assert_that(result.xpath("//rpc-reply/ok"), has_length(1))
-
-    def cleanup(self, *args):
-        for cleanup in args:
-            cleanup(self.edit)
+    def test_replace_port_with_nothing_leaves_configuration_empty(self):
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "port-mode": "access"}}}]}]},
+            ]})
         self.nc.commit()
 
-    def get_interface(self, name):
-        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
-            "configuration": {"interfaces": {"interface": {"name": name}}}}}))
+        self.edit({
+            "interfaces": [
+                {"interface": [{XML_ATTRIBUTES: {"operation": "replace"}},
+                               {"name": "ge-0/0/1"},
+                               ]}
+            ]})
+        self.nc.commit()
 
-        return result.xpath("data/configuration/interfaces/interface")[0]
+        get_interface_reply = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
 
+        assert_that(get_interface_reply.xpath("data/configuration"), has_length(0))
 
-def vlan(vlan_name):
-    def m(edit):
-        edit({"vlans": {
-            "vlan": {"name": vlan_name, XML_ATTRIBUTES: {"operation": "delete"}}
-        }})
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"disable": ""}]}]})
 
-    return m
+        self.nc.commit()
+
+        get_interface_reply = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
+        assert_that(get_interface_reply.xpath("data/configuration"), has_length(1))
 
 
 def interface(interface_name, fields=None):
