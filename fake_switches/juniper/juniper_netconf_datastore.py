@@ -124,9 +124,7 @@ class JuniperNetconfDatastore(object):
         self.configurations[target].locked = False
 
     def interface_to_etree(self, port):
-        interface_data = [
-            {"name": port.name}
-        ]
+        interface_data = []
 
         if port.description is not None:
             interface_data.append({"description": port.description})
@@ -188,6 +186,9 @@ class JuniperNetconfDatastore(object):
                 }})
 
             self.apply_trunk_native_vlan(interface_data, port)
+
+        if len(interface_data) > 0:
+            interface_data.insert(0, {"name": port.name})
 
         return interface_data
 
