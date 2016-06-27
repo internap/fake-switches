@@ -82,21 +82,21 @@ class ConfigCommandProcessor(BaseCommandProcessor):
             else:
                 self.show_unknown_interface_error_message()
 
-    def show_unknown_interface_error_message(self):
-        self.write_line("              ^")
-        self.write_line("% Invalid input detected at '^' marker (not such interface)")
-        self.write_line("")
-
-    def make_aggregated_port(self, interface_name):
-        return self.switch_configuration.new("AggregatedPort", interface_name.capitalize())
-
     def do_no_interface(self, *args):
         port = self.switch_configuration.get_port_by_partial_name("".join(args))
         if isinstance(port, VlanPort) or isinstance(port, AggregatedPort):
             self.switch_configuration.remove_port(port)
 
+    def do_exit(self):
+        self.is_done = True
+
+    def show_unknown_interface_error_message(self):
+        self.write_line("              ^")
+        self.write_line("% Invalid input detected at '^' marker (not such interface)")
+        self.write_line("")
+
     def make_vlan_port(self, vlan_id, interface_name):
         return self.switch_configuration.new("VlanPort", vlan_id, interface_name.capitalize())
 
-    def do_exit(self):
-        self.is_done = True
+    def make_aggregated_port(self, interface_name):
+        return self.switch_configuration.new("AggregatedPort", interface_name.capitalize())
