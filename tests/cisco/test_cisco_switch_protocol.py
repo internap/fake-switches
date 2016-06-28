@@ -1373,6 +1373,47 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
         t.readln("")
         t.read("my_switch#")
 
+    @with_protocol
+    def test_reset_port(self, t):
+        enable(t)
+
+        configuring_interface(t, "FastEthernet0/3", do="description shizzle the whizzle and drizzle with lizzle")
+        configuring_interface(t, "FastEthernet0/3", do="shutdown")
+        set_interface_on_vlan(t, "FastEthernet0/3", "123")
+
+        assert_interface_configuration(t, "FastEthernet0/3", [
+            "interface FastEthernet0/3",
+            " description shizzle the whizzle and drizzle with lizzle",
+            " switchport access vlan 123",
+            " switchport mode access",
+            " shutdown",
+            "end"])
+
+        configuring(t, "default interface FastEthernet0/3")
+
+        assert_interface_configuration(t, "FastEthernet0/3", [
+            "interface FastEthernet0/3",
+            "end"])
+
+    @with_protocol
+    def test_reset_port_invalid_interface_fails(self, t):
+        enable(t)
+
+        configuring_interface(t, "FastEthernet0/3", do="description shizzle the whizzle and drizzle with lizzle")
+
+        t.write("conf t")
+        t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
+        t.read("my_switch(config)#")
+
+        t.write("default interface WrongInterfaceName0/3")
+
+        t.readln("\s*\^", regex=True)
+        t.readln("% Invalid input detected at '^' marker (not such interface)")
+        t.readln("")
+        t.read("my_switch(config)#")
+
+        configuring(t, "default interface FastEthernet0/3")
+
 
 def enable(t):
     t.write("enable")

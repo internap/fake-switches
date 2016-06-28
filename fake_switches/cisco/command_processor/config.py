@@ -87,6 +87,15 @@ class ConfigCommandProcessor(BaseCommandProcessor):
         if isinstance(port, VlanPort) or isinstance(port, AggregatedPort):
             self.switch_configuration.remove_port(port)
 
+    def do_default(self, cmd, *args):
+        if 'interface'.startswith(cmd):
+            interface_name = self.interface_separator.join(args)
+            port = self.switch_configuration.get_port_by_partial_name(interface_name)
+            if port:
+                port.reset()
+            else:
+                self.show_unknown_interface_error_message()
+
     def do_exit(self):
         self.is_done = True
 
