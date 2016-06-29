@@ -152,11 +152,91 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         remove_vlan(t, "123")
 
     @with_protocol
-    def test_command_interface_tagged_with_native_default_vlan(self, t):
+    def test_command_show_interface_invalid_interface_name(self, t):
         enable(t)
 
         t.write("show interface ethe 1/25")
         t.readln("Error - invalid interface 1/25")
+        t.read("SSH@my_switch#")
+
+        t.write("show interface ethe 1/64")
+        t.readln("Error - invalid interface 1/64")
+        t.read("SSH@my_switch#")
+
+        t.write("show interface ethe 1/65")
+        t.readln("Invalid input -> 1/65")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch#")
+
+        t.write("show interface ethe 1/99")
+        t.readln("Invalid input -> 1/99")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch#")
+
+        t.write("show interface ethe 2/1")
+        t.readln("Error - interface 2/1 is not an ETHERNET interface")
+        t.read("SSH@my_switch#")
+
+    @with_protocol
+    def test_command_no_interface_invalid_interface_name(self, t):
+        enable(t)
+        t.write("configure terminal")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("no interface ethe 1/25")
+        t.readln("Error - invalid interface 1/25")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("no interface ethe 1/64")
+        t.readln("Error - invalid interface 1/64")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("no interface ethe 1/65")
+        t.readln("Invalid input -> 1/65")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("no interface ethe 1/99")
+        t.readln("Invalid input -> 1/99")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("no interface ethe 2/1")
+        t.readln("Error - interface 2/1 is not an ETHERNET interface")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("exit")
+        t.read("SSH@my_switch#")
+
+    @with_protocol
+    def test_command_interface_invalid_interface_name(self, t):
+        enable(t)
+        t.write("configure terminal")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("interface ethe 1/25")
+        t.readln("Error - invalid interface 1/25")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("interface ethe 1/64")
+        t.readln("Error - invalid interface 1/64")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("interface ethe 1/65")
+        t.readln("Invalid input -> 1/65")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("interface ethe 1/99")
+        t.readln("Invalid input -> 1/99")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("interface ethe 2/1")
+        t.readln("Error - interface 2/1 is not an ETHERNET interface")
+        t.read("SSH@my_switch(config)#")
+
+        t.write("exit")
         t.read("SSH@my_switch#")
 
     @with_protocol
@@ -641,7 +721,12 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         configuring_interface(t, "1/1", do="no port-name")
         configuring_interface(t, "1/3", do="no port-name")
         configuring_interface(t, "1/3", do="disable")
-        configuring_interface(t, "1/4", do="disable")
+        
+        configuring(t, do="no interface ethernet 1/4")
+
+        t.write("show running-config interface")
+        t.readln("")
+        t.read("SSH@my_switch#")
 
     @with_protocol
     def test_overlapping_and_secondary_ips(self, t):

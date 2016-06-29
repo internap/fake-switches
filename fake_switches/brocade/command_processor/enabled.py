@@ -14,6 +14,7 @@
 
 import re
 from fake_switches import group_sequences
+from fake_switches.brocade.command_processor import explain_missing_port
 from fake_switches.brocade.command_processor.config import ConfigCommandProcessor
 from fake_switches.command_processing.switch_tftp_parser import SwitchTftpParser
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
@@ -140,15 +141,15 @@ class EnabledCommandProcessor(BaseCommandProcessor):
 
     def show_int(self, args):
         ports = []
+        port_name = " ".join(args[1:])
         if len(args) > 1:
-            port = self.switch_configuration.get_port_by_partial_name(" ".join(args[1:]))
+            port = self.switch_configuration.get_port_by_partial_name(port_name)
             if port:
                 ports.append(port)
         else:
             ports = self.switch_configuration.ports
         if not ports:
-            name, number = split_port_name(" ".join(args[1:]))
-            self.write_line("Error - invalid interface {}".format(number))
+            [self.write_line(l) for l in explain_missing_port(port_name)]
         for port in ports:
             if isinstance(port, VlanPort):
                 _, port_id = split_port_name(port.name)
