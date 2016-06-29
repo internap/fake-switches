@@ -11,14 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from fake_switches.brocade.command_processor import explain_missing_port
 from fake_switches.brocade.command_processor.config_interface import ConfigInterfaceCommandProcessor
 from fake_switches.brocade.command_processor.config_virtual_interface import \
     ConfigVirtualInterfaceCommandProcessor
 from fake_switches.brocade.command_processor.config_vlan import ConfigVlanCommandProcessor
 from fake_switches.brocade.command_processor.config_vrf import ConfigVrfCommandProcessor
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
-from fake_switches.switch_configuration import VlanPort
+from fake_switches.switch_configuration import Port, VlanPort
 
 
 class ConfigCommandProcessor(BaseCommandProcessor):
@@ -77,14 +77,18 @@ class ConfigCommandProcessor(BaseCommandProcessor):
             if "ve".startswith(args[0]):
                 self.write_line("Error - invalid virtual ethernet interface number.")
             else:
-                self.write_line("Invalid input -> %s" % " ".join(args[1:]))
-                self.write_line("Type ? for a list")
+                [self.write_line(l) for l in explain_missing_port(" ".join(args))]
 
     def do_no_interface(self, *args):
         port = self.switch_configuration.get_port_by_partial_name("".join(args))
-        if port and isinstance(port, VlanPort):
-            self.switch_configuration.remove_port(port)
-            self.switch_configuration.add_port(self.switch_configuration.new("VlanPort", port.vlan_id, port.name))
+        if port:
+            if isinstance(port, VlanPort):
+                self.switch_configuration.remove_port(port)
+                self.switch_configuration.add_port(self.switch_configuration.new("VlanPort", port.vlan_id, port.name))
+            elif isinstance(port, Port):
+                port.reset()
+        else:
+            [self.write_line(l) for l in explain_missing_port(" ".join(args))]
 
     def do_no_ip(self, cmd, *args):
         if "vrf".startswith(cmd):
