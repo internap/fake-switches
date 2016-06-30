@@ -86,7 +86,13 @@ class ConfigCommandProcessor(BaseCommandProcessor):
                 self.switch_configuration.remove_port(port)
                 self.switch_configuration.add_port(self.switch_configuration.new("VlanPort", port.vlan_id, port.name))
             elif isinstance(port, Port):
+                trunk_vlans = port.trunk_vlans
+                access_vlan = port.access_vlan
+                trunk_native_vlan = port.trunk_native_vlan
                 port.reset()
+                port.trunk_vlans = trunk_vlans
+                port.access_vlan = access_vlan
+                port.trunk_native_vlan = trunk_native_vlan
         else:
             [self.write_line(l) for l in explain_missing_port(" ".join(args))]
 

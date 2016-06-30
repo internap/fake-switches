@@ -728,6 +728,38 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         t.readln("")
         t.read("SSH@my_switch#")
 
+
+    @with_protocol
+    def test_configuring_no_interface_does_not_remove_interfaces_from_vlans(self, t):
+        enable(t)
+
+        create_vlan(t, "3000")
+        configuring_vlan(t, "3000", do="untagged ethernet 1/1")
+        configuring_vlan(t, "3000", do="tagged ethernet 1/2")
+
+        create_vlan(t, "3001")
+        configuring_vlan(t, "3001", do="untagged ethernet 1/3")
+
+        configuring(t, do="no interface ethernet 1/1")
+        configuring(t, do="no interface ethernet 1/2")
+
+        t.write("show running-config vlan | begin vlan 3000")
+        t.readln("vlan 3000")
+        t.readln(" untagged ethe 1/1")
+        t.readln(" tagged ethe 1/2")
+        t.readln("!")
+        t.readln("vlan 3001")
+        t.readln(" untagged ethe 1/3")
+        t.readln("!")
+
+        t.readln("!")
+        t.readln("")
+        t.read("SSH@my_switch#")
+
+        configuring(t, do="no vlan 3000")
+        configuring(t, do="no vlan 3001")
+
+
     @with_protocol
     def test_overlapping_and_secondary_ips(self, t):
         enable(t)
