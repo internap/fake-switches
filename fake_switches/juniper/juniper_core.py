@@ -18,7 +18,7 @@ import textwrap
 from lxml import etree
 
 from fake_switches.juniper.juniper_netconf_datastore import JuniperNetconfDatastore, NS_JUNOS
-from fake_switches.netconf import OperationNotSupported, RUNNING, CANDIDATE, Response, xml_equals
+from fake_switches.netconf import OperationNotSupported, RUNNING, CANDIDATE, Response, xml_equals, NetconfError
 from fake_switches.netconf.capabilities import Candidate1_0, ConfirmedCommit1_0, Validate1_0, Url1_0, \
     Capability
 from fake_switches.netconf.netconf_protocol import NetconfProtocol
@@ -27,9 +27,6 @@ from fake_switches.netconf.netconf_protocol import NetconfProtocol
 class JuniperSwitchCore(object):
     def __init__(self, switch_configuration, datastore_class=JuniperNetconfDatastore):
         self.switch_configuration = switch_configuration
-        for p in self.switch_configuration.ports:
-            p.vendor_specific["has-ethernet-switching"] = True
-
         self.last_connection_id = 0
         self.datastore = datastore_class(self.switch_configuration)
 
@@ -76,6 +73,12 @@ class NetconfJunos1_0(Capability):
             """).format("There were some changes" if not xml_equals(running, candidate) else ""), parser=etree.XMLParser(recover=True))
 
         return Response(data)
+
+    def get_interface_information(self, request):
+        if len(request) == 1 and request[0].tag == "terse":
+            return Response(self.datastore.get_interface_information_terse())
+
+        raise NetconfError("syntax error", err_type="protocol", tag="operation-failed")
 
 
 class DmiSystem1_0(Capability):

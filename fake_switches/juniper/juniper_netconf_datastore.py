@@ -20,7 +20,6 @@ from fake_switches.netconf import XML_NS, XML_ATTRIBUTES, CANDIDATE, RUNNING, Al
 from fake_switches.netconf.netconf_protocol import dict_2_etree
 from fake_switches.switch_configuration import AggregatedPort
 
-
 NS_JUNOS = "http://xml.juniper.net/junos/11.4R1/junos"
 
 
@@ -123,6 +122,14 @@ class JuniperNetconfDatastore(object):
     def unlock(self, target):
         self.configurations[target].locked = False
 
+    def get_interface_information_terse(self):
+        return dict_2_etree({
+            "interface-information":
+                [{XML_ATTRIBUTES: {"style": "terse"}}]
+                + _port_terse(self.configurations[RUNNING])
+                + _aggregated_port_terse(self.configurations[RUNNING])})
+
+
     def interface_to_etree(self, port):
         interface_data = []
 
@@ -166,7 +173,7 @@ class JuniperNetconfDatastore(object):
             if len(ether_options.items()) > 0:
                 interface_data.append({"ether-options": ether_options})
 
-        if port.vendor_specific["has-ethernet-switching"]:
+        if port.vendor_specific.get("has-ethernet-switching"):
             ethernet_switching = {}
             if port.mode is not None:
                 ethernet_switching[self.PORT_MODE_TAG] = port.mode
@@ -185,7 +192,7 @@ class JuniperNetconfDatastore(object):
                     }
                 }})
 
-            self.apply_trunk_native_vlan(interface_data, port)
+        self.apply_trunk_native_vlan(interface_data, port)
 
         if len(interface_data) > 0:
             interface_data.insert(0, {"name": port.name})
@@ -210,10 +217,11 @@ class JuniperNetconfDatastore(object):
             operation = resolve_operation(interface_node)
             if operation == "delete" and isinstance(port, AggregatedPort):
                 conf.remove_port(port)
+            elif operation == "delete":
+                port.reset()
             else:
                 if operation == "replace":
                     port.reset()
-                    port.vendor_specific["has-ethernet-switching"] = False
                 self.apply_interface_data(interface_node, port)
 
         return handled_elements
@@ -324,7 +332,7 @@ class JuniperNetconfDatastore(object):
         return port.trunk_native_vlan
 
     def apply_trunk_native_vlan(self, interface_data, port):
-        if port.vendor_specific["has-ethernet-switching"]:
+        if port.vendor_specific.get("has-ethernet-switching"):
             if port.trunk_native_vlan is not None:
                 if not "unit" in interface_data[-1]:
                     interface_data.append({"unit": {
@@ -509,7 +517,6 @@ def extract_protocols(configuration):
             if port.lldp_receive is False and port.lldp_transmit is False:
                 interface["interface"].append({"disable": ""})
 
-
     return protocols
 
 
@@ -527,5 +534,51 @@ def get_or_create_interface(if_list, port):
 def port_is_in_access_mode(port):
     return port.mode is None or port.mode == "access"
 
+
 def port_is_in_trunk_mode(port):
     return not port_is_in_access_mode(port)
+
+
+def _port_terse(conf):
+    return [_to_terse(p) for p in conf.get_physical_ports()]
+
+
+def _aggregated_port_terse(conf):
+    number_of_physical_ports = len(conf.get_physical_ports())
+
+    terse_ports = []
+    # the number of existing unconfigured aggregated ports is arbitrary so we use as many as there are physical ports
+    for i in range(0, number_of_physical_ports):
+        port_name = "ae{}".format(i)
+        try:
+            port = next(p for p in conf.ports if isinstance(p, AggregatedPort) and p.name == port_name)
+        except StopIteration:
+            port = AggregatedPort(port_name)
+
+        terse_ports.append(_to_terse(port))
+
+    return terse_ports
+
+
+def _to_terse(port):
+    interface = [
+        {"name": port.name},
+        {"admin-status": "down" if port.shutdown else "up"},
+        {"oper-status": "down"}
+    ]
+
+    if port.vendor_specific.get("has-ethernet-switching"):
+        interface.extend([
+            {"logical-interface": [
+                {"name": "{}.0".format(port.name)},
+                {"admin-status": "down" if port.shutdown else "up"},
+                {"oper-status": "down"},
+                {"filter-information": {}},
+                {"address-family": {
+                    "address-family-name": "eth-switch"
+                }}
+            ]}
+        ])
+
+    return {"physical-interface": interface}
+

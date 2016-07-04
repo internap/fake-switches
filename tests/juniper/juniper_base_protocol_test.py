@@ -49,7 +49,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
             "http://xml.juniper.net/dmi/system/1.0",
         ))
 
-    def test_get_running_config(self):
+    def test_get_running_config_shows_nothing_by_default(self):
         result = self.nc.get_config(source="running")
 
         conf = result._NCElement__result.xml
@@ -57,7 +57,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
             '<configuration xmlns="http://xml.juniper.net/xnm/1.1/xnm" junos:commit-localtime="[^"]*" junos:commit-seconds="[^"]*" junos:commit-user="[^"]*">'))
 
         assert_that(result.xpath("data/configuration/interfaces/interface/unit/family/ethernet-switching"),
-                    has_length(4))
+                    has_length(0))
         assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
 
     def test_lock_edit_candidate_add_vlan_and_commit(self):
@@ -284,7 +284,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(1))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2995"))
 
-        self.cleanup(vlan("VLAN2995"), interface("ge-0/0/3", ["port-mode", "vlan"]))
+        self.cleanup(vlan("VLAN2995"), reset_interface("ge-0/0/3"))
 
     def test_assigning_unknown_vlan_raises(self):
         self.edit({
@@ -358,8 +358,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
                                 }}}]}]}})
         self.nc.commit()
 
-        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", ["port-mode"]))
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"), reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -442,8 +441,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
                                 ]}}}]}]}})
         self.nc.commit()
 
-        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", ["port-mode", "native-vlan-id", "vlan"]))
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"), reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -500,8 +498,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         int003 = result.xpath("data/configuration/interfaces/interface")[0]
         assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("2996"))
 
-        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", ["port-mode", "vlan", "native-vlan-id"]))
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"), reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -565,8 +562,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         int003 = result.xpath("data/configuration/interfaces/interface")[0]
         assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("2995"))
 
-        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", ["port-mode", "vlan", "native-vlan-id"]))
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"), reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -662,8 +658,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id"), has_length(0))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(0))
 
-        self.cleanup(vlan("VLAN1100"), vlan("VLAN1200"), vlan("VLAN1300"), vlan("VLAN1400"),
-                     interface("ge-0/0/3", ["port-mode", "vlan", "native-vlan-id"]))
+        self.cleanup(vlan("VLAN1100"), vlan("VLAN1200"), vlan("VLAN1300"), vlan("VLAN1400"), reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -715,8 +710,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         assert_that(members[1].text, equal_to("2997"))
         assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("2996"))
 
-        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", ["port-mode", "vlan", "native-vlan-id"]))
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"), reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -750,7 +744,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
         assert_that(int003.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text, equal_to("2996"))
 
-        self.cleanup(vlan("VLAN2996"), interface("ge-0/0/3", ["native-vlan-id"]))
+        self.cleanup(vlan("VLAN2996"), reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -905,11 +899,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}
         }))
 
-        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
-
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-
-        assert_that(int002.xpath("description"), has_length(0))
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(0))
 
     def test_set_interface_raises_on_physical_interface_with_bad_trailing_input(self):
         with self.assertRaises(RPCError) as exc:
@@ -951,12 +941,6 @@ class JuniperBaseProtocolTest(BaseJuniper):
         assert_that(str(exc.exception), contains_string("device value outside range 0..127 for '34345' in 'ae34345'"))
 
     def test_set_interface_disabling(self):
-        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
-            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
-
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("disable"), has_length(0))
-
         self.edit({"interfaces": {"interface": [{"name": "ge-0/0/2"}, {"disable": ""}]}})
         self.nc.commit()
 
@@ -973,16 +957,9 @@ class JuniperBaseProtocolTest(BaseJuniper):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
 
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("disable"), has_length(0))
+        assert_that(result.xpath("data/configuration/interfaces"), has_length(0))
 
     def test_set_interface_enabling_already_enabled(self):
-        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
-            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
-
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("disable"), has_length(0))
-
         with self.assertRaises(RPCError) as exc:
             self.edit({"interfaces": {
                 "interface": [{"name": "ge-0/0/2"}, {"disable": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
@@ -1058,7 +1035,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         assert_that(ae1.xpath("aggregated-ether-options/lacp/periodic")[0].text, is_("slow"))
         assert_that(ae1.xpath("unit/family/ethernet-switching/vlan/members"), has_length(2))
 
-        self.cleanup(vlan("VLAN2995"), vlan("VLAN2997"), interface("ae1"))
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2997"), reset_interface("ae1"))
 
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": "ae1"}}}}}))
@@ -1163,7 +1140,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         ge002 = self.get_interface("ge-0/0/2", )
         assert_that(ge002, is_(None))
 
-        self.cleanup(vlan("VLAN2995"), interface("ae1"), reset_interface("ge-0/0/1"), reset_interface("ge-0/0/2"))
+        self.cleanup(vlan("VLAN2995"), reset_interface("ae1"), reset_interface("ge-0/0/1"), reset_interface("ge-0/0/2"))
 
     def test_compare_configuration(self):
 
@@ -1242,7 +1219,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         assert_that(to_xml(before.xpath("data/configuration/vlans")[0]), xml_equals_to(after.xpath("data/configuration/vlans")[0]))
         assert_that(to_xml(before.xpath("data/configuration/interfaces")[0]), xml_equals_to(after.xpath("data/configuration/interfaces")[0]))
 
-        self.cleanup(vlan("VLAN10"), interface("ge-0/0/3", ["port-mode", "vlan"]))
+        self.cleanup(vlan("VLAN10"), reset_interface("ge-0/0/3"))
 
     def test_replace_port_with_nothing_leaves_configuration_empty(self):
         self.edit({
@@ -1282,36 +1259,146 @@ class JuniperBaseProtocolTest(BaseJuniper):
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
         assert_that(get_interface_reply.xpath("data/configuration"), has_length(1))
 
-
-def interface(interface_name, fields=None):
-    if fields is not None:
-        def m(edit):
-            edit({"interfaces": {
-                "interface": [
-                    {"name": interface_name},
+    def test_delete_port_leaves_configuration_empty(self):
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
                     {"unit": [
                         {"name": "0"},
                         {"family": {
-                            "ethernet-switching": {field: {XML_ATTRIBUTES: {"operation": "delete"}} for field in fields}
-                        }}]}]}})
-    else:
-        def m(edit):
-            edit({"interfaces": {
-                "interface": {
-                    "name": interface_name,
-                    XML_ATTRIBUTES: {"operation": "delete"}}}})
+                            "ethernet-switching": {
+                                "port-mode": "access"}}}]}]},
+            ]})
+        self.nc.commit()
 
-    return m
+        self.edit({
+            "interfaces": [
+                {"interface": [{XML_ATTRIBUTES: {"operation": "delete"}},
+                               {"name": "ge-0/0/1"},
+                               ]}
+            ]})
+        self.nc.commit()
+
+        get_interface_reply = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
+
+        assert_that(get_interface_reply.xpath("data/configuration"), has_length(0))
+
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"disable": ""}]}]})
+
+        self.nc.commit()
+
+        get_interface_reply = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
+        assert_that(get_interface_reply.xpath("data/configuration"), has_length(1))
+
+    def test_operational_request_unknown_fails(self):
+        with self.assertRaises(RPCError):
+            self.nc.rpc(dict_2_etree({
+                "waaaat": {}}))
+
+        with self.assertRaises(RPCError):
+             self.nc.rpc(dict_2_etree({
+                "get-interface-information": {
+                    "wrong-param": {}}}))
+
+    def test_operational_request_get_interface_information_terse(self):
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {XML_ATTRIBUTES: {"operation": "delete"}},
+                    {"name": "ge-0/0/1"}]},
+                {"interface": [
+                    {"name": "ge-0/0/2"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "port-mode": "access"}}}]}]},
+                {"interface": [
+                    {"name": "ge-0/0/3"},
+                    {"ether-options": {
+                        "ieee-802.3ad": {"bundle": "ae1"}}},
+                    {"unit": {XML_ATTRIBUTES: {"operation": "delete"}}}]},
+                {"interface": [
+                    {"name": "ge-0/0/4"},
+                    {"disable": ""}]},
+                {"interface": [
+                    {"name": "ae3"},
+                    {"aggregated-ether-options": {
+                        "lacp": {
+                            "active": {},
+                            "periodic": "slow"}}},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "port-mode": "trunk"}}}]}]},
+            ]})
+        self.nc.commit()
+
+        terse = self.nc.rpc(dict_2_etree({
+            "get-interface-information": {
+                "terse": {}}}))
+
+        assert_that(terse.xpath("interface-information/physical-interface"), has_length(8)) # 4 physical 4 bonds
+
+        deleted_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/1')]/..")[0]
+        assert_that(deleted_interface.xpath("*"), has_length(3))
+        assert_that(deleted_interface.xpath("admin-status")[0].text, is_("up"))
+        assert_that(deleted_interface.xpath("oper-status")[0].text, is_("down"))
+
+        access_mode_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/2')]/..")[0]
+        assert_that(access_mode_interface.xpath("*"), has_length(4))
+        assert_that(access_mode_interface.xpath("admin-status")[0].text, is_("up"))
+        assert_that(access_mode_interface.xpath("oper-status")[0].text, is_("down"))
+        assert_that(access_mode_interface.xpath("logical-interface/*"), has_length(5))
+        assert_that(access_mode_interface.xpath("logical-interface/name")[0].text, is_("ge-0/0/2.0"))
+        assert_that(access_mode_interface.xpath("logical-interface/admin-status")[0].text, is_("up"))
+        assert_that(access_mode_interface.xpath("logical-interface/oper-status")[0].text, is_("down"))
+        assert_that(access_mode_interface.xpath("logical-interface/filter-information"), has_length(1))
+        assert_that(access_mode_interface.xpath("logical-interface/filter-information/*"), has_length(0))
+        assert_that(access_mode_interface.xpath("logical-interface/address-family/*"), has_length(1))
+        assert_that(access_mode_interface.xpath("logical-interface/address-family/address-family-name")[0].text, is_("eth-switch"))
+
+        bond_member_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/3')]/..")[0]
+        assert_that(bond_member_interface.xpath("*"), has_length(3))
+        assert_that(bond_member_interface.xpath("admin-status")[0].text, is_("up"))
+        assert_that(bond_member_interface.xpath("oper-status")[0].text, is_("down"))
+
+        disabled_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/4')]/..")[0]
+        assert_that(disabled_interface.xpath("admin-status")[0].text, is_("down"))
+
+        inactive_bond = terse.xpath("interface-information/physical-interface/name[contains(text(),'ae1')]/..")[0]
+        assert_that(inactive_bond.xpath("*"), has_length(3))
+        assert_that(inactive_bond.xpath("admin-status")[0].text, is_("up"))
+        assert_that(inactive_bond.xpath("oper-status")[0].text, is_("down"))
+
+        active_bond = terse.xpath("interface-information/physical-interface/name[contains(text(),'ae3')]/..")[0]
+        assert_that(active_bond.xpath("*"), has_length(4))
+        assert_that(active_bond.xpath("admin-status")[0].text, is_("up"))
+        assert_that(active_bond.xpath("oper-status")[0].text, is_("down"))
+        assert_that(active_bond.xpath("logical-interface/*"), has_length(5))
+        assert_that(active_bond.xpath("logical-interface/name")[0].text, is_("ae3.0"))
+        assert_that(active_bond.xpath("logical-interface/admin-status")[0].text, is_("up"))
+        assert_that(active_bond.xpath("logical-interface/oper-status")[0].text, is_("down"))
+        assert_that(active_bond.xpath("logical-interface/filter-information"), has_length(1))
+        assert_that(active_bond.xpath("logical-interface/filter-information/*"), has_length(0))
+        assert_that(active_bond.xpath("logical-interface/address-family/*"), has_length(1))
+        assert_that(active_bond.xpath("logical-interface/address-family/address-family-name")[0].text, is_("eth-switch"))
+
+        self.cleanup(reset_interface("ae3"), reset_interface("ge-0/0/2"), reset_interface("ge-0/0/3"))
 
 
 def reset_interface(interface_name):
     def m(edit):
         edit({"interfaces": {
-            "interface": [{XML_ATTRIBUTES: {"operation": "replace"}},
-                          {"name": interface_name},
-                          {"unit": [
-                              {"name": "0"},
-                              {"family": {
-                                  "ethernet-switching": {}}}]}]}})
+            "interface": [{XML_ATTRIBUTES: {"operation": "delete"}},
+                          {"name": interface_name}]}})
 
     return m

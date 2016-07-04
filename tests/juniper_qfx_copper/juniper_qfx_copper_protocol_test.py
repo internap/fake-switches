@@ -58,7 +58,7 @@ class JuniperQfxCopperProtocolTest(BaseJuniper):
                 '<configuration xmlns="http://xml.juniper.net/xnm/1.1/xnm" junos:commit-localtime="[^"]*" junos:commit-seconds="[^"]*" junos:commit-user="[^"]*">'))
 
         assert_that(result.xpath("data/configuration/interfaces/interface/unit/family/ethernet-switching"),
-                    has_length(4))
+                    has_length(0))
         assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
 
     def test_lock_edit_candidate_add_vlan_and_commit(self):
@@ -285,7 +285,7 @@ class JuniperQfxCopperProtocolTest(BaseJuniper):
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(1))
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2995"))
 
-        self.cleanup(vlan("VLAN2995"), interface("ge-0/0/3", ["interface-mode", "vlan"]))
+        self.cleanup(vlan("VLAN2995"), reset_interface("ge-0/0/3"))
 
     def test_assigning_unknown_vlan_in_a_range_raises(self):
         self.edit({
@@ -373,7 +373,7 @@ configuration check-out failed
 </commit-results>"""))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                         interface("ge-0/0/3", ["interface-mode"]))
+                         reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -444,7 +444,7 @@ configuration check-out failed
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[0].text, equal_to("2997"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
+                     reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -495,7 +495,7 @@ configuration check-out failed
         assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
+                     reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -562,7 +562,7 @@ configuration check-out failed
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members")[1].text, equal_to("2997"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
+                     reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -637,7 +637,7 @@ configuration check-out failed
         assert_that(int003.xpath("unit/family/ethernet-switching/vlan/members"), has_length(0))
 
         self.cleanup(vlan("VLAN1100"), vlan("VLAN1200"), vlan("VLAN1300"), vlan("VLAN1400"),
-                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
+                     reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -690,7 +690,7 @@ configuration check-out failed
         assert_that(members[1].text, equal_to("2997"))
 
         self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
-                     interface("ge-0/0/3", ["interface-mode", "vlan"]))
+                     reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -731,7 +731,7 @@ configuration check-out failed
         assert_that(int003.xpath("name")[0].text, equal_to("ge-0/0/3"))
         assert_that(int003.xpath("native-vlan-id")[0].text, equal_to("2996"))
 
-        self.cleanup(vlan("VLAN2996"), interface("ge-0/0/3"))
+        self.cleanup(vlan("VLAN2996"), reset_interface("ge-0/0/3"))
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"vlans": {}}}
         }))
@@ -886,18 +886,13 @@ configuration check-out failed
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}
         }))
 
-        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
-
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-
-        assert_that(int002.xpath("description"), has_length(0))
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(0))
 
     def test_set_interface_disabling(self):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
 
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("disable"), has_length(0))
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(0))
 
         self.edit({"interfaces": {"interface": [{"name": "ge-0/0/2"}, {"disable": ""}]}})
         self.nc.commit()
@@ -915,8 +910,7 @@ configuration check-out failed
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}}))
 
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-        assert_that(int002.xpath("disable"), has_length(0))
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(0))
 
     def test_set_interface_trunk_native_vlan_id(self):
         self.edit({
@@ -955,11 +949,7 @@ configuration check-out failed
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/2"}}}}
         }))
 
-        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(1))
-
-        int002 = result.xpath("data/configuration/interfaces/interface")[0]
-
-        assert_that(int002.xpath("native-vlan-id"), has_length(0))
+        assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(0))
 
     def test_set_interface_raises_on_aggregated_out_of_range_port(self):
         with self.assertRaises(RPCError) as exc:
@@ -1038,7 +1028,7 @@ configuration check-out failed
         assert_that(ae1.xpath("aggregated-ether-options/lacp/periodic")[0].text, is_("slow"))
         assert_that(ae1.xpath("unit/family/ethernet-switching/vlan/members"), has_length(2))
 
-        self.cleanup(vlan("VLAN2995"), vlan("VLAN2997"), interface("ae1"))
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2997"), reset_interface("ae1"))
 
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": "ae1"}}}}}))
@@ -1143,7 +1133,7 @@ configuration check-out failed
         ge002 = self.get_interface("ge-0/0/2", )
         assert_that(ge002, is_(None))
 
-        self.cleanup(vlan("VLAN2995"), interface("ae1"), reset_interface("ge-0/0/1"), reset_interface("ge-0/0/2"))
+        self.cleanup(vlan("VLAN2995"), reset_interface("ae1"), reset_interface("ge-0/0/1"), reset_interface("ge-0/0/2"))
 
     def test_compare_configuration(self):
 
@@ -1172,39 +1162,10 @@ configuration check-out failed
         assert_that(output.text.strip(), is_(""))
 
 
-def interface(interface_name, fields=None, native_vlan_id=None):
-    if fields is not None:
-        def m(edit):
-            edit({"interfaces": {
-                "interface": [
-                    {"name": interface_name},
-                    {"native-vlan-id": {XML_ATTRIBUTES: {"operation": "delete"}}},
-                    {"unit": [
-                        {"name": "0"},
-                        {"family": {
-                            "ethernet-switching": {field: {XML_ATTRIBUTES: {"operation": "delete"}} for field in fields}
-                        }}]}]}})
-    else:
-        def m(edit):
-            edit({"interfaces": {
-                "interface": [{
-                    "name": interface_name,
-                    XML_ATTRIBUTES: {"operation": "delete"}},
-                    {"native-vlan-id": {XML_ATTRIBUTES: {"operation": "delete"}}}
-                ]}})
-
-    return m
-
-
 def reset_interface(interface_name):
     def m(edit):
         edit({"interfaces": {
-            "interface": [{XML_ATTRIBUTES: {"operation": "replace"}},
-                          {"name": interface_name},
-                          {"native-vlan-id": ""},
-                          {"unit": [
-                              {"name": "0"},
-                              {"family": {
-                                  "ethernet-switching": {}}}]}]}})
+            "interface": [{XML_ATTRIBUTES: {"operation": "delete"}},
+                          {"name": interface_name}]}})
 
     return m
