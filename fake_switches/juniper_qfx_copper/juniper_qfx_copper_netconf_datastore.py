@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from fake_switches.switch_configuration import AggregatedPort
 
 from fake_switches.juniper.juniper_netconf_datastore import JuniperNetconfDatastore, resolve_new_value, port_is_in_trunk_mode
 from fake_switches.netconf import FailingCommitResults, TrunkShouldHaveVlanMembers, ConfigurationCheckOutFailed
@@ -44,3 +45,37 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
                 raise FailingCommitResults([TrunkShouldHaveVlanMembers(interface=port.name),
                                             ConfigurationCheckOutFailed()])
         return super(JuniperQfxCopperNetconfDatastore, self)._validate(configuration)
+
+    def _to_terse(self, port):
+        interface = [
+            {"name": port.name},
+            {"admin-status": "down" if port.shutdown else "up"},
+            {"oper-status": "down"}
+        ]
+
+        if port.description is not None:
+            interface.append({"description": port.description})
+
+        if port.vendor_specific.get("has-ethernet-switching"):
+            interface.extend([
+                {"logical-interface": [
+                    {"name": "{}.0".format(port.name)},
+                    {"admin-status": "down" if port.shutdown else "up"},
+                    {"oper-status": "down"},
+                    {"filter-information": {}},
+                    {"address-family": {
+                        "address-family-name": "eth-switch"
+                    }}
+                ]}
+            ])
+        elif port.aggregation_membership is None and not isinstance(port, AggregatedPort):
+            interface.extend([
+                {"logical-interface": [
+                    {"name": "{}.16386".format(port.name)},
+                    {"admin-status": "down" if port.shutdown else "up"},
+                    {"oper-status": "down"},
+                    {"filter-information": {}}
+                ]}
+            ])
+
+        return {"physical-interface": interface}

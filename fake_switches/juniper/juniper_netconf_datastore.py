@@ -126,8 +126,8 @@ class JuniperNetconfDatastore(object):
         return dict_2_etree({
             "interface-information":
                 [{XML_ATTRIBUTES: {"style": "terse"}}]
-                + _port_terse(self.configurations[RUNNING])
-                + _aggregated_port_terse(self.configurations[RUNNING])})
+                + self._port_terse(self.configurations[RUNNING])
+                + self._aggregated_port_terse(self.configurations[RUNNING])})
 
 
     def interface_to_etree(self, port):
@@ -360,6 +360,47 @@ class JuniperNetconfDatastore(object):
                     if trunk_vlan not in vlan_list:
                         raise UnknownVlan(trunk_vlan, port.name, 0)
 
+    def _port_terse(self, conf):
+        return [self._to_terse(p) for p in conf.get_physical_ports()]
+
+    def _aggregated_port_terse(self, conf):
+        number_of_physical_ports = len(conf.get_physical_ports())
+
+        terse_ports = []
+        # the number of existing unconfigured aggregated ports is arbitrary so we use as many as there are physical ports
+        for i in range(0, number_of_physical_ports):
+            port_name = "ae{}".format(i)
+            try:
+                port = next(p for p in conf.ports if isinstance(p, AggregatedPort) and p.name == port_name)
+            except StopIteration:
+                port = AggregatedPort(port_name)
+
+            terse_ports.append(self._to_terse(port))
+
+        return terse_ports
+
+    def _to_terse(self, port):
+        interface = [
+            {"name": port.name},
+            {"admin-status": "down" if port.shutdown else "up"},
+            {"oper-status": "down"}
+        ]
+
+        if port.vendor_specific.get("has-ethernet-switching"):
+            interface.extend([
+                {"logical-interface": [
+                    {"name": "{}.0".format(port.name)},
+                    {"admin-status": "down" if port.shutdown else "up"},
+                    {"oper-status": "down"},
+                    {"filter-information": {}},
+                    {"address-family": {
+                        "address-family-name": "eth-switch"
+                    }}
+                ]}
+            ])
+
+        return {"physical-interface": interface}
+
 
 def vlan_to_etree(vlan):
     vlan_data = [{"name": vlan.name}]
@@ -537,48 +578,4 @@ def port_is_in_access_mode(port):
 
 def port_is_in_trunk_mode(port):
     return not port_is_in_access_mode(port)
-
-
-def _port_terse(conf):
-    return [_to_terse(p) for p in conf.get_physical_ports()]
-
-
-def _aggregated_port_terse(conf):
-    number_of_physical_ports = len(conf.get_physical_ports())
-
-    terse_ports = []
-    # the number of existing unconfigured aggregated ports is arbitrary so we use as many as there are physical ports
-    for i in range(0, number_of_physical_ports):
-        port_name = "ae{}".format(i)
-        try:
-            port = next(p for p in conf.ports if isinstance(p, AggregatedPort) and p.name == port_name)
-        except StopIteration:
-            port = AggregatedPort(port_name)
-
-        terse_ports.append(_to_terse(port))
-
-    return terse_ports
-
-
-def _to_terse(port):
-    interface = [
-        {"name": port.name},
-        {"admin-status": "down" if port.shutdown else "up"},
-        {"oper-status": "down"}
-    ]
-
-    if port.vendor_specific.get("has-ethernet-switching"):
-        interface.extend([
-            {"logical-interface": [
-                {"name": "{}.0".format(port.name)},
-                {"admin-status": "down" if port.shutdown else "up"},
-                {"oper-status": "down"},
-                {"filter-information": {}},
-                {"address-family": {
-                    "address-family-name": "eth-switch"
-                }}
-            ]}
-        ])
-
-    return {"physical-interface": interface}
 
