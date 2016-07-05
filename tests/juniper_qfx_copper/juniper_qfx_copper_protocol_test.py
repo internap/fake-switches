@@ -1161,6 +1161,110 @@ configuration check-out failed
         output = result.xpath("configuration-information/configuration-output")[0]
         assert_that(output.text.strip(), is_(""))
 
+    def test_operational_request_get_interface_information_terse(self):
+        self.edit({
+            "vlans": [
+                {"vlan": [
+                    {"name": "VLAN1999"},
+                    {"vlan-id": "1999"}]},
+            ],
+            "interfaces": [
+                {"interface": [
+                    {XML_ATTRIBUTES: {"operation": "delete"}},
+                    {"name": "ge-0/0/1"}]},
+                {"interface": [
+                    {"name": "ge-0/0/2"},
+                    {"description": "my crib"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "interface-mode": "access"}}}]}]},
+                {"interface": [
+                    {"name": "ge-0/0/3"},
+                    {"description": "bond member"},
+                    {"ether-options": {
+                        "ieee-802.3ad": {"bundle": "ae1"}}},
+                    {"unit": {XML_ATTRIBUTES: {"operation": "delete"}}}]},
+                {"interface": [
+                    {"name": "ge-0/0/4"},
+                    {"disable": ""}]},
+                {"interface": [
+                    {"name": "ae3"},
+                    {"aggregated-ether-options": {
+                        "lacp": {
+                            "active": {},
+                            "periodic": "slow"}}},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "ethernet-switching": {
+                                "interface-mode": "trunk",
+                                "vlan": [
+                                    {"members": "1999"}]}}}]}]},
+            ]})
+        self.nc.commit()
+
+        terse = self.nc.rpc(dict_2_etree({
+            "get-interface-information": {
+                "terse": {}}}))
+
+        assert_that(terse.xpath("interface-information/physical-interface"), has_length(8)) # 4 physical 4 bonds
+
+        deleted_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/1')]/..")[0]
+        assert_that(deleted_interface.xpath("*"), has_length(4))
+        assert_that(deleted_interface.xpath("admin-status")[0].text, is_("up"))
+        assert_that(deleted_interface.xpath("oper-status")[0].text, is_("down"))
+        assert_that(deleted_interface.xpath("logical-interface/*"), has_length(4))
+        assert_that(deleted_interface.xpath("logical-interface/name")[0].text, is_("ge-0/0/1.16386"))
+        assert_that(deleted_interface.xpath("logical-interface/admin-status")[0].text, is_("up"))
+        assert_that(deleted_interface.xpath("logical-interface/oper-status")[0].text, is_("down"))
+        assert_that(deleted_interface.xpath("logical-interface/filter-information"), has_length(1))
+        assert_that(deleted_interface.xpath("logical-interface/filter-information/*"), has_length(0))
+
+        access_mode_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/2')]/..")[0]
+        assert_that(access_mode_interface.xpath("*"), has_length(5))
+        assert_that(access_mode_interface.xpath("admin-status")[0].text, is_("up"))
+        assert_that(access_mode_interface.xpath("oper-status")[0].text, is_("down"))
+        assert_that(access_mode_interface.xpath("description")[0].text, is_("my crib"))
+        assert_that(access_mode_interface.xpath("logical-interface/*"), has_length(5))
+        assert_that(access_mode_interface.xpath("logical-interface/name")[0].text, is_("ge-0/0/2.0"))
+        assert_that(access_mode_interface.xpath("logical-interface/admin-status")[0].text, is_("up"))
+        assert_that(access_mode_interface.xpath("logical-interface/oper-status")[0].text, is_("down"))
+        assert_that(access_mode_interface.xpath("logical-interface/filter-information"), has_length(1))
+        assert_that(access_mode_interface.xpath("logical-interface/filter-information/*"), has_length(0))
+        assert_that(access_mode_interface.xpath("logical-interface/address-family/*"), has_length(1))
+        assert_that(access_mode_interface.xpath("logical-interface/address-family/address-family-name")[0].text, is_("eth-switch"))
+
+        bond_member_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/3')]/..")[0]
+        assert_that(bond_member_interface.xpath("*"), has_length(4))
+        assert_that(bond_member_interface.xpath("admin-status")[0].text, is_("up"))
+        assert_that(bond_member_interface.xpath("oper-status")[0].text, is_("down"))
+        assert_that(bond_member_interface.xpath("description")[0].text, is_("bond member"))
+
+        disabled_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/4')]/..")[0]
+        assert_that(disabled_interface.xpath("admin-status")[0].text, is_("down"))
+
+        inactive_bond = terse.xpath("interface-information/physical-interface/name[contains(text(),'ae1')]/..")[0]
+        assert_that(inactive_bond.xpath("*"), has_length(3))
+        assert_that(inactive_bond.xpath("admin-status")[0].text, is_("up"))
+        assert_that(inactive_bond.xpath("oper-status")[0].text, is_("down"))
+
+        active_bond = terse.xpath("interface-information/physical-interface/name[contains(text(),'ae3')]/..")[0]
+        assert_that(active_bond.xpath("*"), has_length(4))
+        assert_that(active_bond.xpath("admin-status")[0].text, is_("up"))
+        assert_that(active_bond.xpath("oper-status")[0].text, is_("down"))
+        assert_that(active_bond.xpath("logical-interface/*"), has_length(5))
+        assert_that(active_bond.xpath("logical-interface/name")[0].text, is_("ae3.0"))
+        assert_that(active_bond.xpath("logical-interface/admin-status")[0].text, is_("up"))
+        assert_that(active_bond.xpath("logical-interface/oper-status")[0].text, is_("down"))
+        assert_that(active_bond.xpath("logical-interface/filter-information"), has_length(1))
+        assert_that(active_bond.xpath("logical-interface/filter-information/*"), has_length(0))
+        assert_that(active_bond.xpath("logical-interface/address-family/*"), has_length(1))
+        assert_that(active_bond.xpath("logical-interface/address-family/address-family-name")[0].text, is_("eth-switch"))
+
+        self.cleanup(vlan("VLAN1999"), reset_interface("ae3"), reset_interface("ge-0/0/2"), reset_interface("ge-0/0/3"))
+
 
 def reset_interface(interface_name):
     def m(edit):
