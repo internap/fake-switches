@@ -55,11 +55,23 @@ class JuniperQfxCopperProtocolTest(BaseJuniper):
 
         conf = result._NCElement__result.xml
         assert_that(conf, contains_regex(
-                '<configuration xmlns="http://xml.juniper.net/xnm/1.1/xnm" junos:commit-localtime="[^"]*" junos:commit-seconds="[^"]*" junos:commit-user="[^"]*">'))
+                '<configuration xmlns="http://xml.juniper.net/xnm/1.1/xnm" junos:commit-localtime="[^"]*" junos:commit-seconds="[^"]*" junos:commit-user="[^"]*"'))
 
-        assert_that(result.xpath("data/configuration/interfaces/interface/unit/family/ethernet-switching"),
-                    has_length(0))
-        assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
+        assert_that(result.xpath("data/configuration/*"), has_length(0))
+
+    def test_only_configured_interfaces_are_returned(self):
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"description": "I see what you did there!"}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running")
+
+        assert_that(result.xpath("data/configuration/interfaces/*"), has_length(1))
+
+        self.cleanup(reset_interface("ge-0/0/3"))
 
     def test_lock_edit_candidate_add_vlan_and_commit(self):
         with self.nc.locked(target='candidate'):
@@ -774,7 +786,7 @@ configuration check-out failed
             "configuration": {"protocols": ""}}
         }))
 
-        assert_that(result.xpath("data/configuration/protocols"), has_length(1))
+        assert_that(result.xpath("data/configuration/protocols"), has_length(0))
 
     def test_deleting_spanning_tree_options(self):
         self.edit({
@@ -852,7 +864,7 @@ configuration check-out failed
             "configuration": {"protocols": ""}}
         }))
 
-        assert_that(result.xpath("data/configuration/protocols"), has_length(1))
+        assert_that(result.xpath("data/configuration/protocols"), has_length(0))
 
     def test_set_interface_description(self):
         self.edit({
@@ -950,6 +962,8 @@ configuration check-out failed
         }))
 
         assert_that(result.xpath("data/configuration/interfaces/interface"), has_length(0))
+
+        self.cleanup(vlan("VLAN2996"), reset_interface("ge-0/0/2"))
 
     def test_set_interface_raises_on_aggregated_out_of_range_port(self):
         with self.assertRaises(RPCError) as exc:
@@ -1161,6 +1175,8 @@ configuration check-out failed
         output = result.xpath("configuration-information/configuration-output")[0]
         assert_that(output.text.strip(), is_(""))
 
+        self.cleanup(vlan("VLAN2995"))
+
     def test_operational_request_get_interface_information_terse(self):
         self.edit({
             "vlans": [
@@ -1263,7 +1279,12 @@ configuration check-out failed
         assert_that(active_bond.xpath("logical-interface/address-family/*"), has_length(1))
         assert_that(active_bond.xpath("logical-interface/address-family/address-family-name")[0].text, is_("eth-switch"))
 
-        self.cleanup(vlan("VLAN1999"), reset_interface("ae3"), reset_interface("ge-0/0/2"), reset_interface("ge-0/0/3"))
+        self.cleanup(vlan("VLAN1999"),
+                     reset_interface("ae3"),
+                     reset_interface("ge-0/0/1"),
+                     reset_interface("ge-0/0/2"),
+                     reset_interface("ge-0/0/3"),
+                     reset_interface("ge-0/0/4"))
 
 
 def reset_interface(interface_name):

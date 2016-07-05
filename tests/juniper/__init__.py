@@ -10,6 +10,7 @@ class BaseJuniper(unittest.TestCase):
         self.nc = self.create_client()
 
     def tearDown(self):
+        assert_that(self.nc.get_config(source="running").xpath("data/configuration/*"), has_length(0))
         try:
             self.nc.discard_changes()
         finally:

@@ -54,11 +54,23 @@ class JuniperBaseProtocolTest(BaseJuniper):
 
         conf = result._NCElement__result.xml
         assert_that(conf, contains_regex(
-            '<configuration xmlns="http://xml.juniper.net/xnm/1.1/xnm" junos:commit-localtime="[^"]*" junos:commit-seconds="[^"]*" junos:commit-user="[^"]*">'))
+            '<configuration xmlns="http://xml.juniper.net/xnm/1.1/xnm" junos:commit-localtime="[^"]*" junos:commit-seconds="[^"]*" junos:commit-user="[^"]*"'))
 
-        assert_that(result.xpath("data/configuration/interfaces/interface/unit/family/ethernet-switching"),
-                    has_length(0))
-        assert_that(result.xpath("data/configuration/vlans/vlan"), has_length(0))
+        assert_that(result.xpath("data/configuration/*"), has_length(0))
+
+    def test_only_configured_interfaces_are_returned(self):
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "ge-0/0/3"},
+                    {"description": "I see what you did there!"}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running")
+
+        assert_that(result.xpath("data/configuration/interfaces/*"), has_length(1))
+
+        self.cleanup(reset_interface("ge-0/0/3"))
 
     def test_lock_edit_candidate_add_vlan_and_commit(self):
         with self.nc.locked(target='candidate'):
@@ -787,7 +799,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
             "configuration": {"protocols": ""}}
         }))
 
-        assert_that(result.xpath("data/configuration/protocols"), has_length(1))
+        assert_that(result.xpath("data/configuration/protocols"), has_length(0))
 
     def test_deleting_spanning_tree_options(self):
         self.edit({
@@ -815,6 +827,8 @@ class JuniperBaseProtocolTest(BaseJuniper):
         }))
 
         assert_that(result.xpath("data/configuration/protocols/rstp/interface"), has_length(0))
+
+        self.cleanup(reset_interface("ge-0/0/3"))
 
     def test_set_lldp(self):
         self.edit({
@@ -865,7 +879,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
             "configuration": {"protocols": ""}}
         }))
 
-        assert_that(result.xpath("data/configuration/protocols"), has_length(1))
+        assert_that(result.xpath("data/configuration/protocols"), has_length(0))
 
     def test_set_interface_description(self):
         self.edit({
@@ -1168,6 +1182,8 @@ class JuniperBaseProtocolTest(BaseJuniper):
         output = result.xpath("configuration-information/configuration-output")[0]
         assert_that(output.text.strip(), is_(""))
 
+        self.cleanup(vlan("VLAN2995"))
+
     def test_discard_trunk_members_really_works(self):
 
         self.edit({
@@ -1259,6 +1275,8 @@ class JuniperBaseProtocolTest(BaseJuniper):
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
         assert_that(get_interface_reply.xpath("data/configuration"), has_length(1))
 
+        self.cleanup(reset_interface("ge-0/0/1"))
+
     def test_delete_port_leaves_configuration_empty(self):
         self.edit({
             "interfaces": [
@@ -1296,6 +1314,8 @@ class JuniperBaseProtocolTest(BaseJuniper):
         get_interface_reply = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
         assert_that(get_interface_reply.xpath("data/configuration"), has_length(1))
+
+        self.cleanup(reset_interface("ge-0/0/1"))
 
     def test_operational_request_unknown_fails(self):
         with self.assertRaises(RPCError):
@@ -1392,7 +1412,11 @@ class JuniperBaseProtocolTest(BaseJuniper):
         assert_that(active_bond.xpath("logical-interface/address-family/*"), has_length(1))
         assert_that(active_bond.xpath("logical-interface/address-family/address-family-name")[0].text, is_("eth-switch"))
 
-        self.cleanup(reset_interface("ae3"), reset_interface("ge-0/0/2"), reset_interface("ge-0/0/3"))
+        self.cleanup(reset_interface("ae3"),
+                     reset_interface("ge-0/0/1"),
+                     reset_interface("ge-0/0/2"),
+                     reset_interface("ge-0/0/3"),
+                     reset_interface("ge-0/0/4"))
 
 
 def reset_interface(interface_name):

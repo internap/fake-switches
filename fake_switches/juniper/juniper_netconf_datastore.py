@@ -43,22 +43,24 @@ class JuniperNetconfDatastore(object):
     def to_etree(self, source):
         etree.register_namespace("junos", NS_JUNOS)
 
-        return dict_2_etree({
-            "data": {
-                "configuration": {
-                    XML_NS: 'http://xml.juniper.net/xnm/1.1/xnm',
-                    XML_ATTRIBUTES: {
-                        "xmlns":"http://xml.juniper.net/xnm/1.1/xnm",
-                        "{" + NS_JUNOS + "}commit-seconds": "1411928899",
-                        "{" + NS_JUNOS + "}commit-localtime": "2014-09-28 14:28:19 EDT",
-                        "{" + NS_JUNOS + "}commit-user": "admin"
-                    },
-                    "interfaces": [{"interface": self.interface_to_etree(port)} for port in self.configurations[source].ports],
-                    "protocols": extract_protocols(self.configurations[source]),
-                    "vlans": [{"vlan": vlan_to_etree(vlan)} for vlan in self.configurations[source].vlans]
-                }
+        configuration = {
+            XML_NS: 'http://xml.juniper.net/xnm/1.1/xnm',
+            XML_ATTRIBUTES: {
+                "xmlns":"http://xml.juniper.net/xnm/1.1/xnm",
+                "{" + NS_JUNOS + "}commit-seconds": "1411928899",
+                "{" + NS_JUNOS + "}commit-localtime": "2014-09-28 14:28:19 EDT",
+                "{" + NS_JUNOS + "}commit-user": "admin"
             }
-        })
+        }
+
+        _add_if_not_empty(configuration, "interfaces", self._extract_interfaces(self.configurations[source]))
+
+        _add_if_not_empty(configuration, "protocols", extract_protocols(self.configurations[source]))
+
+        _add_if_not_empty(configuration, "vlans",
+                         [{"vlan": vlan_to_etree(vlan)} for vlan in self.configurations[source].vlans])
+
+        return dict_2_etree({"data": {"configuration": configuration}})
 
     def edit(self, target, etree_conf):
         conf = self.configurations[target]
@@ -129,7 +131,6 @@ class JuniperNetconfDatastore(object):
                 + self._port_terse(self.configurations[RUNNING])
                 + self._aggregated_port_terse(self.configurations[RUNNING])})
 
-
     def interface_to_etree(self, port):
         interface_data = []
 
@@ -196,8 +197,9 @@ class JuniperNetconfDatastore(object):
 
         if len(interface_data) > 0:
             interface_data.insert(0, {"name": port.name})
+            return interface_data
 
-        return interface_data
+        return None
 
     def parse_interfaces(self, conf, etree_conf):
         handled_elements = []
@@ -401,6 +403,14 @@ class JuniperNetconfDatastore(object):
 
         return {"physical-interface": interface}
 
+    def _extract_interfaces(self, source):
+        interfaces = []
+        for port in source.ports:
+            interface_node = self.interface_to_etree(port)
+            if interface_node:
+                interfaces.append({"interface": interface_node})
+        return interfaces
+
 
 def vlan_to_etree(vlan):
     vlan_data = [{"name": vlan.name}]
@@ -442,16 +452,21 @@ def parse_protocols(conf, etree_conf):
 
         port = conf.get_port_by_partial_name(val(lldp_interface_node, "name"))
 
-        port.vendor_specific["lldp"] = True
+        if resolve_operation(lldp_interface_node) == "delete":
+            port.vendor_specific["lldp"] = False
+            port.lldp_transmit = None
+            port.lldp_receive = None
+        else:
+            port.vendor_specific["lldp"] = True
 
-        disable_node = first(lldp_interface_node.xpath("disable"))
-        if disable_node is not None:
-            if resolve_operation(disable_node) == "delete":
-                port.lldp_transmit = None
-                port.lldp_receive = None
-            else:
-                port.lldp_transmit = False
-                port.lldp_receive = False
+            disable_node = first(lldp_interface_node.xpath("disable"))
+            if disable_node is not None:
+                if resolve_operation(disable_node) == "delete":
+                    port.lldp_transmit = None
+                    port.lldp_receive = None
+                else:
+                    port.lldp_transmit = False
+                    port.lldp_receive = False
 
     return handled_elements
 
@@ -579,3 +594,6 @@ def port_is_in_access_mode(port):
 def port_is_in_trunk_mode(port):
     return not port_is_in_access_mode(port)
 
+def _add_if_not_empty(target_dict, key, value):
+    if value:
+        target_dict[key] = value
