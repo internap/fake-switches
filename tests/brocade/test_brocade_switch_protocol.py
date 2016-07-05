@@ -232,6 +232,11 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
         t.readln("Type ? for a list")
         t.read("SSH@my_switch(config)#")
 
+        t.write("interface ethe nonexistent99")
+        t.readln("Invalid input -> nonexistent  99")
+        t.readln("Type ? for a list")
+        t.read("SSH@my_switch(config)#")
+
         t.write("interface ethe 2/1")
         t.readln("Error - interface 2/1 is not an ETHERNET interface")
         t.read("SSH@my_switch(config)#")
