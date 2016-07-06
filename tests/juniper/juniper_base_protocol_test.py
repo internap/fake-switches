@@ -1418,6 +1418,18 @@ class JuniperBaseProtocolTest(BaseJuniper):
                      reset_interface("ge-0/0/3"),
                      reset_interface("ge-0/0/4"))
 
+    def test_removing_bond_membership_node_should_raise(self):
+        with self.assertRaises(RPCError) as expect:
+            self.edit({
+                "interfaces": [
+                    {"interface": [
+                        {"name": "ge-0/0/1"},
+                        {"ether-options": {
+                            "ieee-802.3ad": {XML_ATTRIBUTES: {"operation": "delete"}}}}]}
+                ]})
+
+        assert_that(str(expect.exception), is_("statement not found: 802.3ad"))
+
 
 def reset_interface(interface_name):
     def m(edit):
