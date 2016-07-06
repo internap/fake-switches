@@ -247,6 +247,8 @@ class JuniperNetconfDatastore(object):
                 port.auto_negotiation = resolve_new_value(ether_options_attributes, "auto-negotiation", port.auto_negotiation, transformer=lambda _: True)
 
                 if resolve_operation(first(ether_options_attributes.xpath("ieee-802.3ad"))) == "delete":
+                    if port.aggregation_membership is None:
+                        raise NotFound("802.3ad")
                     port.aggregation_membership = None
                 else:
                     port.aggregation_membership = resolve_new_value(ether_options_attributes, "ieee-802.3ad/bundle", port.aggregation_membership)
