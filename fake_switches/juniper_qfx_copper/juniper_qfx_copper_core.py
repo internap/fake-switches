@@ -17,7 +17,8 @@ from fake_switches.juniper_qfx_copper.juniper_qfx_copper_netconf_datastore impor
 
 
 class JuniperQfxCopperSwitchCore(JuniperSwitchCore):
-    def __init__(self, switch_configuration):
+    def __init__(self, switch_configuration, aggregated_port_count=24):
         super(JuniperQfxCopperSwitchCore, self).__init__(
             switch_configuration,
-            datastore_class=JuniperQfxCopperNetconfDatastore)
+            datastore_class=JuniperQfxCopperNetconfDatastore,
+            aggregated_port_count=aggregated_port_count)

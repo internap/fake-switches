@@ -217,13 +217,14 @@ class JuniperNetconfDatastore(object):
             raise_for_invalid_interface(port_name, self.MAX_AGGREGATED_ETHERNET_INTERFACES)
 
             operation = resolve_operation(interface_node)
-            if operation == "delete" and isinstance(port, AggregatedPort):
-                conf.remove_port(port)
-            elif operation == "delete":
+            if operation in ("delete", "replace"):
+                backup = deepcopy(vars(port))
+
                 port.reset()
-            else:
-                if operation == "replace":
-                    port.reset()
+
+                _restore_protocols_specific_data(backup, port)
+
+            if operation != "delete":
                 self.apply_interface_data(interface_node, port)
 
         return handled_elements
@@ -368,20 +369,7 @@ class JuniperNetconfDatastore(object):
         return [self._to_terse(p) for p in conf.get_physical_ports()]
 
     def _aggregated_port_terse(self, conf):
-        number_of_physical_ports = len(conf.get_physical_ports())
-
-        terse_ports = []
-        # the number of existing unconfigured aggregated ports is arbitrary so we use as many as there are physical ports
-        for i in range(0, number_of_physical_ports):
-            port_name = "ae{}".format(i)
-            try:
-                port = next(p for p in conf.ports if isinstance(p, AggregatedPort) and p.name == port_name)
-            except StopIteration:
-                port = AggregatedPort(port_name)
-
-            terse_ports.append(self._to_terse(port))
-
-        return terse_ports
+        return [self._to_terse(p) for p in conf.ports if isinstance(p, AggregatedPort)]
 
     def _to_terse(self, port):
         interface = [
@@ -596,6 +584,15 @@ def port_is_in_access_mode(port):
 def port_is_in_trunk_mode(port):
     return not port_is_in_access_mode(port)
 
+
 def _add_if_not_empty(target_dict, key, value):
     if value:
         target_dict[key] = value
+
+
+def _restore_protocols_specific_data(backup, port):
+    port.vendor_specific["rstp-edge"] = backup.get("vendor_specific", {}).get("rstp-edge")
+    port.vendor_specific["rstp-no-root-port"] = backup.get("vendor_specific", {}).get("rstp-no-root-port")
+    port.vendor_specific["lldp"] = backup.get("vendor_specific", {}).get("lldp")
+    port.lldp_transmit = backup.get("lldp_transmit")
+    port.lldp_receive = backup.get("lldp_receive")

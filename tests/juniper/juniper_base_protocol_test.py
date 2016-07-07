@@ -830,6 +830,82 @@ class JuniperBaseProtocolTest(BaseJuniper):
 
         self.cleanup(reset_interface("ge-0/0/3"))
 
+    def test_setting_rstp_protocol_on_unconfigured_bond_works(self):
+        self.edit({
+            "protocols": {
+                "rstp": {
+                    "interface": [
+                        {"name": "ae3"},
+                        {"edge": ""},
+                        {"no-root-port": ""}]}}})
+        self.nc.commit()
+
+        self.edit({
+            "protocols": {
+                "rstp": {
+                    "interface": [
+                        {XML_ATTRIBUTES: {"operation": "delete"}},
+                        {"name": "ae3"}]}}})
+        self.nc.commit()
+
+    def test_deleting_spanning_tree_options_on_unconfigured_bond_does_nothing(self):
+        self.edit({
+            "protocols": {
+                "rstp": {
+                    "interface": [
+                        {XML_ATTRIBUTES: {"operation": "delete"}},
+                        {"name": "ae2"}]}}})
+        self.nc.commit()
+
+    def test_spanning_tree_options_are_not_affected_by_the_deletion_of_the_interface(self):
+        self.edit({
+            "protocols": {
+                "rstp": {
+                    "interface": [
+                        {"name": "ge-0/0/3"},
+                        {"edge": ""},
+                        {"no-root-port": ""}]}}})
+        self.nc.commit()
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {XML_ATTRIBUTES: {"operation": "delete"}},
+                    {"name": "ge-0/0/3"}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"protocols": {"rstp": {"interface": {"name": "ge-0/0/3"}}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/protocols/rstp/interface"), has_length(1))
+
+        self.cleanup(reset_interface("ge-0/0/3"))
+
+    def test_spanning_tree_options_are_not_affected_by_the_deletion_of_the_bond(self):
+        self.edit({
+            "protocols": {
+                "rstp": {
+                    "interface": [
+                        {"name": "ae2"},
+                        {"edge": ""},
+                        {"no-root-port": ""}]}}})
+        self.nc.commit()
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {XML_ATTRIBUTES: {"operation": "delete"}},
+                    {"name": "ae2"}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"protocols": {"rstp": {"interface": {"name": "ae2"}}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/protocols/rstp/interface"), has_length(1))
+
+        self.cleanup(reset_interface("ae2"))
+
+
     def test_set_lldp(self):
         self.edit({
             "protocols": {
@@ -880,6 +956,55 @@ class JuniperBaseProtocolTest(BaseJuniper):
         }))
 
         assert_that(result.xpath("data/configuration/protocols"), has_length(0))
+
+    def test_lldp_on_unconfigured_bond_works(self):
+        self.edit({
+            "protocols": {
+                "lldp": {
+                    "interface": [
+                        {"name": "ae3"},
+                        {"disable": ""}]}}})
+        self.nc.commit()
+
+        self.edit({
+            "protocols": {
+                "lldp": {
+                    "interface": [
+                        {XML_ATTRIBUTES: {"operation": "delete"}},
+                        {"name": "ae3"}]}}})
+        self.nc.commit()
+
+    def test_deleting_lldp_on_unconfigured_bond_does_nothing(self):
+        self.edit({
+            "protocols": {
+                "lldp": {
+                    "interface": [
+                        {XML_ATTRIBUTES: {"operation": "delete"}},
+                        {"name": "ae2"}]}}})
+        self.nc.commit()
+
+    def test_lldp_is_not_affected_by_the_deletion_of_the_interface(self):
+        self.edit({
+            "protocols": {
+                "lldp": {
+                    "interface": [
+                        {"name": "ge-0/0/3"},
+                        {"disable": ""}]}}})
+        self.nc.commit()
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {XML_ATTRIBUTES: {"operation": "delete"}},
+                    {"name": "ge-0/0/3"}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"protocols": {"lldp": {"interface": {"name": "ge-0/0/3"}}}}}
+        }))
+
+        assert_that(result.xpath("data/configuration/protocols/lldp/interface"), has_length(1))
+
+        self.cleanup(reset_interface("ge-0/0/3"))
 
     def test_set_interface_description(self):
         self.edit({
@@ -1433,8 +1558,19 @@ class JuniperBaseProtocolTest(BaseJuniper):
 
 def reset_interface(interface_name):
     def m(edit):
-        edit({"interfaces": {
-            "interface": [{XML_ATTRIBUTES: {"operation": "delete"}},
-                          {"name": interface_name}]}})
+        edit({
+            "interfaces": {
+                "interface": [
+                    {XML_ATTRIBUTES: {"operation": "delete"}},
+                    {"name": interface_name}]},
+            "protocols": {
+                "rstp": {
+                    "interface": [
+                        {XML_ATTRIBUTES: {"operation": "delete"}},
+                        {"name": interface_name}]},
+                "lldp": {
+                    "interface": [
+                        {XML_ATTRIBUTES: {"operation": "delete"}},
+                        {"name": interface_name}]}}})
 
     return m
