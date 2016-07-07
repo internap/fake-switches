@@ -234,11 +234,11 @@ class VlanPort(Port):
 
 
 class AggregatedPort(Port):
-    def __init__(self, *args, **kwargs):
-        super(AggregatedPort, self).__init__(*args, **kwargs)
-
+    def reset(self):
         self.lacp_active = False
         self.lacp_periodic = None
+
+        super(AggregatedPort, self).reset()
 
     def get_child_ports_linked_to_a_machine(self):
         return [p for p in self.switch_configuration.ports if p.aggregation_membership == self.name and p.link_name is not None]

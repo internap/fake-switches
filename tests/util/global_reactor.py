@@ -99,7 +99,7 @@ class ThreadedReactor(threading.Thread):
             Port("ge-0/0/2"),
             Port("ge-0/0/3"),
             Port("ge-0/0/4")
-        ]))
+        ]), aggregated_port_count=4)
         SwitchSshService(juniper_switch_ip, ssh_port=juniper_switch_netconf_port, switch_core=switch_core,
                          users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
@@ -109,7 +109,7 @@ class ThreadedReactor(threading.Thread):
                 Port("ge-0/0/2"),
                 Port("ge-0/0/3"),
                 Port("ge-0/0/4")
-            ]))
+            ]), aggregated_port_count=4)
         SwitchSshService(juniper_qfx_copper_switch_ip, ssh_port=juniper_qfx_copper_switch_netconf_port,
                          switch_core=switch_core, users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 

@@ -25,8 +25,13 @@ from fake_switches.netconf.netconf_protocol import NetconfProtocol
 
 
 class JuniperSwitchCore(object):
-    def __init__(self, switch_configuration, datastore_class=JuniperNetconfDatastore):
+    def __init__(self, switch_configuration, datastore_class=JuniperNetconfDatastore, aggregated_port_count=24):
         self.switch_configuration = switch_configuration
+
+        # the aggregated port are considered physical ports and are always existing in a junos environment
+        for i in range(0, aggregated_port_count):
+            switch_configuration.add_port(switch_configuration.new("AggregatedPort", name="ae{}".format(i)))
+
         self.last_connection_id = 0
         self.datastore = datastore_class(self.switch_configuration)
 
