@@ -373,20 +373,20 @@ class JuniperNetconfDatastore(object):
 
     def _to_terse(self, port):
         interface = [
-            {"name": port.name},
-            {"admin-status": "down" if port.shutdown else "up"},
-            {"oper-status": "down"}
+            {"name": "\n{}\n".format(port.name)},
+            {"admin-status": "\ndown\n" if port.shutdown else "\nup\n"},
+            {"oper-status": "\ndown\n"}
         ]
 
         if port.vendor_specific.get("has-ethernet-switching"):
             interface.extend([
                 {"logical-interface": [
-                    {"name": "{}.0".format(port.name)},
-                    {"admin-status": "down" if port.shutdown else "up"},
-                    {"oper-status": "down"},
+                    {"name": "\n{}.0\n".format(port.name)},
+                    {"admin-status": "\ndown\n" if port.shutdown else "\nup\n"},
+                    {"oper-status": "\ndown\n"},
                     {"filter-information": {}},
                     {"address-family": {
-                        "address-family-name": "eth-switch"
+                        "address-family-name": "\neth-switch\n"
                     }}
                 ]}
             ])
