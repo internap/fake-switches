@@ -1493,49 +1493,49 @@ class JuniperBaseProtocolTest(BaseJuniper):
 
         assert_that(terse.xpath("interface-information/physical-interface"), has_length(8)) # 4 physical 4 bonds
 
-        deleted_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/1')]/..")[0]
+        deleted_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'\nge-0/0/1\n')]/..")[0]
         assert_that(deleted_interface.xpath("*"), has_length(3))
-        assert_that(deleted_interface.xpath("admin-status")[0].text, is_("up"))
-        assert_that(deleted_interface.xpath("oper-status")[0].text, is_("down"))
+        assert_that(deleted_interface.xpath("admin-status")[0].text, is_("\nup\n"))
+        assert_that(deleted_interface.xpath("oper-status")[0].text, is_("\ndown\n"))
 
-        access_mode_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/2')]/..")[0]
+        access_mode_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'\nge-0/0/2\n')]/..")[0]
         assert_that(access_mode_interface.xpath("*"), has_length(4))
-        assert_that(access_mode_interface.xpath("admin-status")[0].text, is_("up"))
-        assert_that(access_mode_interface.xpath("oper-status")[0].text, is_("down"))
+        assert_that(access_mode_interface.xpath("admin-status")[0].text, is_("\nup\n"))
+        assert_that(access_mode_interface.xpath("oper-status")[0].text, is_("\ndown\n"))
         assert_that(access_mode_interface.xpath("logical-interface/*"), has_length(5))
-        assert_that(access_mode_interface.xpath("logical-interface/name")[0].text, is_("ge-0/0/2.0"))
-        assert_that(access_mode_interface.xpath("logical-interface/admin-status")[0].text, is_("up"))
-        assert_that(access_mode_interface.xpath("logical-interface/oper-status")[0].text, is_("down"))
+        assert_that(access_mode_interface.xpath("logical-interface/name")[0].text, is_("\nge-0/0/2.0\n"))
+        assert_that(access_mode_interface.xpath("logical-interface/admin-status")[0].text, is_("\nup\n"))
+        assert_that(access_mode_interface.xpath("logical-interface/oper-status")[0].text, is_("\ndown\n"))
         assert_that(access_mode_interface.xpath("logical-interface/filter-information"), has_length(1))
         assert_that(access_mode_interface.xpath("logical-interface/filter-information/*"), has_length(0))
         assert_that(access_mode_interface.xpath("logical-interface/address-family/*"), has_length(1))
-        assert_that(access_mode_interface.xpath("logical-interface/address-family/address-family-name")[0].text, is_("eth-switch"))
+        assert_that(access_mode_interface.xpath("logical-interface/address-family/address-family-name")[0].text, is_("\neth-switch\n"))
 
-        bond_member_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/3')]/..")[0]
+        bond_member_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'\nge-0/0/3\n')]/..")[0]
         assert_that(bond_member_interface.xpath("*"), has_length(3))
-        assert_that(bond_member_interface.xpath("admin-status")[0].text, is_("up"))
-        assert_that(bond_member_interface.xpath("oper-status")[0].text, is_("down"))
+        assert_that(bond_member_interface.xpath("admin-status")[0].text, is_("\nup\n"))
+        assert_that(bond_member_interface.xpath("oper-status")[0].text, is_("\ndown\n"))
 
-        disabled_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'ge-0/0/4')]/..")[0]
-        assert_that(disabled_interface.xpath("admin-status")[0].text, is_("down"))
+        disabled_interface = terse.xpath("interface-information/physical-interface/name[contains(text(),'\nge-0/0/4\n')]/..")[0]
+        assert_that(disabled_interface.xpath("admin-status")[0].text, is_("\ndown\n"))
 
-        inactive_bond = terse.xpath("interface-information/physical-interface/name[contains(text(),'ae1')]/..")[0]
+        inactive_bond = terse.xpath("interface-information/physical-interface/name[contains(text(),'\nae1\n')]/..")[0]
         assert_that(inactive_bond.xpath("*"), has_length(3))
-        assert_that(inactive_bond.xpath("admin-status")[0].text, is_("up"))
-        assert_that(inactive_bond.xpath("oper-status")[0].text, is_("down"))
+        assert_that(inactive_bond.xpath("admin-status")[0].text, is_("\nup\n"))
+        assert_that(inactive_bond.xpath("oper-status")[0].text, is_("\ndown\n"))
 
-        active_bond = terse.xpath("interface-information/physical-interface/name[contains(text(),'ae3')]/..")[0]
+        active_bond = terse.xpath("interface-information/physical-interface/name[contains(text(),'\nae3\n')]/..")[0]
         assert_that(active_bond.xpath("*"), has_length(4))
-        assert_that(active_bond.xpath("admin-status")[0].text, is_("up"))
-        assert_that(active_bond.xpath("oper-status")[0].text, is_("down"))
+        assert_that(active_bond.xpath("admin-status")[0].text, is_("\nup\n"))
+        assert_that(active_bond.xpath("oper-status")[0].text, is_("\ndown\n"))
         assert_that(active_bond.xpath("logical-interface/*"), has_length(5))
-        assert_that(active_bond.xpath("logical-interface/name")[0].text, is_("ae3.0"))
-        assert_that(active_bond.xpath("logical-interface/admin-status")[0].text, is_("up"))
-        assert_that(active_bond.xpath("logical-interface/oper-status")[0].text, is_("down"))
+        assert_that(active_bond.xpath("logical-interface/name")[0].text, is_("\nae3.0\n"))
+        assert_that(active_bond.xpath("logical-interface/admin-status")[0].text, is_("\nup\n"))
+        assert_that(active_bond.xpath("logical-interface/oper-status")[0].text, is_("\ndown\n"))
         assert_that(active_bond.xpath("logical-interface/filter-information"), has_length(1))
         assert_that(active_bond.xpath("logical-interface/filter-information/*"), has_length(0))
         assert_that(active_bond.xpath("logical-interface/address-family/*"), has_length(1))
-        assert_that(active_bond.xpath("logical-interface/address-family/address-family-name")[0].text, is_("eth-switch"))
+        assert_that(active_bond.xpath("logical-interface/address-family/address-family-name")[0].text, is_("\neth-switch\n"))
 
         self.cleanup(reset_interface("ae3"),
                      reset_interface("ge-0/0/1"),

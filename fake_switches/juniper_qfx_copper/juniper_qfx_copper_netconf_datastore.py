@@ -48,32 +48,32 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
 
     def _to_terse(self, port):
         interface = [
-            {"name": port.name},
-            {"admin-status": "down" if port.shutdown else "up"},
-            {"oper-status": "down"}
+            {"name": "\n{}\n".format(port.name)},
+            {"admin-status": "\ndown\n" if port.shutdown else "\nup\n"},
+            {"oper-status": "\ndown\n"}
         ]
 
         if port.description is not None:
-            interface.append({"description": port.description})
+            interface.append({"description": "\n{}\n".format(port.description)})
 
         if port.vendor_specific.get("has-ethernet-switching"):
             interface.extend([
                 {"logical-interface": [
-                    {"name": "{}.0".format(port.name)},
-                    {"admin-status": "down" if port.shutdown else "up"},
-                    {"oper-status": "down"},
+                    {"name": "\n{}.0\n".format(port.name)},
+                    {"admin-status": "\ndown\n" if port.shutdown else "\nup\n"},
+                    {"oper-status": "\ndown\n"},
                     {"filter-information": {}},
                     {"address-family": {
-                        "address-family-name": "eth-switch"
+                        "address-family-name": "\neth-switch\n"
                     }}
                 ]}
             ])
         elif port.aggregation_membership is None and not isinstance(port, AggregatedPort):
             interface.extend([
                 {"logical-interface": [
-                    {"name": "{}.16386".format(port.name)},
-                    {"admin-status": "down" if port.shutdown else "up"},
-                    {"oper-status": "down"},
+                    {"name": "\n{}.16386\n".format(port.name)},
+                    {"admin-status": "\ndown\n" if port.shutdown else "\nup\n"},
+                    {"oper-status": "\ndown\n"},
                     {"filter-information": {}}
                 ]}
             ])
