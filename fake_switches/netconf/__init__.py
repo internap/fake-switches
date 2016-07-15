@@ -46,8 +46,8 @@ class SimpleDatastore(object):
         pass
 
 class Response(object):
-    def __init__(self, etree_object, require_disconnect=False):
-        self.etree = etree_object
+    def __init__(self, elements, require_disconnect=False):
+        self.elements = elements if isinstance(elements, list) else [elements]
         self.require_disconnect = require_disconnect
 
 
@@ -108,6 +108,11 @@ class NetconfError(Exception):
         self.tag = tag
         self.info = info
         self.path = path
+
+
+class MultipleNetconfErrors(Exception):
+    def __init__(self, errors):
+        self.errors = errors
 
 
 class AlreadyLocked(NetconfError):
