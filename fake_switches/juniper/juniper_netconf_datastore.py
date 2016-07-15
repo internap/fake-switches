@@ -12,11 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from copy import deepcopy
 import re
+from copy import deepcopy
+
 from lxml import etree
-from fake_switches.netconf import XML_NS, XML_ATTRIBUTES, CANDIDATE, RUNNING, AlreadyLocked, NetconfError, CannotLockUncleanCandidate, first, \
-    UnknownVlan, InvalidInterfaceType, InvalidTrailingInput, AggregatePortOutOfRange, PhysicalPortOutOfRange
+
+from fake_switches.netconf import XML_NS, XML_ATTRIBUTES, CANDIDATE, RUNNING, AlreadyLocked, NetconfError, \
+    CannotLockUncleanCandidate, first,UnknownVlan, InvalidInterfaceType, InvalidTrailingInput, \
+    AggregatePortOutOfRange, PhysicalPortOutOfRange,  MultipleNetconfErrors
 from fake_switches.netconf.netconf_protocol import dict_2_etree
 from fake_switches.switch_configuration import AggregatedPort
 
@@ -28,6 +31,7 @@ class JuniperNetconfDatastore(object):
         self.original_configuration = configuration
         self.configurations = {}
         self.reset()
+        self.edit_errors = []
 
         self.PORT_MODE_TAG = "port-mode"
         self.MAX_AGGREGATED_ETHERNET_INTERFACES = 127
@@ -63,6 +67,7 @@ class JuniperNetconfDatastore(object):
         return dict_2_etree({"data": {"configuration": configuration}})
 
     def edit(self, target, etree_conf):
+        self.edit_errors = []
         conf = self.configurations[target]
         handled_elements = []
 
@@ -70,7 +75,10 @@ class JuniperNetconfDatastore(object):
         handled_elements += self.parse_interfaces(conf, etree_conf)
         handled_elements += parse_protocols(conf, etree_conf)
 
-        raise_for_unused_nodes(etree_conf, handled_elements)
+        self.edit_errors.extend(_get_errors_for_unused_nodes(etree_conf, handled_elements))
+
+        if len(self.edit_errors) > 0:
+            raise MultipleNetconfErrors(self.edit_errors)
 
     def commit_candidate(self):
         self._validate(self.configurations[CANDIDATE])
@@ -145,9 +153,6 @@ class JuniperNetconfDatastore(object):
             if port.speed is not None:
                 aggregated_ether_options["link-speed"] = port.speed
 
-            if port.auto_negotiation is True:
-                aggregated_ether_options["auto-negotiation"] = {}
-
             lacp_options = {}
             if port.lacp_active is True:
                 lacp_options["active"] = {}
@@ -167,6 +172,8 @@ class JuniperNetconfDatastore(object):
 
             if port.auto_negotiation is True:
                 ether_options["auto-negotiation"] = {}
+            elif port.auto_negotiation is False:
+                ether_options["no-auto-negotiation"] = {}
 
             if port.aggregation_membership is not None:
                 ether_options["ieee-802.3ad"] = {"bundle": port.aggregation_membership}
@@ -245,7 +252,7 @@ class JuniperNetconfDatastore(object):
                 if speed_node is not None:
                     port.speed = speed_node.tag.split("-")[-1]
 
-                port.auto_negotiation = resolve_new_value(ether_options_attributes, "auto-negotiation", port.auto_negotiation, transformer=lambda _: True)
+                self.edit_errors.extend(assign_auto_negotiation_state(ether_options_attributes, port))
 
                 if resolve_operation(first(ether_options_attributes.xpath("ieee-802.3ad"))) == "delete":
                     if port.aggregation_membership is None:
@@ -461,7 +468,8 @@ def parse_protocols(conf, etree_conf):
     return handled_elements
 
 
-def raise_for_unused_nodes(root, handled_elements):
+def _get_errors_for_unused_nodes(root, handled_elements):
+    errors = []
     for element in root:
         if len(element) == 0:
             current = element
@@ -473,9 +481,10 @@ def raise_for_unused_nodes(root, handled_elements):
                 current = current.getparent()
 
             if not handled:
-                raise BadElement(element.tag)
+                errors.append(BadElement(element.tag))
         else:
-            raise_for_unused_nodes(element, handled_elements)
+            errors.extend(_get_errors_for_unused_nodes(element, handled_elements))
+    return errors
 
 
 def raise_for_invalid_interface(interface, max_aggregated_interfaces):
@@ -531,6 +540,11 @@ class BadElement(NetconfError):
 class NotFound(NetconfError):
     def __init__(self, name):
         super(NotFound, self).__init__("statement not found: %s" % name, severity="warning")
+
+
+class SyntaxError(NetconfError):
+    def __init__(self):
+        super(SyntaxError, self).__init__("syntax error")
 
 
 def parse_range(r):
@@ -596,3 +610,26 @@ def _restore_protocols_specific_data(backup, port):
     port.vendor_specific["lldp"] = backup.get("vendor_specific", {}).get("lldp")
     port.lldp_transmit = backup.get("lldp_transmit")
     port.lldp_receive = backup.get("lldp_receive")
+
+
+def assign_auto_negotiation_state(ether_options_attributes, port):
+    errors = []
+
+    auto_negotion_present = resolve_new_value(ether_options_attributes, "auto-negotiation", False, transformer=lambda _: True)
+    no_auto_negotion_present = resolve_new_value(ether_options_attributes, "no-auto-negotiation", False, transformer=lambda _: True)
+
+    if auto_negotion_present is not False and no_auto_negotion_present is not False:
+        errors.append(SyntaxError())
+    if auto_negotion_present is None and port.auto_negotiation is not True:
+        errors.append(NotFound("auto-negotiation"))
+    if no_auto_negotion_present is None and port.auto_negotiation is not False:
+        errors.append(NotFound("no-auto-negotiation"))
+
+    if auto_negotion_present is True:
+        port.auto_negotiation = True
+    elif no_auto_negotion_present is True:
+        port.auto_negotiation = False
+    else:
+        port.auto_negotiation = None
+
+    return errors

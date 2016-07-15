@@ -18,7 +18,7 @@ import re
 from twisted.internet.protocol import Protocol
 from lxml import etree
 from fake_switches.netconf import dict_2_etree, NS_BASE_1_0, normalize_operation_name, SimpleDatastore, \
-    Response, OperationNotSupported, NetconfError, FailingCommitResults
+    Response, OperationNotSupported, NetconfError, FailingCommitResults, MultipleNetconfErrors
 from fake_switches.netconf.capabilities import Base1_0
 
 
@@ -77,6 +77,8 @@ class NetconfProtocol(Protocol):
                     self.reply(message_id, getattr(capability, operation_name)(operation))
                 except NetconfError as e:
                     self.reply(message_id, error_to_response(e))
+                except MultipleNetconfErrors as e:
+                    self.reply(message_id, errors_to_response(e.errors))
                 except FailingCommitResults as e:
                     self.reply(message_id, commit_results_error_to_response(e))
                 handled = True
@@ -87,7 +89,8 @@ class NetconfProtocol(Protocol):
     def reply(self, message_id, response):
         reply = etree.Element("rpc-reply", xmlns=NS_BASE_1_0, nsmap=self.additionnal_namespaces)
         reply.attrib["message-id"] = message_id
-        reply.append(response.etree)
+        for ele in response.elements:
+            reply.append(ele)
 
         self.say(reply)
 
@@ -115,6 +118,10 @@ def error_to_rpcerror_dict(error):
 
 def error_to_response(error):
     return Response(dict_2_etree(error_to_rpcerror_dict(error)))
+
+
+def errors_to_response(errors):
+    return Response([dict_2_etree(error_to_rpcerror_dict(error)) for error in errors])
 
 
 def commit_results_error_to_response(commit_results_error):

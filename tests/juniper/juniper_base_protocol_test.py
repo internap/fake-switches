@@ -1125,7 +1125,6 @@ class JuniperBaseProtocolTest(BaseJuniper):
                     {"description": {XML_ATTRIBUTES: {"operation": "delete"}}},
                     {"aggregated-ether-options": {
                         "link-speed": "10g",
-                        "auto-negotiation": {},
                         "lacp": {
                             "active": {},
                             "periodic": "slow"}}}]}})
@@ -1133,9 +1132,8 @@ class JuniperBaseProtocolTest(BaseJuniper):
 
         ae1 = self.get_interface("ae1")
         assert_that(ae1.xpath("*"), has_length(2))
-        assert_that(ae1.xpath("aggregated-ether-options/*"), has_length(3))
+        assert_that(ae1.xpath("aggregated-ether-options/*"), has_length(2))
         assert_that(ae1.xpath("aggregated-ether-options/link-speed")[0].text, is_("10g"))
-        assert_that(ae1.xpath("aggregated-ether-options/auto-negotiation"), has_length(1))
         assert_that(ae1.xpath("aggregated-ether-options/lacp/*"), has_length(2))
         assert_that(ae1.xpath("aggregated-ether-options/lacp/active"), has_length(1))
         assert_that(ae1.xpath("aggregated-ether-options/lacp/periodic")[0].text, is_("slow"))
@@ -1154,7 +1152,6 @@ class JuniperBaseProtocolTest(BaseJuniper):
                     {"name": "ae1"},
                     {"aggregated-ether-options": {
                         "link-speed": {XML_ATTRIBUTES: {"operation": "delete"}},
-                        "auto-negotiation": {XML_ATTRIBUTES: {"operation": "delete"}},
                         "lacp": {
                             "active": {XML_ATTRIBUTES: {"operation": "delete"}},
                             "periodic": "slow"}}},
@@ -1180,6 +1177,88 @@ class JuniperBaseProtocolTest(BaseJuniper):
             "configuration": {"interfaces": {"interface": {"name": "ae1"}}}}}))
 
         assert_that(result.xpath("configuration/interfaces"), has_length(0))
+
+    def test_auto_negotiation_and_no_auti_negotiation_are_mutually_exclusive(self):
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"ether-options": {
+                        "auto-negotiation": {}}}]}]})
+        self.nc.commit()
+
+        ge001 = self.get_interface("ge-0/0/1")
+        assert_that(ge001.xpath("ether-options/auto-negotiation"), has_length(1))
+        assert_that(ge001.xpath("ether-options/no-auto-negotiation"), has_length(0))
+
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"ether-options": {
+                        "no-auto-negotiation": {}}}]}]})
+        self.nc.commit()
+
+        ge001 = self.get_interface("ge-0/0/1")
+        assert_that(ge001.xpath("ether-options/auto-negotiation"), has_length(0))
+        assert_that(ge001.xpath("ether-options/no-auto-negotiation"), has_length(1))
+
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"ether-options": {
+                        "no-auto-negotiation": {XML_ATTRIBUTES: {"operation": "delete"}}}}]}]})
+        self.nc.commit()
+
+        assert_that(self.get_interface("ge-0/0/1"), is_(None))
+
+    def test_posting_delete_on_both_auto_negotiation_flags_delete_and_raises(self):
+        with self.assertRaises(RPCError) as expect:
+            self.edit({
+                "interfaces": [
+                    {"interface": [
+                        {"name": "ge-0/0/1"},
+                        {"ether-options": {
+                            "auto-negotiation": {XML_ATTRIBUTES: {"operation": "delete"}},
+                            "no-auto-negotiation": {XML_ATTRIBUTES: {"operation": "delete"}}}}]}]})
+
+        assert_that(str(expect.exception), contains_string("warning: statement not found: no-auto-negotiation"))
+        assert_that(str(expect.exception), contains_string("warning: statement not found: auto-negotiation"))
+
+        with self.assertRaises(RPCError) as expect:
+            self.edit({
+                "interfaces": [
+                    {"interface": [
+                        {"name": "ge-0/0/1"},
+                        {"ether-options": {
+                            "auto-negotiation": {},
+                            "no-auto-negotiation": {}}}]}]})
+
+        assert_that(str(expect.exception), contains_string("syntax error"))
+
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"ether-options": {
+                        "auto-negotiation": {}}}]}]})
+        self.nc.commit()
+
+        with self.assertRaises(RPCError) as expect:
+            self.edit({
+                "interfaces": [
+                    {"interface": [
+                        {"name": "ge-0/0/1"},
+                        {"ether-options": {
+                            "auto-negotiation": {XML_ATTRIBUTES: {"operation": "delete"}},
+                            "no-auto-negotiation": {XML_ATTRIBUTES: {"operation": "delete"}}}}]}]})
+        self.nc.commit()
+
+        assert_that(str(expect.exception), contains_string("warning: statement not found: no-auto-negotiation"))
+        assert_that(str(expect.exception), is_not(contains_string("warning: statement not found: auto-negotiation")))
+
+        assert_that(self.get_interface("ge-0/0/1"), is_(None))
 
     def test_assign_port_to_aggregated_interface(self):
         self.edit({
