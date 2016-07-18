@@ -137,17 +137,17 @@ class AggregatePortOutOfRange(NetconfError):
 
 class PhysicalPortOutOfRange(NetconfError):
     def __init__(self, port, interface):
-        super(PhysicalPortOutOfRange, self).__init__("Port value outside range 1..127 for '{}' in '{}'".format(port, interface))
+        super(PhysicalPortOutOfRange, self).__init__("port value outside range 1..127 for '{}' in '{}'".format(port, interface))
 
 
 class InvalidTrailingInput(NetconfError):
     def __init__(self, port, interface):
-        super(InvalidTrailingInput, self).__init__("Invalid trailing input '{}' in '{}'".format(port, interface))
+        super(InvalidTrailingInput, self).__init__("invalid trailing input '{}' in '{}'".format(port, interface))
 
 
 class InvalidInterfaceType(NetconfError):
     def __init__(self, interface):
-        super(InvalidInterfaceType, self).__init__("Invalid interface type in '{}'".format(interface))
+        super(InvalidInterfaceType, self).__init__("invalid interface type in '{}'".format(interface))
 
 
 class OperationNotSupported(NetconfError):
