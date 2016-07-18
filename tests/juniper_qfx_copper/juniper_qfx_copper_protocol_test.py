@@ -970,7 +970,9 @@ configuration check-out failed
             self.edit({
                 "interfaces": {
                     "interface": [
-                        {"name": "ae9000"}
+                        {"name": "ae9000"},
+                        {"aggregated-ether-options": {
+                            "link-speed": "10g"}}
                     ]}})
         assert_that(str(exc.exception), contains_string("device value outside range 0..999 for '9000' in 'ae9000'"))
 
@@ -1365,6 +1367,42 @@ configuration check-out failed
                      reset_interface("ge-0/0/2"),
                      reset_interface("ge-0/0/3"),
                      reset_interface("ge-0/0/4"))
+
+    def test_set_interface_raises_on_physical_interface_with_bad_trailing_input(self):
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/43foobar"},
+                        {"ether-options": {
+                            "auto-negotiation": {}}}
+                    ]}})
+
+        assert_that(str(exc.exception), contains_string("invalid trailing input 'foobar' in 'ge-0/0/43foobar'"))
+
+    def test_set_interface_raises_for_physical_interface_for_out_of_range_port(self):
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/128"},
+                        {"ether-options": {
+                            "auto-negotiation": {}}}
+                    ]}})
+
+        assert_that(str(exc.exception), contains_string("port value outside range 1..127 for '128' in 'ge-0/0/128'"))
+
+    def test_set_interface_raises_on_aggregated_invalid_interface_type(self):
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ae34foobar345"},
+                        {"ether-options": {
+                            "auto-negotiation": {}}}
+                    ]}})
+
+        assert_that(str(exc.exception), contains_string("invalid interface type in 'ae34foobar345'"))
 
 
 def reset_interface(interface_name):

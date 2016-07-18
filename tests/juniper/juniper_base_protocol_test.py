@@ -1045,37 +1045,45 @@ class JuniperBaseProtocolTest(BaseJuniper):
             self.edit({
                 "interfaces": {
                     "interface": [
-                        {"name": "ge-0/0/43foobar"}
+                        {"name": "ge-0/0/43foobar"},
+                        {"ether-options": {
+                            "auto-negotiation": {}}}
                     ]}})
 
-        assert_that(str(exc.exception), contains_string("Invalid trailing input 'foobar' in 'ge-0/0/43foobar'"))
+        assert_that(str(exc.exception), contains_string("invalid trailing input 'foobar' in 'ge-0/0/43foobar'"))
 
     def test_set_interface_raises_for_physical_interface_for_out_of_range_port(self):
         with self.assertRaises(RPCError) as exc:
             self.edit({
                 "interfaces": {
                     "interface": [
-                        {"name": "ge-0/0/128"}
+                        {"name": "ge-0/0/128"},
+                        {"ether-options": {
+                            "auto-negotiation": {}}}
                     ]}})
 
-        assert_that(str(exc.exception), contains_string("Port value outside range 1..127 for '128' in 'ge-0/0/128'"))
+        assert_that(str(exc.exception), contains_string("port value outside range 1..127 for '128' in 'ge-0/0/128'"))
 
     def test_set_interface_raises_on_aggregated_invalid_interface_type(self):
         with self.assertRaises(RPCError) as exc:
             self.edit({
                 "interfaces": {
                     "interface": [
-                        {"name": "ae34foobar345"}
+                        {"name": "ae34foobar345"},
+                        {"ether-options": {
+                            "auto-negotiation": {}}}
                     ]}})
 
-        assert_that(str(exc.exception), contains_string("Invalid interface type in 'ae34foobar345'"))
+        assert_that(str(exc.exception), contains_string("invalid interface type in 'ae34foobar345'"))
 
     def test_set_interface_raises_on_aggregated_out_of_range_port(self):
         with self.assertRaises(RPCError) as exc:
             self.edit({
                 "interfaces": {
                     "interface": [
-                        {"name": "ae34345"}
+                        {"name": "ae34345"},
+                        {"aggregated-ether-options": {
+                            "link-speed": "10g"}}
                     ]}})
         assert_that(str(exc.exception), contains_string("device value outside range 0..127 for '34345' in 'ae34345'"))
 
