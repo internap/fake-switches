@@ -21,6 +21,7 @@ from hamcrest import assert_that, has_length, equal_to, has_items, is_, is_not, 
 from ncclient import manager
 from ncclient.operations import RPCError
 from tests import contains_regex
+from tests.juniper.assertion_tools import has_xpath
 from tests.netconf.netconf_protocol_test import xml_equals_to
 
 from tests.util.global_reactor import juniper_qfx_copper_switch_ip, \
@@ -1403,6 +1404,66 @@ configuration check-out failed
                     ]}})
 
         assert_that(str(exc.exception), contains_string("invalid interface type in 'ae34foobar345'"))
+
+    def test_set_interface_mtu(self):
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/2"},
+                    {"mtu": "1000"}]},
+                {"interface": [
+                    {"name": "ae2"},
+                    {"mtu": "1500"}]},
+            ]})
+
+        self.nc.commit()
+
+        assert_that(self._interface("ge-0/0/2"), has_xpath("mtu", equal_to("1000")))
+        assert_that(self._interface("ae2"), has_xpath("mtu", equal_to("1500")))
+
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/2"},
+                    {"mtu": {XML_ATTRIBUTES: {"operation": "delete"}}}]},
+                {"interface": [
+                    {"name": "ae2"},
+                    {"mtu": {XML_ATTRIBUTES: {"operation": "delete"}}}]}
+            ]})
+
+        self.nc.commit()
+
+        assert_that(self._interface("ge-0/0/2"), is_(None))
+        assert_that(self._interface("ae2"), is_(None))
+
+    def test_set_interface_mtu_error_messages(self):
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ge-0/0/2"},
+                        {"mtu": "wat"}]}})
+
+        assert_that(str(exc.exception), contains_string("Invalid numeric value: 'wat'"))
+
+        with self.assertRaises(RPCError) as exc:
+            self.edit({
+                "interfaces": {
+                    "interface": [
+                        {"name": "ae2"},
+                        {"mtu": "0"}]}})
+
+        assert_that(str(exc.exception), contains_string("Value 0 is not within range (256..9216)"))
+
+    def _interface(self, name):
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": name}}}}
+        }))
+
+        try:
+            return result.xpath("data/configuration/interfaces/interface")[0]
+        except IndexError:
+            return None
 
 
 def reset_interface(interface_name):

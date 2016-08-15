@@ -19,7 +19,7 @@ from lxml import etree
 
 from fake_switches.netconf import XML_NS, XML_ATTRIBUTES, CANDIDATE, RUNNING, AlreadyLocked, NetconfError, \
     CannotLockUncleanCandidate, first,UnknownVlan, InvalidInterfaceType, InvalidTrailingInput, \
-    AggregatePortOutOfRange, PhysicalPortOutOfRange,  MultipleNetconfErrors
+    AggregatePortOutOfRange, PhysicalPortOutOfRange,  MultipleNetconfErrors, InvalidNumericValue, InvalidMTUValue
 from fake_switches.netconf.netconf_protocol import dict_2_etree
 from fake_switches.switch_configuration import AggregatedPort
 
@@ -104,6 +104,7 @@ class JuniperNetconfDatastore(object):
                 actual_port.mode = updated_port.mode
                 actual_port.shutdown = updated_port.shutdown
                 actual_port.description = updated_port.description
+                actual_port.mtu = updated_port.mtu
                 actual_port.access_vlan = updated_port.access_vlan
                 actual_port.trunk_vlans = deepcopy(updated_port.trunk_vlans)
                 actual_port.trunk_native_vlan = updated_port.trunk_native_vlan
@@ -144,6 +145,9 @@ class JuniperNetconfDatastore(object):
 
         if port.description is not None:
             interface_data.append({"description": port.description})
+
+        if port.mtu is not None:
+            interface_data.append({"mtu": port.mtu})
 
         if port.shutdown:
             interface_data.append({"disable": ""})
@@ -238,6 +242,7 @@ class JuniperNetconfDatastore(object):
 
     def apply_interface_data(self, interface_node, port):
         port.description = resolve_new_value(interface_node, "description", port.description)
+        port.mtu = resolve_new_value(interface_node, "mtu", port.mtu, transformer=_validate_mtu)
 
         shutdown_node = first(interface_node.xpath("disable"))
         if shutdown_node is not None:
@@ -633,3 +638,15 @@ def assign_auto_negotiation_state(ether_options_attributes, port):
         port.auto_negotiation = None
 
     return errors
+
+
+def _validate_mtu(value):
+    try:
+        int_val = int(value)
+    except ValueError:
+        raise InvalidNumericValue(value)
+
+    if 256 <= int_val <= 9216:
+        return value
+
+    raise InvalidMTUValue(value)
