@@ -150,6 +150,16 @@ class InvalidInterfaceType(NetconfError):
         super(InvalidInterfaceType, self).__init__("invalid interface type in '{}'".format(interface))
 
 
+class InvalidNumericValue(NetconfError):
+    def __init__(self, value):
+        super(InvalidNumericValue, self).__init__("Invalid numeric value: '{}'".format(value))
+
+
+class InvalidMTUValue(NetconfError):
+    def __init__(self, value):
+        super(InvalidMTUValue, self).__init__("Value {} is not within range (256..9216)".format(value))
+
+
 class OperationNotSupported(NetconfError):
     def __init__(self, name):
         super(OperationNotSupported, self).__init__(

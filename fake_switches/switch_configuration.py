@@ -164,6 +164,7 @@ class Port(object):
         self.speed = None
         self.auto_negotiation = None
         self.aggregation_membership = None
+        self.mtu = None
         self.vendor_specific = {}
         self.ip_helpers = []
         self.lldp_transmit = None
