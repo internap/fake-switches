@@ -21,13 +21,13 @@ from tests.dell import enable, configuring_interface, \
     assert_interface_configuration, assert_running_config_contains_in_order, \
     get_running_config, configure, configuring_vlan, unconfigure_vlan, \
     configuring_a_vlan_on_interface, create_bond, remove_bond, \
-    ssh_protocol_factory, telnet_protocol_factory
+    ssh_protocol_factory, telnet_protocol_factory, configuring_bond
 from tests.util.protocol_util import with_protocol
 
 
 class DellConfigureInterfaceTest(unittest.TestCase):
     __test__ = False
-    protocol_factory = None
+    protocol_factory = ssh_protocol_factory
 
     def setUp(self):
         self.protocol = self.protocol_factory()
@@ -741,6 +741,103 @@ class DellConfigureInterfaceTest(unittest.TestCase):
         remove_bond(t, 9)
         remove_bond(t, 10)
 
+    @with_protocol
+    def test_mtu(self, t):
+        enable(t)
+
+        configure(t)
+        t.write("interface ethernet 1/g1")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("mtu what")
+        t.readln("                            ^")
+        t.readln("Invalid input. Please specify an integer in the range 1518 to 9216.")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("mtu 1517")
+        t.readln("                            ^")
+        t.readln("Value is out of range. The valid range is 1518 to 9216.")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("mtu 9217")
+        t.readln("                            ^")
+        t.readln("Value is out of range. The valid range is 1518 to 9216.")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("mtu 5000 lol")
+        t.readln("                                  ^")
+        t.readln("% Invalid input detected at '^' marker.")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("mtu 5000")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch(config)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, "ethernet 1/g1", [
+            "mtu 5000"
+        ])
+
+        configuring_interface(t, "ethernet 1/g1", do="no mtu")
+
+        assert_interface_configuration(t, "ethernet 1/g1", [
+            ""
+        ])
+
+    @with_protocol
+    def test_mtu_on_bond(self, t):
+        enable(t)
+
+        create_bond(t, 1)
+
+        configure(t)
+        t.write("interface port-channel 1")
+        t.readln("")
+        t.read("my_switch(config-if-ch1)#")
+        t.write("mtu what")
+        t.readln("                            ^")
+        t.readln("Invalid input. Please specify an integer in the range 1518 to 9216.")
+        t.read("my_switch(config-if-ch1)#")
+        t.write("mtu 1517")
+        t.readln("                            ^")
+        t.readln("Value is out of range. The valid range is 1518 to 9216.")
+        t.read("my_switch(config-if-ch1)#")
+        t.write("mtu 9217")
+        t.readln("                            ^")
+        t.readln("Value is out of range. The valid range is 1518 to 9216.")
+        t.read("my_switch(config-if-ch1)#")
+        t.write("mtu 5000 lol")
+        t.readln("                                  ^")
+        t.readln("% Invalid input detected at '^' marker.")
+        t.readln("")
+        t.read("my_switch(config-if-ch1)#")
+        t.write("mtu 5000")
+        t.readln("")
+        t.read("my_switch(config-if-ch1)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch(config)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, "port-channel 1", [
+            "mtu 5000"
+        ])
+
+        configuring_bond(t, "port-channel 1", do="no mtu")
+
+        assert_interface_configuration(t, "port-channel 1", [
+            ""
+        ])
+
+        remove_bond(t, 1)
 
 class DellConfigureInterfaceSshTest(DellConfigureInterfaceTest):
     __test__ = True

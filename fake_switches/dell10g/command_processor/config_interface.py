@@ -106,6 +106,16 @@ class Dell10GConfigInterfaceCommandProcessor(DellConfigInterfaceCommandProcessor
 
         self.write_line("")
 
+    def do_mtu(self, *args):
+        self.write_line("                                                     ^")
+        self.write_line("% Invalid input detected at '^' marker.")
+        self.write_line("")
+
+    def do_no_mtu(self, *args):
+        self.write_line("                                                     ^")
+        self.write_line("% Invalid input detected at '^' marker.")
+        self.write_line("")
+
     def set_switchport_mode(self, mode):
         if mode not in ("access", "trunk", "general"):
             self.write_line("                                         ^")
