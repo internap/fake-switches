@@ -138,6 +138,8 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
             conf.append("spanning-tree disable")
         if port.spanning_tree_portfast:
             conf.append("spanning-tree portfast")
+        if port.mtu:
+            conf.append("mtu {}".format(port.mtu))
         if port.lldp_transmit is False:
             conf.append('no lldp transmit')
         if port.lldp_receive is False:

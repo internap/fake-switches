@@ -133,6 +133,32 @@ class DellConfigInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
 
         self.write_line("")
 
+    def do_mtu(self, *args):
+        if len(args) > 1:
+            self.write_line("                                  ^")
+            self.write_line("% Invalid input detected at '^' marker.")
+            self.write_line("")
+            return
+
+        try:
+            value = int(args[0])
+        except ValueError:
+            self.write_line("                            ^")
+            self.write_line("Invalid input. Please specify an integer in the range 1518 to 9216.")
+            return
+
+        if not (1518 <= value <= 9216):
+            self.write_line("                            ^")
+            self.write_line("Value is out of range. The valid range is 1518 to 9216.")
+            return
+
+        self.port.mtu = value
+        self.write_line("")
+
+    def do_no_mtu(self, *args):
+        self.port.mtu = None
+        self.write_line("")
+
     def set_switchport_mode(self, mode):
         if mode not in ("access", "trunk", "general"):
             self.write_line("                                         ^")

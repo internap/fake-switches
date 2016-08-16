@@ -63,6 +63,27 @@ def configuring_interface(t, interface, do):
     t.read("my_switch#")
 
 
+def configuring_bond(t, bond, do):
+    bond_number = bond.split(' ')[1]
+    t.write("configure")
+    t.readln("")
+    t.read("my_switch(config)#")
+    t.write("interface %s" % bond)
+    t.readln("")
+    t.read("my_switch(config-if-ch%s)#" % bond_number)
+
+    t.write(do)
+
+    t.readln("")
+    t.read("my_switch(config-if-ch%s)#" % bond_number)
+    t.write("exit")
+    t.readln("")
+    t.read("my_switch(config)#")
+    t.write("exit")
+    t.readln("")
+    t.read("my_switch#")
+
+
 def configuring_a_vlan_on_interface(t, interface, do):
     interface_short_name = interface.split(' ')[1]
     t.write("configure")

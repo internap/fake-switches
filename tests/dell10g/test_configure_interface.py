@@ -661,6 +661,37 @@ class Dell10GConfigureInterfaceSshTest(unittest.TestCase):
 
         remove_bond(t, 43)
 
+    @with_protocol
+    def test_10g_does_not_support_mtu_command_on_interface(self, t):
+        enable(t)
+
+        t.write("configure")
+        t.readln("")
+        t.read("my_switch(config)#")
+        t.write("interface tengigabitethernet 0/0/1")
+        t.readln("")
+        t.read("my_switch(config-if-Te0/0/1)#")
+
+        t.write("mtu 5000")
+        t.readln("                                                     ^")
+        t.readln("% Invalid input detected at '^' marker.")
+        t.readln("")
+        t.read("my_switch(config-if-Te0/0/1)#")
+
+        t.write("no mtu")
+        t.readln("                                                     ^")
+        t.readln("% Invalid input detected at '^' marker.")
+        t.readln("")
+        t.read("my_switch(config-if-Te0/0/1)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch(config)#")
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch#")
+
+
 
 class Dell10GConfigureInterfaceTelnetTest(Dell10GConfigureInterfaceSshTest):
     protocol_factory = telnet_protocol_factory
