@@ -224,6 +224,170 @@ class DellConfigureInterfaceTest(unittest.TestCase):
         unconfigure_vlan(t, 1264)
 
     @with_protocol
+    def test_no_switchport_mode_in_trunk_mode(self, t):
+        enable(t)
+
+        configuring_vlan(t, 1264)
+
+        configure(t)
+        t.write("interface ethernet 1/g1")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("switchport mode trunk")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("switchport trunk allowed vlan add 1264")
+        t.readln("Warning: The use of large numbers of VLANs or interfaces may cause significant")
+        t.readln("delays in applying the configuration.")
+        t.readln("")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch(config)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, 'ethernet 1/g1', [
+            "switchport mode trunk",
+            "switchport trunk allowed vlan add 1264",
+        ])
+
+        configure(t)
+        t.write("interface ethernet 1/g1")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("no switchport mode")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch(config)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, 'ethernet 1/g1', [
+            ""
+        ])
+
+        unconfigure_vlan(t, 1264)
+
+    @with_protocol
+    def test_no_switchport_mode_in_access_mode(self, t):
+        enable(t)
+
+        configuring_vlan(t, 1264)
+
+        configure(t)
+        t.write("interface ethernet 1/g1")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("switchport access vlan 1264")
+        t.readln("Warning: The use of large numbers of VLANs or interfaces may cause significant")
+        t.readln("delays in applying the configuration.")
+        t.readln("")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch(config)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, 'ethernet 1/g1', [
+            "switchport access vlan 1264",
+        ])
+
+        configure(t)
+        t.write("interface ethernet 1/g1")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("no switchport mode")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch(config)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, 'ethernet 1/g1', [
+            "switchport access vlan 1264",
+        ])
+
+        unconfigure_vlan(t, 1264)
+
+    @with_protocol
+    def test_no_switchport_mode_in_general_mode(self, t):
+        enable(t)
+
+        configuring_vlan(t, 1264)
+
+        configure(t)
+        t.write("interface ethernet 1/g1")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("switchport mode general")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("switchport general pvid 1264")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+
+        t.write("switchport general allowed vlan add 1264")
+
+        t.readln("Warning: The use of large numbers of VLANs or interfaces may cause significant")
+        t.readln("delays in applying the configuration.")
+        t.readln("")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch(config)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, 'ethernet 1/g1', [
+            "switchport mode general",
+            "switchport general pvid 1264",
+            "switchport general allowed vlan add 1264",
+        ])
+
+        configure(t)
+        t.write("interface ethernet 1/g1")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("no switchport mode")
+        t.readln("")
+        t.read("my_switch(config-if-1/g1)#")
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch(config)#")
+
+        t.write("exit")
+        t.readln("")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, 'ethernet 1/g1', [
+            "",
+        ])
+
+        unconfigure_vlan(t, 1264)
+
+    @with_protocol
     def test_switchport_mode(self, t):
         enable(t)
 

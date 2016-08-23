@@ -130,6 +130,11 @@ class DellConfigInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
         elif "general".startswith(args[0]):
             if "pvid".startswith(args[1]):
                 self.port.trunk_native_vlan = None
+        elif "mode".startswith(args[0]):
+            self.port.trunk_vlans = None
+            self.port.mode = None
+            self.port.trunk_native_vlan = None
+            self.port.trunk_vlans = None
 
         self.write_line("")
 
