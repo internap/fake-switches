@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from functools import reduce
+
 def group_sequences(item_list, are_in_sequence):
 
     def group(ranges, current):

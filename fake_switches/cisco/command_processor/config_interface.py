@@ -41,7 +41,7 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                 self.port.trunk_vlans += parse_vlan_list(args[4])
         elif args[0:4] == ("trunk", "allowed", "vlan", "remove"):
             if self.port.trunk_vlans is None:
-                self.port.trunk_vlans = range(1, 4097)
+                self.port.trunk_vlans = list(range(1, 4097))
             for v in parse_vlan_list(args[4]):
                 if v in self.port.trunk_vlans:
                     self.port.trunk_vlans.remove(v)

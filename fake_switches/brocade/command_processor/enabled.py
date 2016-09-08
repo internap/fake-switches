@@ -334,7 +334,7 @@ def get_port_attributes(port):
         for vrrp in port.vrrps:
             attributes.append("ip vrrp-extended vrid %s" % vrrp.group_id)
             if vrrp.priority and len(vrrp.track) > 0:
-                attributes.append(" backup priority %s track-priority %s" % (vrrp.priority, vrrp.track.values()[0]))
+                attributes.append(" backup priority %s track-priority %s" % (vrrp.priority, list(vrrp.track.values())[0]))
             if vrrp.ip_addresses:
                 for ip_address in vrrp.ip_addresses:
                     attributes.append(" ip-address %s" % ip_address)
@@ -344,8 +344,8 @@ def get_port_attributes(port):
                 attributes.append(" dead-interval %s" % vrrp.timers_hold)
             if vrrp.timers_hello:
                 attributes.append(" hello-interval %s" % vrrp.timers_hello)
-            if len(vrrp.track) > 0 and vrrp.track.keys()[0] is not None:
-                attributes.append(" track-port %s" % vrrp.track.keys()[0])
+            if len(vrrp.track) > 0 and list(vrrp.track.keys())[0] is not None:
+                attributes.append(" track-port %s" % list(vrrp.track.keys())[0])
             if vrrp.activated:
                 attributes.append(" activate")
             else:

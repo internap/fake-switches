@@ -234,7 +234,7 @@ class XmlEqualsToMatcher(BaseMatcher):
         self.last_error = None
 
     def _matches(self, other):
-        otherxml = other if not isinstance(other, basestring) else to_ele(other)
+        otherxml = other if not isinstance(other, str) else to_ele(other)
         try:
             self.compare_nodes(self.expected, otherxml)
             return True
@@ -246,7 +246,7 @@ class XmlEqualsToMatcher(BaseMatcher):
         description.append_text(to_xml(self.expected, pretty_print=True))
 
     def describe_mismatch(self, item, mismatch_description):
-        itemxml = item if not isinstance(item, basestring) else to_ele(item)
+        itemxml = item if not isinstance(item, str) else to_ele(item)
         mismatch_description.append_text("WAS : \n" + to_xml(itemxml, pretty_print=True) + "\n\n")
         mismatch_description.append_text("IN WHICH : " + str(self.last_error))
 

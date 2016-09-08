@@ -88,7 +88,7 @@ class SwitchConfiguration(object):
         return next((port for port in self.ports if port.name.lower().startswith(partial_name.strip()) and port.name.lower().endswith(number.strip())), None)
 
     def get_port_and_ip_by_ip(self, ip_string):
-        for port in filter(lambda e: isinstance(e, VlanPort), self.ports):
+        for port in [e for e in self.ports if isinstance(e, VlanPort)]:
             for ip in port.ips:
                 if ip_string in ip:
                     return port, ip
