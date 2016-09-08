@@ -68,7 +68,7 @@ class SSHDemoRealm:
         if conchinterfaces.IConchUser in interfaces:
             return interfaces[0], SSHDemoAvatar(avatarId, switch_core=self.switch_core), lambda: None
         else:
-            raise Exception, "No supported interfaces found."
+            raise Exception("No supported interfaces found.")
 
 def getRSAKeys():
     public_key = """ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC53ANLkvrZmufQsXuIZch7zrzWbevrqQpNT+/YUBffi3wX+I4lfJibL4lFwqgwR3Hshy7hqX4tgQiU6nWSz5QD/dcCuoaMvhVxVH0WyCtzc69xL9GBfHzyDvWYV/SU1bMiWwzWsFXSrnASeok1/zuDK4z5F0+U5gOtN009988/sw5DYBNer8gYq04Lt4r1WlCEPdyemLNkwHqNLMI7zgZw65djAEK7m+t8DhjtpV7ODxKi/ZB5TegoIbdMciMOTR+alX4bdw85d9tkVot7wLFX627/+DIbO0DokFfIDgJAt/jBVZf+MFhzjta/ZicxIWsTxK1yyOpmDlGFTHDR0Zwp fake@ssh"""
