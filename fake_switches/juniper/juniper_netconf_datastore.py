@@ -164,10 +164,10 @@ class JuniperNetconfDatastore(object):
             if port.lacp_periodic is not None:
                 lacp_options["periodic"] = port.lacp_periodic
 
-            if len(lacp_options.items()) > 0:
+            if len(lacp_options) > 0:
                 aggregated_ether_options["lacp"] = lacp_options
 
-            if len(aggregated_ether_options.items()) > 0:
+            if len(aggregated_ether_options) > 0:
                 interface_data.append({"aggregated-ether-options": aggregated_ether_options})
         else:
             ether_options = {}
@@ -182,7 +182,7 @@ class JuniperNetconfDatastore(object):
             if port.aggregation_membership is not None:
                 ether_options["ieee-802.3ad"] = {"bundle": port.aggregation_membership}
 
-            if len(ether_options.items()) > 0:
+            if len(ether_options) > 0:
                 interface_data.append({"ether-options": ether_options})
 
         if port.vendor_specific.get("has-ethernet-switching"):
@@ -196,7 +196,7 @@ class JuniperNetconfDatastore(object):
             if len(vlans) > 0:
                 ethernet_switching["vlan"] = [{"members": str(v)} for v in vlans]
 
-            if len(ethernet_switching.items()) > 0 or not isinstance(port, AggregatedPort):
+            if ethernet_switching or not isinstance(port, AggregatedPort):
                 interface_data.append({"unit": {
                     "name": "0",
                     "family": {
@@ -555,7 +555,7 @@ class SyntaxError(NetconfError):
 def parse_range(r):
     m = re.match("(\d+)-(\d+)", r)
     if m:
-        return range(int(m.groups()[0]), int(m.groups()[1]) + 1)
+        return list(range(int(m.groups()[0]), int(m.groups()[1]) + 1))
     else:
         return [int(r)]
 

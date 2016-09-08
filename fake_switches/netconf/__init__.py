@@ -74,7 +74,7 @@ def dict_2_etree(source_dict):
         else:
             root.text = data
 
-    root_element = source_dict.keys()[0]
+    root_element = list(source_dict.keys())[0]
     root_etree = etree.Element(root_element)
     append(root_etree, source_dict[root_element])
     return root_etree

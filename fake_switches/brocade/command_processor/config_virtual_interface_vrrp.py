@@ -31,7 +31,7 @@ class ConfigVirtualInterfaceVrrpCommandProcessor(ConfigInterfaceCommandProcessor
         if "priority".startswith(args[0]) and "track-priority".startswith(args[2]):
             self.vrrp.priority = args[1]
             if len(self.vrrp.track) > 0:
-                track_port = self.vrrp.track.keys()[0]
+                track_port = list(self.vrrp.track.keys())[0]
             else:
                 track_port = None
             self.vrrp.track.update({track_port: args[3]})
@@ -39,7 +39,7 @@ class ConfigVirtualInterfaceVrrpCommandProcessor(ConfigInterfaceCommandProcessor
     def do_no_backup(self, *_):
         self.vrrp.priority = None
         if len(self.vrrp.track) > 0:
-            track_port = self.vrrp.track.keys()[0]
+            track_port = list(self.vrrp.track.keys())[0]
         else:
             track_port = None
         self.vrrp.track.update({track_port: None})
@@ -76,7 +76,7 @@ class ConfigVirtualInterfaceVrrpCommandProcessor(ConfigInterfaceCommandProcessor
         old_value = None
 
         if len(self.vrrp.track) > 0:
-            old_value = self.vrrp.track.values()[0]
+            old_value = list(self.vrrp.track.values())[0]
 
         self.vrrp.track = {' '.join(args[0:2]): old_value}
 
@@ -84,7 +84,7 @@ class ConfigVirtualInterfaceVrrpCommandProcessor(ConfigInterfaceCommandProcessor
         old_value = None
 
         if len(self.vrrp.track) > 0:
-            old_value = self.vrrp.track.values()[0]
+            old_value = list(self.vrrp.track.values())[0]
 
         self.vrrp.track = {None: old_value}
 
