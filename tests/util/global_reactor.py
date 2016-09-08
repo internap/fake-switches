@@ -222,5 +222,5 @@ class ThreadedReactor(threading.Thread):
 
 
 if __name__ == '__main__':
-    print 'Starting reactor...'
+    print('Starting reactor...')
     ThreadedReactor.start_reactor()

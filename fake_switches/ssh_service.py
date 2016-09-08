@@ -45,7 +45,7 @@ class SSHDemoAvatar(avatar.ConchUser):
         return None
 
     def execCommand(self, protocol, cmd):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def closed(self):
         pass
