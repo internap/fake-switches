@@ -1,6 +1,8 @@
 language: python
 python:
   - "2.7"
+  - "3.4"
+  - "3.5"
 
 addons:
   apt:
@@ -8,9 +10,9 @@ addons:
     - telnet
 
 install:
-  - 'pip install tox'
+  - 'pip install tox-travis'
 
-script: tox -r
+script: tox
 deploy:
   provider: pypi
   user: internaphosting
