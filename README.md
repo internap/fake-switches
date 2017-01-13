@@ -98,6 +98,41 @@ Your program should say "This could add vlan to eth0" or do anything you would
 want it to do :)
 
 
+Starting a switch from the command line
+=======================================
+
+```shell
+    pip install fake-switches
+    
+    # fake-switches <model> <listen_host> <listen_port>
+    fake-switches cisco_generic 0.0.0.0 22222
+
+    # On a different shell, type the following:
+    ssh root@127.0.0.1 -p 22222
+```
+
+You can replace cisco_generic by any other supported switch model.
+
+
+Available switch models
+-----------------------
+
+The following models are available:
+ 
+  * brocade_generic
+  * cisco_generic
+  * cisco_2960_24TT_L
+  * cisco_2960_48TT_L
+  * dell_generic
+  * dell10g_generic
+  * juniper_generic
+  * juniper_qfx_copper_generic
+
+The generic models are mainly for test purposes. They usually have less ports than a proper switch
+model but behave the same otherwise. Once a "core" is available, more specific models can be very
+easily added. Send your pull requests :)
+
+
 Contributing
 ============
 

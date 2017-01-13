@@ -19,6 +19,7 @@ from fake_switches.brocade.command_processor.piping import \
 from fake_switches.dell.dell_core import DellSwitchCore, DellShellSession
 from fake_switches.dell10g.command_processor.default import \
     Dell10GDefaultCommandProcessor
+from fake_switches.switch_configuration import Port
 from fake_switches.terminal import LoggingTerminalController
 
 
@@ -34,3 +35,12 @@ class Dell10GSwitchCore(DellSwitchCore):
             logger=self.logger)
 
         return DellShellSession(command_processor)
+
+    @staticmethod
+    def get_default_ports():
+        return [
+            Port("tengigabitethernet 0/0/1"),
+            Port("tengigabitethernet 0/0/2"),
+            Port("tengigabitethernet 1/0/1"),
+            Port("tengigabitethernet 1/0/2")
+        ]

@@ -21,6 +21,7 @@ from fake_switches.brocade.command_processor.piping import \
 from fake_switches.brocade.brocade_core import BrocadeSwitchCore
 from fake_switches.dell.command_processor.default import \
     DellDefaultCommandProcessor
+from fake_switches.switch_configuration import Port
 from fake_switches.terminal import LoggingTerminalController
 
 
@@ -36,6 +37,17 @@ class DellSwitchCore(BrocadeSwitchCore):
             logger=self.logger)
 
         return DellShellSession(command_processor)
+
+    @staticmethod
+    def get_default_ports():
+        return [
+            Port("ethernet 1/g1"),
+            Port("ethernet 1/g2"),
+            Port("ethernet 2/g1"),
+            Port("ethernet 2/g2"),
+            Port("ethernet 1/xg1"),
+            Port("ethernet 2/xg1")
+        ]
 
 
 class DellShellSession(ShellSession):

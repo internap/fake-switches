@@ -17,6 +17,8 @@ import textwrap
 
 from lxml import etree
 
+from fake_switches import switch_core
+from fake_switches.switch_configuration import Port
 from fake_switches.juniper.juniper_netconf_datastore import JuniperNetconfDatastore, NS_JUNOS
 from fake_switches.netconf import OperationNotSupported, RUNNING, CANDIDATE, Response, xml_equals, NetconfError
 from fake_switches.netconf.capabilities import Candidate1_0, ConfirmedCommit1_0, Validate1_0, Url1_0, \
@@ -24,9 +26,9 @@ from fake_switches.netconf.capabilities import Candidate1_0, ConfirmedCommit1_0,
 from fake_switches.netconf.netconf_protocol import NetconfProtocol
 
 
-class JuniperSwitchCore(object):
+class JuniperSwitchCore(switch_core.SwitchCore):
     def __init__(self, switch_configuration, datastore_class=JuniperNetconfDatastore, aggregated_port_count=24):
-        self.switch_configuration = switch_configuration
+        super(JuniperSwitchCore, self).__init__(switch_configuration)
 
         # the aggregated port are considered physical ports and are always existing in a junos environment
         for i in range(0, aggregated_port_count):
@@ -57,6 +59,15 @@ class JuniperSwitchCore(object):
             additionnal_namespaces={"junos": NS_JUNOS},
             logger=logging.getLogger("fake_switches.juniper.%s.%s.netconf" % (self.switch_configuration.name, self.last_connection_id))
         )
+
+    @staticmethod
+    def get_default_ports():
+        return [
+            Port("ge-0/0/1"),
+            Port("ge-0/0/2"),
+            Port("ge-0/0/3"),
+            Port("ge-0/0/4")
+        ]
 
 
 class NetconfJunos1_0(Capability):
