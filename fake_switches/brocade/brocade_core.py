@@ -14,15 +14,17 @@
 
 import logging
 
+from fake_switches import switch_core
 from fake_switches.brocade.command_processor.default import DefaultCommandProcessor
 from fake_switches.brocade.command_processor.piping import PipingProcessor
 from fake_switches.command_processing.shell_session import ShellSession
+from fake_switches.switch_configuration import Port
 from fake_switches.terminal import LoggingTerminalController
 
 
-class BrocadeSwitchCore(object):
+class BrocadeSwitchCore(switch_core.SwitchCore):
     def __init__(self, switch_configuration):
-        self.switch_configuration = switch_configuration
+        super(BrocadeSwitchCore, self).__init__(switch_configuration)
         self.switch_configuration.add_vlan(self.switch_configuration.new("Vlan", 1))
         self.logger = None
         self.last_connection_id = 0
@@ -43,6 +45,15 @@ class BrocadeSwitchCore(object):
 
     def get_netconf_protocol(self):
         return None
+
+    @staticmethod
+    def get_default_ports():
+        return [
+            Port("ethernet 1/1"),
+            Port("ethernet 1/2"),
+            Port("ethernet 1/3"),
+            Port("ethernet 1/4")
+        ]
 
 
 class BrocadeShellSession(ShellSession):

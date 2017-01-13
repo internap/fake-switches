@@ -14,16 +14,18 @@
 
 import logging
 
+from fake_switches import switch_core
 from fake_switches.cisco.command_processor.default import DefaultCommandProcessor
 from fake_switches.cisco.command_processor.enabled import EnabledCommandProcessor
 from fake_switches.cisco.command_processor.piping import PipingProcessor
 from fake_switches.command_processing.shell_session import ShellSession
+from fake_switches.switch_configuration import Port
 from fake_switches.terminal import LoggingTerminalController
 
 
-class CiscoSwitchCore(object):
+class CiscoSwitchCore(switch_core.SwitchCore):
     def __init__(self, switch_configuration):
-        self.switch_configuration = switch_configuration
+        super(CiscoSwitchCore, self).__init__(switch_configuration)
         self.switch_configuration.add_vlan(self.switch_configuration.new("Vlan", 1))
 
         self.logger = None
@@ -48,12 +50,30 @@ class CiscoSwitchCore(object):
     def get_netconf_protocol(self):
         return None
 
+    @staticmethod
+    def get_default_ports():
+        return [
+            Port("FastEthernet0/1"),
+            Port("FastEthernet0/2"),
+            Port("FastEthernet0/3"),
+            Port("FastEthernet0/4")
+        ]
+
 
 class CiscoShellSession(ShellSession):
     def handle_unknown_command(self, line):
         self.command_processor.terminal_controller.write("No such command : %s\n" % line)
 
 
+class Cisco2960_24TT_L_SwitchCore(CiscoSwitchCore):
+    @staticmethod
+    def get_default_ports():
+        return [Port("FastEthernet0/{0}".format(p+1)) for p in range(24)] + \
+               [Port("GigabitEthernet0/{0}".format(p+1)) for p in range(2)]
 
 
-
+class Cisco2960_48TT_L_SwitchCore(CiscoSwitchCore):
+    @staticmethod
+    def get_default_ports():
+        return [Port("FastEthernet0/{0}".format(p+1)) for p in range(48)] + \
+               [Port("GigabitEthernet0/{0}".format(p+1)) for p in range(2)]
