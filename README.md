@@ -36,6 +36,57 @@ behavior, please see the tests section for each model.
 | Juniper | netconf over ssh | [tests/juniper/juniper_base_protocol_test.py](tests/juniper/juniper_base_protocol_test.py) |
 | Dell    | ssh and telnet   | [tests/dell/](tests/dell/) |
 
+Using it with Docker
+====================
+
+```shell
+$ docker run -P -d internap:fake-switches
+$ docker ps
+CONTAINER ID        IMAGE                             COMMAND                  CREATED             STATUS              PORTS                     NAMES
+6eec86849561        fake-switches                     "/bin/sh -c 'fake-swi"   35 seconds ago      Up 13 seconds       0.0.0.0:32776->22/tcp     boring_thompson
+$ ssh 127.0.0.1 -p 32776 -l root
+root@127.0.0.1's password:  # root
+my_switch>enable
+Password:  # press <RETURN>
+my_switch#show run
+Building configuration...
+
+Current configuration : 164 bytes
+version 12.1
+!
+hostname my_switch
+!
+!
+vlan 1
+!
+interface FastEthernet0/1
+!
+interface FastEthernet0/2
+!
+interface FastEthernet0/3
+!
+interface FastEthernet0/4
+!
+end
+
+my_switch#
+
+```
+
+Launching with custom parameters
+--------------------------------
+
+```shell
+$ docker run -P -d -e SWITCH_MODEL="another_model" internap:fake-switches
+```
+
+Building image from source
+--------------------------
+
+```shell
+$ docker build -t fake-switches .
+$ docker run -P -d fake-switches
+```
 
 Making the switches more real
 =============================
