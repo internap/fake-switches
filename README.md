@@ -40,10 +40,10 @@ Using it with Docker
 ====================
 
 ```shell
-$ docker run -P -d internap:fake-switches
+$ docker run -P -d internap/fake-switches
 $ docker ps
 CONTAINER ID        IMAGE                             COMMAND                  CREATED             STATUS              PORTS                     NAMES
-6eec86849561        fake-switches                     "/bin/sh -c 'fake-swi"   35 seconds ago      Up 13 seconds       0.0.0.0:32776->22/tcp     boring_thompson
+6eec86849561        internap/fake-switches            "/bin/sh -c 'fake-swi"   35 seconds ago      Up 13 seconds       0.0.0.0:32776->22/tcp     boring_thompson
 $ ssh 127.0.0.1 -p 32776 -l root
 root@127.0.0.1's password:  # root
 my_switch>enable
@@ -77,7 +77,7 @@ Launching with custom parameters
 --------------------------------
 
 ```shell
-$ docker run -P -d -e SWITCH_MODEL="another_model" internap:fake-switches
+$ docker run -P -d -e SWITCH_MODEL="another_model" internap/fake-switches
 ```
 
 Building image from source
