@@ -25,7 +25,7 @@ class LoggingFileInterface(object):
         self.prefix = prefix
 
     def write(self, data):
-        for line in data.rstrip('\r\n').split('\r\n'):
+        for line in data.rstrip(b'\r\n').split(b'\r\n'):
             logging.info(self.prefix + repr(line))
 
     def flush(self):
@@ -61,36 +61,37 @@ class ProtocolTester(object):
 
     def read(self, expected, regex=False):
         self.wait_for(expected, regex)
-        assert_that(self.child.before, equal_to(""))
+        assert_that(self.child.before, equal_to(b""))
 
     def readln(self, expected, regex=False):
         self.read(expected + "\r\n", regex=regex)
 
     def read_lines_until(self, expected):
         self.wait_for(expected)
-        lines = self.child.before.split('\r\n')
+        lines = self.child.before.decode().split('\r\n')
         return lines
 
     def read_eof(self):
         self.child.expect(pexpect.EOF)
 
     def wait_for(self, expected, regex=False):
-        self.child.expect(re.escape(expected) if not regex else expected)
+        pattern = re.escape(expected) if not regex else expected
+        self.child.expect(pattern)
 
     def write(self, data):
-        self.child.sendline(data)
+        self.child.sendline(data.encode())
         self.read(data + "\r\n")
 
     def write_invisible(self, data):
-        self.child.sendline(data)
+        self.child.sendline(data.encode())
         self.read("\r\n")
 
     def write_stars(self, data):
-        self.child.sendline(data)
+        self.child.sendline(data.encode())
         self.read(len(data) * "*" + "\r\n")
 
     def write_raw(self, data):
-        self.child.send(data)
+        self.child.send(data.encode())
 
 
 class SshTester(ProtocolTester):
@@ -112,6 +113,6 @@ class TelnetTester(ProtocolTester):
     def login(self):
         self.wait_for("Username: ")
         self.write(self.username)
-        self.read("Password: ")
+        self.wait_for("[pP]assword: ", True)
         self.write_invisible(self.password)
         self.wait_for('[>#]$', regex=True)

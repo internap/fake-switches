@@ -43,12 +43,13 @@ class StatefulTelnet(Telnet, object):
         self.handler = lambda data: None
         self._buffer = ""
         self._key_handlers = {
-            CR: self._run_command,
-            LF: self._run_command,
+            '\r': self._run_command,
+            '\n': self._run_command,
         }
 
     def applicationDataReceived(self, data):
-        for key in data:
+        data_string = data.decode()
+        for key in data_string:
             m = self._key_handlers.get(key)
             if m is not None:
                 m()
@@ -60,14 +61,14 @@ class StatefulTelnet(Telnet, object):
                     self.write(self._replace_input)
 
     def write(self, data):
-        self.transport.write(lf_to_crlf(data))
+        self.transport.write(lf_to_crlf(data).encode())
 
     def writeln(self, data):
         self.write(data)
         self.next_line()
 
     def next_line(self):
-        self.write(CR + LF)
+        self.write('\n')
 
     def enable_input_replacement(self, replace_char):
         self._replace_input = replace_char
@@ -130,9 +131,10 @@ class SwitchTelnetShell(StatefulTelnet):
             self.transport.loseConnection()
 
     def applicationDataReceived(self, data):
-        if data in self._printable_chars:
+        data_string = data.decode()
+        if data_string in self._printable_chars:
             if self.awaiting_keystroke is not None:
-                args = self.awaiting_keystroke[1] + [data]
+                args = self.awaiting_keystroke[1] + [data_string]
                 cmd = self.awaiting_keystroke[0]
                 cmd(*args)
                 return
