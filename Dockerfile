@@ -21,4 +21,9 @@ COPY . /usr/src/app
 RUN PBR_VERSION=0.0.0 pip install .
 
 EXPOSE 22
-CMD fake-switches ${SWITCH_MODEL:-cisco_generic} 0.0.0.0 22
+CMD fake-switches --model ${SWITCH_MODEL:-cisco_generic} \
+                  --hostname ${SWITCH_HOSTNAME:-switch} \
+                  --username ${SWITCH_USERNAME:-root} \
+                  --password ${SWITCH_PASSWORD:-root} \
+                  --listen-host ${LISTEN_HOST:-0.0.0.0} \
+                  --listen-port ${LISTEN_PORT:-22}

@@ -14,7 +14,8 @@ TEST_BIND_PORT = str(random.randint(20000, 22000))
 
 class FakeSwitchesTest(unittest.TestCase):
     def test_fake_switches_entrypoint_cisco_generic(self):
-        p = subprocess.Popen(get_base_args() + ['cisco_generic', TEST_BIND_HOST, TEST_BIND_PORT])
+        p = subprocess.Popen(get_base_args() + ["--listen-host", TEST_BIND_HOST,
+                                                "--listen-port", TEST_BIND_PORT])
 
         handshake = connect_and_read_bytes(TEST_BIND_HOST, TEST_BIND_PORT,
                                            byte_count=8, retry_count=10)
@@ -24,7 +25,9 @@ class FakeSwitchesTest(unittest.TestCase):
         assert_that(handshake, starts_with('SSH-2.0'))
 
     def test_fake_switches_entrypoint_invalid_model(self):
-        p = subprocess.Popen(get_base_args() + ['invalid_model', TEST_BIND_HOST, TEST_BIND_PORT])
+        p = subprocess.Popen(get_base_args() + ["--listen-host", TEST_BIND_HOST,
+                                                "--listen-port", TEST_BIND_PORT,
+                                                "--model", "invalid_model"])
 
         returncode = p.wait()
 

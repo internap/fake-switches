@@ -80,6 +80,17 @@ Launching with custom parameters
 $ docker run -P -d -e SWITCH_MODEL="another_model" internap/fake-switches
 ```
 
+Supported parameters
+--------------------
+
+- SWITCH_MODEL, defaults to _cisco_generic_
+- SWITCH_HOSTNAME, defaults to _switch_
+- SWITCH_USER, defaults to _root_
+- SWITCH_PASS, defaults to _root_
+- LISTEN_HOST, defaults to _0.0.0.0_
+- LISTEN_PORT, defaults to _22_
+
+
 Building image from source
 --------------------------
 
@@ -88,8 +99,8 @@ $ docker build -t fake-switches .
 $ docker run -P -d fake-switches
 ```
 
-Making the switches more real
-=============================
+Extending functionality
+=======================
 
 The SwitchConfiguration class can be extended and given an object factory with
 custom classes that can act upon resources changes. For example :
@@ -155,20 +166,44 @@ Starting a switch from the command line
 ```shell
     pip install fake-switches
     
-    # fake-switches <model> <listen_host> <listen_port>
-    fake-switches cisco_generic 0.0.0.0 22222
+    fake-switches
 
     # On a different shell, type the following:
     ssh root@127.0.0.1 -p 22222
 ```
 
-You can replace cisco_generic by any other supported switch model.
+Command line help
+-----------------
+
+The --help flag is supported.
+
+    fake-switches --help
+    usage: fake-switches [-h] [--model MODEL] [--hostname HOSTNAME]
+                         [--username USERNAME] [--password PASSWORD]
+                         [--listen-host LISTEN_HOST] [--listen-port LISTEN_PORT]
+
+    Fake-switch simulator launcher
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --model MODEL         Switch model, allowed values are
+                            juniper_qfx_copper_generic, cisco_2960_24TT_L,
+                            dell_generic, dell10g_generic, juniper_generic,
+                            cisco_2960_48TT_L, cisco_generic, brocade_generic
+                            (default: cisco_generic)
+      --hostname HOSTNAME   Switch hostname (default: switch)
+      --username USERNAME   Switch username (default: root)
+      --password PASSWORD   Switch password (default: root)
+      --listen-host LISTEN_HOST
+                            Listen host (default: 0.0.0.0)
+      --listen-port LISTEN_PORT
+                            Listen port (default: 2222)
 
 
 Available switch models
 -----------------------
 
-The following models are available:
+At time of writing this document, the following models are available:
  
   * brocade_generic
   * cisco_generic
@@ -178,6 +213,8 @@ The following models are available:
   * dell10g_generic
   * juniper_generic
   * juniper_qfx_copper_generic
+
+Use the --help flag to find the available models.
 
 The generic models are mainly for test purposes. They usually have less ports than a proper switch
 model but behave the same otherwise. Once a "core" is available, more specific models can be very

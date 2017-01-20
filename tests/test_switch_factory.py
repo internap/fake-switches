@@ -28,5 +28,6 @@ class SwitchFactoryTest(unittest.TestCase):
         assert_that(switch, is_(instance_of(switch_core.SwitchCore)))
         switch_conf_class.assert_called_with('127.0.0.1',
                                              name='my_hostname',
-                                             ports=mock.sentinel.port_list)
+                                             ports=mock.sentinel.port_list,
+                                             privileged_passwords=['root'])
         core_mock.assert_called_with(switch_conf_instance)
