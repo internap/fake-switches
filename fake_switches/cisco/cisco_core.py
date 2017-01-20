@@ -56,7 +56,15 @@ class CiscoSwitchCore(switch_core.SwitchCore):
             Port("FastEthernet0/1"),
             Port("FastEthernet0/2"),
             Port("FastEthernet0/3"),
-            Port("FastEthernet0/4")
+            Port("FastEthernet0/4"),
+            Port("FastEthernet0/5"),
+            Port("FastEthernet0/6"),
+            Port("FastEthernet0/7"),
+            Port("FastEthernet0/8"),
+            Port("FastEthernet0/9"),
+            Port("FastEthernet0/10"),
+            Port("FastEthernet0/11"),
+            Port("FastEthernet0/12")
         ]
 
 
