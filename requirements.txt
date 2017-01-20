@@ -1,6 +1,6 @@
 netaddr>=0.7.13
 tftpy>=0.6.1
 pycrypto>=2.6.1
-Twisted==15.5.0
+Twisted>=16.6.0, <17.0
 pyasn1>=0.1.7
 lxml>=3.7
