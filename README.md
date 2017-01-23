@@ -80,6 +80,15 @@ Launching with custom parameters
 $ docker run -P -d -e SWITCH_MODEL="another_model" internap/fake-switches
 ```
 
+Supported parameters
+--------------------
+
+- SWITCH_MODEL, defaults to _cisco_generic_
+- SWITCH_HOSTNAME, defaults to _switch_
+- LISTEN_HOST, defaults to _0.0.0.0_
+- LISTEN_PORT, defaults to _22_
+
+
 Building image from source
 --------------------------
 
@@ -88,8 +97,8 @@ $ docker build -t fake-switches .
 $ docker run -P -d fake-switches
 ```
 
-Making the switches more real
-=============================
+Extending functionality
+=======================
 
 The SwitchConfiguration class can be extended and given an object factory with
 custom classes that can act upon resources changes. For example :
@@ -155,7 +164,7 @@ Starting a switch from the command line
 ```shell
     pip install fake-switches
     
-    # fake-switches <model> <listen_host> <listen_port>
+    # fake-switches <model> [<hostname>] <listen_host> <listen_port>
     fake-switches cisco_generic 0.0.0.0 22222
 
     # On a different shell, type the following:
