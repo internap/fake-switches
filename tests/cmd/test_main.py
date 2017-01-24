@@ -15,7 +15,7 @@ TEST_BIND_PORT = str(random.randint(20000, 22000))
 class FakeSwitchesTest(unittest.TestCase):
     def test_fake_switches_entrypoint_cisco_generic(self):
         p = subprocess.Popen(get_base_args() + ['cisco_generic', TEST_BIND_HOST, TEST_BIND_PORT])
-
+        time.sleep(1)
         handshake = connect_and_read_bytes(TEST_BIND_HOST, TEST_BIND_PORT,
                                            byte_count=8, retry_count=10)
 
@@ -39,7 +39,7 @@ def get_base_args():
 def connect_and_read_bytes(host, port, byte_count, retry_count, sleep_time=0.1):
     last_socket_error = None
 
-    for _ in xrange(retry_count):
+    for _ in range(retry_count):
         try:
             s = socket.create_connection((host, port))
         except socket.error as e:
@@ -49,5 +49,5 @@ def connect_and_read_bytes(host, port, byte_count, retry_count, sleep_time=0.1):
         data = s.recv(byte_count)
         s.close()
 
-        return data
+        return data.decode()
     raise last_socket_error

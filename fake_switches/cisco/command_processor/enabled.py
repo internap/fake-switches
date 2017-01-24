@@ -333,7 +333,7 @@ def short_name(port):
 
 
 def version_text(**kwargs):
-    return textwrap.dedent("""
+    return textwrap.dedent(u"""
         Cisco IOS Software, C3750 Software (C3750-IPSERVICESK9-M), Version 12.2(58)SE2, RELEASE SOFTWARE (fc1)
         Technical Support: http://www.cisco.com/techsupport
         Copyright (c) 1986-2011 by Cisco Systems, Inc.

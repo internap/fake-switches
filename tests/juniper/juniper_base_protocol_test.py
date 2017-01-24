@@ -1373,7 +1373,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         result = self.nc.compare_configuration()
 
         output = result.xpath("configuration-information/configuration-output")[0]
-        assert_that(output.text.strip(), is_(""))
+        assert_that(output.text, is_not("There were some changes"))
 
         self.edit({
             "vlans": [
@@ -1385,14 +1385,14 @@ class JuniperBaseProtocolTest(BaseJuniper):
         result = self.nc.compare_configuration()
 
         output = result.xpath("configuration-information/configuration-output")[0]
-        assert_that(output.text.strip(), is_not(""))
+        assert_that(output.text, is_("There were some changes"))
 
         self.nc.commit()
 
         result = self.nc.compare_configuration()
 
         output = result.xpath("configuration-information/configuration-output")[0]
-        assert_that(output.text.strip(), is_(""))
+        assert_that(output.text, is_not("There were some changes"))
 
         self.cleanup(vlan("VLAN2995"))
 

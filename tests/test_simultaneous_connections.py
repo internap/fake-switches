@@ -8,8 +8,8 @@ from tests.util.protocol_util import SshTester, TelnetTester
 
 class RoutingEngineTest(unittest.TestCase):
     def test_2_ssh(self):
-        tester1 = SshTester("ssh-1", brocade_switch_ip, brocade_switch_ssh_port, 'root', 'root')
-        tester2 = SshTester("ssh-2", brocade_switch_ip, brocade_switch_ssh_port, 'root', 'root')
+        tester1 = SshTester("ssh-1", brocade_switch_ip, brocade_switch_ssh_port, u'root', u'root')
+        tester2 = SshTester("ssh-2", brocade_switch_ip, brocade_switch_ssh_port, u'root', u'root')
 
         tester1.connect()
         tester1.write("enable")
