@@ -24,7 +24,7 @@ class SwitchFactory(object):
             mapping = DEFAULT_MAPPING
         self.mapping = mapping
 
-    def get(self, switch_model, hostname='switch_hostname'):
+    def get(self, switch_model, hostname='switch_hostname', password='root'):
         try:
             core = self.mapping[switch_model]
         except KeyError:
@@ -34,6 +34,7 @@ class SwitchFactory(object):
             switch_configuration.SwitchConfiguration(
                 '127.0.0.1',
                 name=hostname,
+                privileged_passwords=[password],
                 ports=core.get_default_ports())
         )
 

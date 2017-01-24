@@ -49,7 +49,7 @@ class SSHDemoAvatar(avatar.ConchUser):
     def closed(self):
         pass
 
-    def windowChanged(newWindowSize):
+    def windowChanged(self, newWindowSize):
         pass
 
     def eofReceived(self):
