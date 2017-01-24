@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  tsr1.yul1.example.net:
+    image: "internap/fake-switches:latest"
+    environment:
+      - SWITCH_MODEL=cisco_2960_48TT_L
+
+  tor1.yul1.example.net:
+    image: "internap/fake-switches:latest"
+    environment:
+      - SWITCH_MODEL=cisco_2960_48TT_L
