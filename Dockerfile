@@ -1,7 +1,6 @@
 FROM python:2.7-alpine
 
-RUN apk update
-RUN apk add python-dev gcc g++ make libffi-dev openssl-dev libxml2 libxml2-dev libxslt libxslt-dev
+RUN apk update && apk add --no-cache python-dev gcc git g++ make libffi-dev openssl-dev libxml2 libxml2-dev libxslt libxslt-dev
 
 # 
 # NOTE(mmitchell): Mimick -onbuild using -alpine image.
