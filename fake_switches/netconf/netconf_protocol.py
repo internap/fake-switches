@@ -52,6 +52,7 @@ class NetconfProtocol(Protocol):
         }))
 
     def dataReceived(self, data):
+        data = data.decode()
         self.logger.info("Received : %s" % repr(data))
         self.input_buffer += data
         if self.input_buffer.rstrip().endswith("]]>]]>"):
@@ -64,7 +65,7 @@ class NetconfProtocol(Protocol):
             self.been_greeted = True
             return
 
-        xml_request_root = remove_namespaces(etree.fromstring(data))
+        xml_request_root = remove_namespaces(etree.fromstring(data.encode()))
         message_id = xml_request_root.get("message-id")
         operation = xml_request_root[0]
         self.logger.info("Operation requested %s" % repr(operation.tag))
@@ -100,7 +101,7 @@ class NetconfProtocol(Protocol):
 
     def say(self, etree_root):
         self.logger.info("Saying : %s" % repr(etree.tostring(etree_root)))
-        self.transport.write(etree.tostring(etree_root, pretty_print=True) + "]]>]]>\n")
+        self.transport.write(etree.tostring(etree_root, pretty_print=True) + b"]]>]]>\n")
 
 
 def error_to_rpcerror_dict(error):

@@ -26,7 +26,7 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
     __test__ = False
 
     def create_client(self):
-        return SshTester("ssh", cisco_switch_ip, cisco_switch_ssh_port, 'root', 'root')
+        return SshTester("ssh", cisco_switch_ip, cisco_switch_ssh_port, u'root', u'root')
 
     def setUp(self):
         self.protocol = self.create_client()
@@ -1551,11 +1551,11 @@ class TestCiscoSwitchProtocolSSH(TestCiscoSwitchProtocol):
     __test__ = True
 
     def create_client(self):
-        return SshTester("ssh", cisco_switch_ip, cisco_switch_ssh_port, 'root', 'root')
+        return SshTester("ssh", cisco_switch_ip, cisco_switch_ssh_port, u'root', u'root')
 
 
 class TestCiscoSwitchProtocolTelnet(TestCiscoSwitchProtocol):
     __test__ = True
 
     def create_client(self):
-        return TelnetTester("telnet", cisco_switch_ip, cisco_switch_telnet_port, 'root', 'root')
+        return TelnetTester("telnet", cisco_switch_ip, cisco_switch_telnet_port, u'root', u'root')

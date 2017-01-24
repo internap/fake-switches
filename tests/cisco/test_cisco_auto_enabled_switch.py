@@ -37,11 +37,11 @@ class TestCiscoSwitchProtocolSSH(TestCiscoAutoEnabledSwitchProtocol):
     __test__ = True
 
     def create_client(self):
-        return SshTester("ssh", cisco_switch_ip, cisco_auto_enabled_switch_ssh_port, 'root', 'root')
+        return SshTester("ssh", cisco_switch_ip, cisco_auto_enabled_switch_ssh_port, u'root', u'root')
 
 
 class TestCiscoSwitchProtocolTelnet(TestCiscoAutoEnabledSwitchProtocol):
     __test__ = True
 
     def create_client(self):
-        return TelnetTester("telnet", cisco_switch_ip, cisco_auto_enabled_switch_telnet_port, 'root', 'root')
+        return TelnetTester("telnet", cisco_switch_ip, cisco_auto_enabled_switch_telnet_port, u'root', u'root')

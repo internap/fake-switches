@@ -34,6 +34,7 @@ class SwitchSSHShell(recvline.HistoricRecvLine):
         ))
 
     def lineReceived(self, line):
+        line = line.decode()
         still_listening = self.session.receive(line)
         if not still_listening:
             self.terminal.loseConnection()
@@ -41,7 +42,7 @@ class SwitchSSHShell(recvline.HistoricRecvLine):
     def keystrokeReceived(self, keyID, modifier):
         if keyID in self._printableChars:
             if self.awaiting_keystroke is not None:
-                args = self.awaiting_keystroke[1] + [keyID]
+                args = self.awaiting_keystroke[1] + [keyID.decode()]
                 cmd = self.awaiting_keystroke[0]
                 cmd(*args)
                 return
@@ -55,7 +56,7 @@ class SwitchSSHShell(recvline.HistoricRecvLine):
         if command_processor.replace_input is False:
             self.terminal.write(ch)
         else:
-            self.terminal.write(len(ch) * command_processor.replace_input)
+            self.terminal.write((len(ch) * command_processor.replace_input).encode())
 
         if self.mode == 'insert':
             self.lineBuffer.insert(self.lineBufferIndex, ch)
@@ -75,7 +76,7 @@ class SshTerminalController(TerminalController):
         self.shell = shell
 
     def write(self, text):
-        self.shell.terminal.write(text)
+        self.shell.terminal.write(text.encode())
 
     def add_any_key_handler(self, callback, *params):
         self.shell.awaiting_keystroke = (callback, list(params))

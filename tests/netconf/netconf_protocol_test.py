@@ -4,6 +4,7 @@ import unittest
 from hamcrest.core.base_matcher import BaseMatcher
 import re
 from hamcrest import assert_that, ends_with, equal_to, has_length, has_key
+from lxml.etree import _Element
 from mock import Mock
 from ncclient.xml_ import to_ele, to_xml
 from fake_switches.netconf import RUNNING, dict_2_etree
@@ -32,10 +33,10 @@ class NetconfProtocolTest(unittest.TestCase):
         self.netconf.connectionMade()
         self.say_hello()
 
-        self.netconf.dataReceived('<nc:rpc xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="12345">\n')
-        self.netconf.dataReceived('  <nc:close-session/>\n')
-        self.netconf.dataReceived('</nc:rpc>\n')
-        self.netconf.dataReceived(']]>]]>\n')
+        self.netconf.dataReceived(b'<nc:rpc xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="12345">\n')
+        self.netconf.dataReceived(b'  <nc:close-session/>\n')
+        self.netconf.dataReceived(b'</nc:rpc>\n')
+        self.netconf.dataReceived(b']]>]]>\n')
 
         self.assert_xml_response("""
             <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="12345">
@@ -49,7 +50,7 @@ class NetconfProtocolTest(unittest.TestCase):
         self.netconf.connectionMade()
         self.say_hello()
 
-        self.netconf.dataReceived("""
+        self.netconf.dataReceived(b"""
             <rpc xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="67890">
               <get-config>
                 <source><running /></source>
@@ -74,7 +75,7 @@ class NetconfProtocolTest(unittest.TestCase):
         self.netconf.connectionMade()
         self.say_hello()
 
-        self.netconf.dataReceived("""
+        self.netconf.dataReceived(b"""
             <nc:rpc xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="67890">
               <nc:get-config>
                 <nc:source><nc:running/></nc:source>
@@ -97,7 +98,7 @@ class NetconfProtocolTest(unittest.TestCase):
         self.netconf.connectionMade()
         self.say_hello()
 
-        self.netconf.dataReceived("""<?xml version="1.0" encoding="UTF-8"?>
+        data = b"""<?xml version="1.0" encoding="UTF-8"?>
             <nc:rpc xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="urn:uuid:346c9f18-c420-11e4-8e4c-fa163ecd3b0a">
                 <nc:edit-config>
                     <nc:target>
@@ -107,7 +108,8 @@ class NetconfProtocolTest(unittest.TestCase):
                         <nc:configuration><nc:stuff><substuff>is hot!</substuff></nc:stuff></nc:configuration>
                     </nc:config>
                 </nc:edit-config>
-            </nc:rpc>]]>]]>""")
+            </nc:rpc>]]>]]>"""
+        self.netconf.dataReceived(data)
 
         self.assert_xml_response("""
             <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="urn:uuid:346c9f18-c420-11e4-8e4c-fa163ecd3b0a">
@@ -123,7 +125,7 @@ class NetconfProtocolTest(unittest.TestCase):
         self.netconf.connectionMade()
         self.say_hello()
 
-        self.netconf.dataReceived("""
+        self.netconf.dataReceived(b"""
             <nc:rpc xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="67890">
               <nc:get-config>
                 <nc:source><nc:running/></nc:source>
@@ -131,7 +133,7 @@ class NetconfProtocolTest(unittest.TestCase):
             </nc:rpc>
             ]]>]]>""")
 
-        assert_that(self.netconf.transport.write.call_args[0][0], xml_equals_to("""
+        assert_that(self.netconf.transport.write.call_args[0][0].decode(), xml_equals_to("""
             <rpc-reply xmlns:junos="http://xml.juniper.net/junos/11.4R1/junos" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="67890">
               <data/>
             </rpc-reply>
@@ -215,10 +217,10 @@ class NetconfProtocolTest(unittest.TestCase):
 
     def say_hello(self):
         self.netconf.dataReceived(
-            '<hello xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"><capabilities><capability>urn:ietf:params:xml:ns:netconf:base:1.0</capability></capabilities></hello>]]>]]>')
+            b'<hello xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0"><capabilities><capability>urn:ietf:params:xml:ns:netconf:base:1.0</capability></capabilities></hello>]]>]]>')
 
     def assert_xml_response(self, expected):
-        data = self.netconf.transport.write.call_args[0][0]
+        data = self.netconf.transport.write.call_args[0][0].decode()
         assert_that(data, ends_with("]]>]]>\n"))
         data = data.replace("]]>]]>", "")
         assert_that(data, xml_equals_to(expected))
@@ -234,7 +236,7 @@ class XmlEqualsToMatcher(BaseMatcher):
         self.last_error = None
 
     def _matches(self, other):
-        otherxml = other if not isinstance(other, str) else to_ele(other)
+        otherxml = other if isinstance(other, _Element) else to_ele(other)
         try:
             self.compare_nodes(self.expected, otherxml)
             return True

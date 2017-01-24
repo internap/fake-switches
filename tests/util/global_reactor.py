@@ -67,7 +67,7 @@ class ThreadedReactor(threading.Thread):
         SwitchTelnetService(cisco_switch_ip, telnet_port=cisco_switch_telnet_port, switch_core=switch_core,
                             users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
         SwitchSshService(cisco_switch_ip, ssh_port=cisco_switch_ssh_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         auto_enabled_switch_core = CiscoSwitchCore(
             SwitchConfiguration(cisco_switch_ip, name="my_switch", auto_enabled=True))
@@ -75,27 +75,27 @@ class ThreadedReactor(threading.Thread):
                             switch_core=auto_enabled_switch_core, users={'root': 'root'}).hook_to_reactor(
             cls._threaded_reactor.reactor)
         SwitchSshService(cisco_switch_ip, ssh_port=cisco_auto_enabled_switch_ssh_port,
-                         switch_core=auto_enabled_switch_core, users={'root': 'root'}).hook_to_reactor(
+                         switch_core=auto_enabled_switch_core, users={'root': b'root'}).hook_to_reactor(
             cls._threaded_reactor.reactor)
 
         switch_core = BrocadeSwitchCore(
             SwitchConfiguration(brocade_switch_ip, name="my_switch", privileged_passwords=[brocade_privileged_password],
                                 ports=BrocadeSwitchCore.get_default_ports()))
         SwitchSshService(brocade_switch_ip, ssh_port=brocade_switch_ssh_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = JuniperSwitchCore(SwitchConfiguration(juniper_switch_ip, name="ju_ju_ju_juniper",
                                 ports=JuniperSwitchCore.get_default_ports()),
             aggregated_port_count=4)
         SwitchSshService(juniper_switch_ip, ssh_port=juniper_switch_netconf_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = JuniperQfxCopperSwitchCore(
             SwitchConfiguration(juniper_qfx_copper_switch_ip, name="ju_ju_ju_juniper_qfx_copper",
                                 ports=JuniperQfxCopperSwitchCore.get_default_ports()),
             aggregated_port_count=4)
         SwitchSshService(juniper_qfx_copper_switch_ip, ssh_port=juniper_qfx_copper_switch_netconf_port,
-                         switch_core=switch_core, users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         switch_core=switch_core, users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = DellSwitchCore(
             SwitchConfiguration(dell_switch_ip, name="my_switch", privileged_passwords=[dell_privileged_password],
@@ -103,7 +103,7 @@ class ThreadedReactor(threading.Thread):
         SwitchTelnetService(dell_switch_ip, telnet_port=dell_switch_telnet_port, switch_core=switch_core,
                             users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
         SwitchSshService(dell_switch_ip, ssh_port=dell_switch_ssh_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = Dell10GSwitchCore(
             SwitchConfiguration(dell10g_switch_ip, name="my_switch", privileged_passwords=[dell10g_privileged_password],
@@ -111,7 +111,7 @@ class ThreadedReactor(threading.Thread):
         SwitchTelnetService(dell10g_switch_ip, telnet_port=dell10g_switch_telnet_port, switch_core=switch_core,
                             users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
         SwitchSshService(dell10g_switch_ip, ssh_port=dell10g_switch_ssh_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         # SWITCHES WITH COMMIT DELAYS
 
@@ -119,31 +119,31 @@ class ThreadedReactor(threading.Thread):
             SwitchConfiguration(cisco_switch_ip, name="my_switch", privileged_passwords=[cisco_privileged_password],
                                 ports=CiscoSwitchCore.get_default_ports(), commit_delay=COMMIT_DELAY))
         SwitchSshService(cisco_switch_ip, ssh_port=cisco_switch_ssh_with_commit_delay_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = BrocadeSwitchCore(
             SwitchConfiguration(brocade_switch_ip, name="my_switch", privileged_passwords=[brocade_privileged_password],
                                 ports=BrocadeSwitchCore.get_default_ports(), commit_delay=COMMIT_DELAY))
         SwitchSshService(brocade_switch_ip, ssh_port=brocade_switch_with_commit_delay_ssh_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = JuniperSwitchCore(SwitchConfiguration(juniper_switch_ip, name="ju_ju_ju_juniper",
                                 ports=JuniperSwitchCore.get_default_ports(),
                                 commit_delay=COMMIT_DELAY))
         SwitchSshService(juniper_switch_ip, ssh_port=juniper_switch_netconf_with_commit_delay_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = DellSwitchCore(
             SwitchConfiguration(dell_switch_ip, name="my_switch", privileged_passwords=[dell_privileged_password],
                                 ports=DellSwitchCore.get_default_ports(), commit_delay=COMMIT_DELAY))
         SwitchSshService(dell_switch_ip, ssh_port=dell_switch_with_commit_delay_ssh_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = Dell10GSwitchCore(
             SwitchConfiguration(dell10g_switch_ip, name="my_switch", privileged_passwords=[dell10g_privileged_password],
                                 ports=Dell10GSwitchCore.get_default_ports(), commit_delay=COMMIT_DELAY))
         SwitchSshService(dell10g_switch_ip, ssh_port=dell10g_switch_with_commit_delay_ssh_port, switch_core=switch_core,
-                         users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         cls._threaded_reactor.start()
 

@@ -98,7 +98,7 @@ class BaseCommandProcessor(CommandProcessor):
             self.terminal_controller.write(filtered)
 
     def write_line(self, data):
-        self.write(data + "\n")
+        self.write(data + u"\n")
 
     def show_prompt(self):
         if self.sub_processor is not None:

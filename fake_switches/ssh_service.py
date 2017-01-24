@@ -18,23 +18,22 @@ from twisted.cred import portal, checkers
 from twisted.conch import avatar, interfaces as conchinterfaces
 from twisted.conch.ssh import factory, keys, session
 from twisted.conch.insults import insults
-import zope.interface
+from zope.interface import implementer
 
 from fake_switches.terminal.ssh import SwitchSSHShell
 
 
+@implementer(conchinterfaces.ISession)
 class SSHDemoAvatar(avatar.ConchUser):
-    zope.interface.implements(conchinterfaces.ISession)
-
     def __init__(self, username, switch_core):
         avatar.ConchUser.__init__(self)
         self.username = username
         self.switch_core = switch_core
-        self.channelLookup.update({'session':session.SSHSession})
+        self.channelLookup.update({b'session':session.SSHSession})
 
         netconf_protocol = switch_core.get_netconf_protocol()
         if netconf_protocol:
-            self.subsystemLookup.update({'netconf': netconf_protocol})
+            self.subsystemLookup.update({b'netconf': netconf_protocol})
 
     def openShell(self, protocol):
         server_protocol = insults.ServerProtocol(SwitchSSHShell, self, switch_core=self.switch_core)
@@ -57,9 +56,8 @@ class SSHDemoAvatar(avatar.ConchUser):
         pass
 
 
+@implementer(portal.IRealm)
 class SSHDemoRealm:
-    zope.interface.implements(portal.IRealm)
-
     def __init__(self, switch_core):
         self.switch_core = switch_core
 
@@ -70,9 +68,10 @@ class SSHDemoRealm:
         else:
             raise Exception("No supported interfaces found.")
 
+
 def getRSAKeys():
-    public_key = """ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC53ANLkvrZmufQsXuIZch7zrzWbevrqQpNT+/YUBffi3wX+I4lfJibL4lFwqgwR3Hshy7hqX4tgQiU6nWSz5QD/dcCuoaMvhVxVH0WyCtzc69xL9GBfHzyDvWYV/SU1bMiWwzWsFXSrnASeok1/zuDK4z5F0+U5gOtN009988/sw5DYBNer8gYq04Lt4r1WlCEPdyemLNkwHqNLMI7zgZw65djAEK7m+t8DhjtpV7ODxKi/ZB5TegoIbdMciMOTR+alX4bdw85d9tkVot7wLFX627/+DIbO0DokFfIDgJAt/jBVZf+MFhzjta/ZicxIWsTxK1yyOpmDlGFTHDR0Zwp fake@ssh"""
-    private_key = """-----BEGIN RSA PRIVATE KEY-----
+    host_public_key = """ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC53ANLkvrZmufQsXuIZch7zrzWbevrqQpNT+/YUBffi3wX+I4lfJibL4lFwqgwR3Hshy7hqX4tgQiU6nWSz5QD/dcCuoaMvhVxVH0WyCtzc69xL9GBfHzyDvWYV/SU1bMiWwzWsFXSrnASeok1/zuDK4z5F0+U5gOtN009988/sw5DYBNer8gYq04Lt4r1WlCEPdyemLNkwHqNLMI7zgZw65djAEK7m+t8DhjtpV7ODxKi/ZB5TegoIbdMciMOTR+alX4bdw85d9tkVot7wLFX627/+DIbO0DokFfIDgJAt/jBVZf+MFhzjta/ZicxIWsTxK1yyOpmDlGFTHDR0Zwp fake@ssh"""
+    host_private_key = """-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAudwDS5L62Zrn0LF7iGXIe8681m3r66kKTU/v2FAX34t8F/iO
 JXyYmy+JRcKoMEdx7Icu4al+LYEIlOp1ks+UA/3XArqGjL4VcVR9Fsgrc3OvcS/R
 gXx88g71mFf0lNWzIlsM1rBV0q5wEnqJNf87gyuM+RdPlOYDrTdNPffPP7MOQ2AT
@@ -100,7 +99,7 @@ J2mT3sY7auegAXuPFKiEr2jLkgsLIuN0P8RWU/m3zPKEkOgIG3X5nOLc25E0wh0F
 Jk9Gg4yPCL/ZKyIEQzqtkBUyK2P5x1OP32tcC9CxHZlXJLJdhtuQTw==
 -----END RSA PRIVATE KEY-----
 """
-    return public_key, private_key
+    return host_public_key, host_private_key
 
 class SwitchSshService(object):
     def __init__(self, ip, ssh_port=22, switch_core=None, users=None, **_):
@@ -117,11 +116,11 @@ class SwitchSshService(object):
         ssh_factory.portal.registerChecker(
             checkers.InMemoryUsernamePasswordDatabaseDontUse(**self.users))
 
-        public_key, private_key = getRSAKeys()
+        host_public_key, host_private_key = getRSAKeys()
         ssh_factory.publicKeys = {
-            'ssh-rsa': keys.Key.fromString(data=public_key)}
+            b'ssh-rsa': keys.Key.fromString(data=host_public_key.encode())}
         ssh_factory.privateKeys = {
-            'ssh-rsa': keys.Key.fromString(data=private_key)}
+            b'ssh-rsa': keys.Key.fromString(data=host_private_key.encode())}
 
         lport = reactor.listenTCP(port=self.port, factory=ssh_factory, interface=self.ip)
         logging.info(lport)
