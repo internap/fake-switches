@@ -70,7 +70,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             self.write_line("VLAN Name                             Status    Ports")
             self.write_line("---- -------------------------------- --------- -------------------------------")
             for vlan in sorted(self.switch_configuration.vlans, key=lambda v: v.number):
-                ports = [port.get_subname(length=2) for port in self.switch_configuration.ports
+                ports = [port.get_subname(length=2) for port in self.switch_configuration.get_physical_ports()
                          if port.access_vlan == vlan.number or (vlan.number == 1 and port.access_vlan is None)]
                 self.write_line("%-4s %-32s %s%s" % (
                     vlan.number,
@@ -136,7 +136,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
                         self.write_line("% Invalid input detected at '^' marker.")
                         self.write_line("")
                 else:
-                    if_list = sorted(self.switch_configuration.ports, key=lambda e: ("a" if isinstance(e, VlanPort) else "b") + e.name)
+                    if_list = self.switch_configuration.get_vlan_ports() + self.switch_configuration.get_physical_ports()
                 if if_list:
                     for interface in if_list:
                         self.write_line("%s is down, line protocol is down" % interface.name)
@@ -199,7 +199,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         ]
         for vlan in self.switch_configuration.vlans:
             all_data = all_data + build_running_vlan(vlan) + ["!"]
-        for interface in sorted(self.switch_configuration.ports, key=lambda e: ("b" if isinstance(e, VlanPort) else "a") + e.name):
+        for interface in self.switch_configuration.get_physical_ports() + self.switch_configuration.get_vlan_ports():
             all_data = all_data + build_running_interface(interface) + ["!"]
         if self.switch_configuration.static_routes:
             for route in self.switch_configuration.static_routes:
