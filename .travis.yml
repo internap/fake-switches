@@ -1,11 +1,30 @@
 language: python
 
+dist: trusty
+sudo: required
+
+services:
+  - docker
+
 matrix:
   include:
     - python: "2.7"
-      env: TOX_ENV=py27
+      env:
+        - TOX_ENV=py27
     - python: "3.5"
-      env: TOX_ENV=py35
+      env:
+        - TOX_ENV=py35
+    - env:
+        - DOCKER_COMPOSE_VERSION=1.10.0
+      install:
+        - sudo rm /usr/local/bin/docker-compose
+        - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+        - chmod +rx docker-compose
+        - sudo mv docker-compose /usr/local/bin
+      script:
+        - docker build . -t internap/fake-switches:latest
+        - docker-compose up -d
+        - docker inspect -f {{.State.Running}} fakeswitches_tor1.yul1.example.net_1
 
 addons:
   apt:
@@ -17,7 +36,8 @@ install:
   - pip install -r requirements.txt
   - pip install -r test-requirements.txt
 
-script: tox -e $TOX_ENV
+script: 
+  - tox -e $TOX_ENV
 
 deploy:
   provider: pypi

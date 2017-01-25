@@ -4,3 +4,4 @@ pycrypto>=2.6.1
 Twisted>=16.6.0, <17.0
 pyasn1>=0.1.7
 lxml>=3.7
+cryptography>=1.7.1
