@@ -72,11 +72,18 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             for vlan in sorted(self.switch_configuration.vlans, key=lambda v: v.number):
                 ports = [port.get_subname(length=2) for port in self.switch_configuration.get_physical_ports()
                          if port.access_vlan == vlan.number or (vlan.number == 1 and port.access_vlan is None)]
+                formatted_membership = []
+                if ports:
+                    ports_membership = ["    {}".format(l) for l in get_port_groups(ports, max_line_length=30)]
+                    formatted_membership.append(ports_membership.pop(0))
+                    for remaining_line in ports_membership:
+                        formatted_membership.append(' ' * 44 + remaining_line)
+
                 self.write_line("%-4s %-32s %s%s" % (
                     vlan.number,
-                     vlan_name(vlan) if vlan_name(vlan) else "VLAN%s" % vlan.number,
+                    vlan_display_name(vlan),
                     "active",
-                    ("    " + ", ".join(ports)) if ports else ""
+                    '\n'.join(formatted_membership)
                 ))
             if len(args) == 1:
                 self.write_line("")
@@ -221,12 +228,14 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             port_count=len(self.switch_configuration.get_physical_ports()),
         ))
 
+
 def strip_leading_slash(dest_file):
     return dest_file[1:]
 
 
 def build_static_routes(route):
     return "ip route {0} {1} {2}".format(route.destination, route.mask, route.next_hop)
+
 
 def build_running_vlan(vlan):
     data = [
@@ -303,6 +312,10 @@ def vlan_name(vlan):
     return vlan.name or ("default" if vlan.number == 1 else None)
 
 
+def vlan_display_name(vlan):
+    return vlan_name(vlan) or "VLAN%s" % vlan.number
+
+
 def to_vlan_ranges(vlans):
     if len(vlans) == 0:
         return "none"
@@ -310,6 +323,27 @@ def to_vlan_ranges(vlans):
     ranges = group_sequences(vlans, are_in_sequence=lambda a, b: a + 1 == b)
 
     return ",".join([to_range_string(r) for r in ranges])
+
+
+def get_port_groups(ports, max_line_length):
+    delimiter = ', '
+    new_lines = []
+
+    while len(ports) > 0:
+        line = []
+        line_length = 0
+        while line_length < max_line_length:
+            try:
+                next_port = ports[0]
+                if len(delimiter.join(line + [next_port])) > max_line_length:
+                    break
+                line.append(ports.pop(0))
+            except IndexError:
+                break
+            line_length = len(delimiter.join(line))
+        new_lines.append(delimiter.join(line))
+
+    return new_lines
 
 
 def to_range_string(array_range):
