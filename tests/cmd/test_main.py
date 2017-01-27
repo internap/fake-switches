@@ -1,18 +1,35 @@
+import os
+import random
 import socket
 import subprocess
 import sys
 import time
 import unittest
-import random
 
-import os
 from hamcrest import assert_that, is_not, starts_with
+
+from tests.util.protocol_util import SshTester
 
 TEST_BIND_HOST = '127.0.0.1'
 TEST_BIND_PORT = str(random.randint(20000, 22000))
+TEST_HOSTNAME = 'root'
+TEST_PASSWORD = 'root'
 
 
 class FakeSwitchesTest(unittest.TestCase):
+    def test_fake_switches_password_encoding(self):
+        p = subprocess.Popen(get_base_args() + ["--listen-host", TEST_BIND_HOST,
+                                                "--listen-port", TEST_BIND_PORT,
+                                                "--hostname", TEST_HOSTNAME,
+                                                "--password", TEST_PASSWORD])
+        time.sleep(1)
+
+        ssh = SshTester("ssh-2", TEST_BIND_HOST, TEST_BIND_PORT, TEST_HOSTNAME, TEST_PASSWORD)
+        ssh.connect()
+        ssh.disconnect()
+
+        p.terminate()
+
     def test_fake_switches_entrypoint_cisco_generic(self):
         p = subprocess.Popen(get_base_args() + ["--listen-host", TEST_BIND_HOST,
                                                 "--listen-port", TEST_BIND_PORT])

@@ -112,7 +112,7 @@ class SwitchSshService(object):
         ssh_factory = factory.SSHFactory()
         ssh_factory.portal = portal.Portal(SSHDemoRealm(self.switch_core))
         if not self.users:
-            self.users = {'root': 'root'}
+            self.users = {'root': b'root'}
         ssh_factory.portal.registerChecker(
             checkers.InMemoryUsernamePasswordDatabaseDontUse(**self.users))
 

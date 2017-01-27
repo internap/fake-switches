@@ -65,14 +65,14 @@ class ThreadedReactor(threading.Thread):
             SwitchConfiguration(cisco_switch_ip, name="my_switch", privileged_passwords=[cisco_privileged_password],
                                 ports=CiscoSwitchCore.get_default_ports()))
         SwitchTelnetService(cisco_switch_ip, telnet_port=cisco_switch_telnet_port, switch_core=switch_core,
-                            users={'root': 'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+                            users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
         SwitchSshService(cisco_switch_ip, ssh_port=cisco_switch_ssh_port, switch_core=switch_core,
                          users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         auto_enabled_switch_core = CiscoSwitchCore(
             SwitchConfiguration(cisco_switch_ip, name="my_switch", auto_enabled=True))
         SwitchTelnetService(cisco_switch_ip, telnet_port=cisco_auto_enabled_switch_telnet_port,
-                            switch_core=auto_enabled_switch_core, users={'root': 'root'}).hook_to_reactor(
+                            switch_core=auto_enabled_switch_core, users={'root': b'root'}).hook_to_reactor(
             cls._threaded_reactor.reactor)
         SwitchSshService(cisco_switch_ip, ssh_port=cisco_auto_enabled_switch_ssh_port,
                          switch_core=auto_enabled_switch_core, users={'root': b'root'}).hook_to_reactor(

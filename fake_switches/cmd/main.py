@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--listen-port', type=int, default=2222, help='Listen port')
 
     args = parser.parse_args()
+    args.password = args.password.encode()
 
     factory = switch_factory.SwitchFactory()
     switch_core = factory.get(args.model, args.hostname, args.password)
