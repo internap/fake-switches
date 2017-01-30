@@ -4,6 +4,8 @@
 Fake-switches
 =============
 
+![Commandline Demo](demo-cli.gif)
+
 Fake-switches is a pluggable switch/router command-line simulator. It is meant
 to help running integrated tests against network equipment without the burden
 of having devices in a lab. This helps testing the communication with the
