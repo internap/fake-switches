@@ -42,8 +42,6 @@ juniper_switch_netconf_port = 11007
 juniper_switch_netconf_with_commit_delay_port = 12007
 juniper_qfx_copper_switch_ip = "127.0.0.1"
 juniper_qfx_copper_switch_netconf_port = 11008
-juniper_ex3300_switch_ip = "127.0.0.1"
-juniper_ex3300_switch_netconf_port = 11013
 dell_switch_ip = "127.0.0.1"
 dell_switch_telnet_port = 11010
 dell_switch_ssh_port = 11009
@@ -54,10 +52,6 @@ dell10g_switch_telnet_port = 11011
 dell10g_switch_ssh_port = 11012
 dell10g_switch_with_commit_delay_ssh_port = 12012
 dell10g_privileged_password = 'DeLL10G'
-
-
-class JuniperEx3300SwitchCore(object):
-    pass
 
 
 class ThreadedReactor(threading.Thread):
@@ -101,13 +95,6 @@ class ThreadedReactor(threading.Thread):
                                 ports=JuniperQfxCopperSwitchCore.get_default_ports()),
             aggregated_port_count=4)
         SwitchSshService(juniper_qfx_copper_switch_ip, ssh_port=juniper_qfx_copper_switch_netconf_port,
-                         switch_core=switch_core, users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
-
-        switch_core = JuniperEx3300SwitchCore(
-            SwitchConfiguration(juniper_ex3300_switch_ip, name="ju_ju_ju_juniper_ex3300",
-                                ports=JuniperEx3300SwitchCore.get_default_ports()),
-            aggregated_port_count=4)
-        SwitchSshService(juniper_ex3300_switch_ip, ssh_port=juniper_ex3300_switch_netconf_port,
                          switch_core=switch_core, users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = DellSwitchCore(
