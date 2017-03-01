@@ -46,6 +46,9 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
                                             ConfigurationCheckOutFailed()])
         return super(JuniperQfxCopperNetconfDatastore, self)._validate(configuration)
 
+    def _assert_no_garbage(self, port):
+        pass
+
     def _to_terse(self, port):
         interface = [
             {"name": "\n{}\n".format(port.name)},
@@ -79,3 +82,6 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
             ])
 
         return {"physical-interface": interface}
+
+    def _format_protocol_port_name(self, port):
+        return port.name

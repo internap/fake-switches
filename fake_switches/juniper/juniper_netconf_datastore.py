@@ -59,7 +59,7 @@ class JuniperNetconfDatastore(object):
 
         _add_if_not_empty(configuration, "interfaces", self._extract_interfaces(self.configurations[source]))
 
-        _add_if_not_empty(configuration, "protocols", extract_protocols(self.configurations[source]))
+        _add_if_not_empty(configuration, "protocols", self._extract_protocols(self.configurations[source]))
 
         _add_if_not_empty(configuration, "vlans",
                          [{"vlan": vlan_to_etree(vlan)} for vlan in self.configurations[source].vlans])
@@ -368,14 +368,23 @@ class JuniperNetconfDatastore(object):
         vlan_list = [vlan.number for vlan in configuration.vlans]
 
         for port in configuration.ports:
-            if port.access_vlan is not None and port.access_vlan not in vlan_list:
-                raise UnknownVlan(port.access_vlan, port.name, 0)
-            if port.trunk_native_vlan is not None and port.trunk_native_vlan not in vlan_list:
-                raise UnknownVlan(port.trunk_native_vlan, port.name, 0)
-            if port.trunk_vlans is not None:
-                for trunk_vlan in port.trunk_vlans:
-                    if trunk_vlan not in vlan_list:
-                        raise UnknownVlan(trunk_vlan, port.name, 0)
+            self._assert_vlan_config(port, vlan_list)
+            self._assert_no_garbage(port)
+
+    def _assert_vlan_config(self, port, vlan_list):
+        if port.access_vlan is not None and port.access_vlan not in vlan_list:
+            raise UnknownVlan(port.access_vlan, port.name, 0)
+        if port.trunk_native_vlan is not None and port.trunk_native_vlan not in vlan_list:
+            raise UnknownVlan(port.trunk_native_vlan, port.name, 0)
+        if port.trunk_vlans is not None:
+            for trunk_vlan in port.trunk_vlans:
+                if trunk_vlan not in vlan_list:
+                    raise UnknownVlan(trunk_vlan, port.name, 0)
+
+    def _assert_no_garbage(self, port):
+        if not port.vendor_specific.get("has-ethernet-switching"):
+            if port.vendor_specific.get("rstp-edge") or port.vendor_specific.get("rstp-no-root-port"):
+                raise RSTPActiveWithoutEthernetSwitching(self._format_protocol_port_name(port))
 
     def _port_terse(self, conf):
         return [self._to_terse(p) for p in conf.get_physical_ports()]
@@ -412,6 +421,44 @@ class JuniperNetconfDatastore(object):
             if interface_node:
                 interfaces.append({"interface": interface_node})
         return interfaces
+
+    def _extract_protocols(self, configuration):
+        protocols = {}
+        for port in configuration.ports:
+            if port.vendor_specific.get("rstp-edge"):
+                if "rstp" not in protocols:
+                    protocols["rstp"] = []
+                interface = self._get_or_create_interface(protocols["rstp"], port)
+                interface["interface"].append({"edge": ""})
+
+            if port.vendor_specific.get("rstp-no-root-port"):
+                if "rstp" not in protocols:
+                    protocols["rstp"] = []
+                interface = self._get_or_create_interface(protocols["rstp"], port)
+                interface["interface"].append({"no-root-port": ""})
+
+            if port.vendor_specific.get("lldp"):
+                if "lldp" not in protocols:
+                    protocols["lldp"] = []
+                interface = self._get_or_create_interface(protocols["lldp"], port)
+                if port.lldp_receive is False and port.lldp_transmit is False:
+                    interface["interface"].append({"disable": ""})
+
+        return protocols
+
+    def _get_or_create_interface(self, if_list, port):
+        port_name = self._format_protocol_port_name(port)
+        existing = next((v for v in if_list if v["interface"][0]["name"] == port_name), None)
+        if existing is None:
+            existing = {"interface": [
+                {"name": port_name},
+            ]}
+            if_list.append(existing)
+
+        return existing
+
+    def _format_protocol_port_name(self, port):
+        return "{}.0".format(port.name)
 
 
 def vlan_to_etree(vlan):
@@ -560,42 +607,6 @@ def parse_range(r):
         return [int(r)]
 
 
-def extract_protocols(configuration):
-    protocols = {}
-    for port in configuration.ports:
-        if port.vendor_specific.get("rstp-edge"):
-            if "rstp" not in protocols:
-                protocols["rstp"] = []
-            interface = get_or_create_interface(protocols["rstp"], port)
-            interface["interface"].append({"edge": ""})
-
-        if port.vendor_specific.get("rstp-no-root-port"):
-            if "rstp" not in protocols:
-                protocols["rstp"] = []
-            interface = get_or_create_interface(protocols["rstp"], port)
-            interface["interface"].append({"no-root-port": ""})
-
-        if port.vendor_specific.get("lldp"):
-            if "lldp" not in protocols:
-                protocols["lldp"] = []
-            interface = get_or_create_interface(protocols["lldp"], port)
-            if port.lldp_receive is False and port.lldp_transmit is False:
-                interface["interface"].append({"disable": ""})
-
-    return protocols
-
-
-def get_or_create_interface(if_list, port):
-    existing = next((v for v in if_list if v["interface"][0]["name"] == port.name), None)
-    if existing is None:
-        existing = {"interface": [
-            {"name": port.name},
-            ]}
-        if_list.append(existing)
-
-    return existing
-
-
 def port_is_in_access_mode(port):
     return port.mode is None or port.mode == "access"
 
@@ -650,3 +661,9 @@ def _validate_mtu(value):
         return value
 
     raise InvalidMTUValue(value)
+
+
+class RSTPActiveWithoutEthernetSwitching(NetconfError):
+    def __init__(self, interface_name):
+        super(RSTPActiveWithoutEthernetSwitching, self).__init__(
+            "XSTP : Interface {} is not enabled for Ethernet Switching".format(interface_name))
