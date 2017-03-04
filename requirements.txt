@@ -1,5 +1,4 @@
 -e git+https://github.com/stephanerobert/tftpy.git@master#egg=tftpy
 netaddr>=0.7.13
 Twisted[conch]>=16.6.0, <17.0
-pyasn1>=0.1.7
 lxml>=3.7
