@@ -15,12 +15,11 @@
 from netaddr import IPNetwork
 from netaddr.ip import IPAddress
 
-from fake_switches.switch_configuration import VlanPort
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
+from fake_switches.switch_configuration import VlanPort
 
 
 class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
-
     def __init__(self, switch_configuration, terminal_controller, logger, piping_processor, port):
         BaseCommandProcessor.__init__(self, switch_configuration, terminal_controller, logger, piping_processor)
         self.description_strip_chars = "\""
@@ -37,7 +36,7 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
         elif args[0:2] == ("trunk", "encapsulation"):
             self.port.trunk_encapsulation_mode = args[2]
         elif args[0:4] == ("trunk", "allowed", "vlan", "add"):
-            if self.port.trunk_vlans is not None: #for cisco, no list = all vlans
+            if self.port.trunk_vlans is not None:  # for cisco, no list = all vlans
                 self.port.trunk_vlans += parse_vlan_list(args[4])
         elif args[0:4] == ("trunk", "allowed", "vlan", "remove"):
             if self.port.trunk_vlans is None:
@@ -127,7 +126,8 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                     self.write_line("%% VRF %s not configured." % args[2])
         if "redirects".startswith(args[0]):
             self.port.ip_redirect = True
-
+        if "proxy-arp".startswith(args[0]):
+            self.port.ip_proxy_arp = True
         if "helper-address".startswith(args[0]):
             if len(args) == 1:
                 self.write_line("% Incomplete command.")
@@ -179,6 +179,8 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                     ip_address = IPAddress(args[1])
                     if ip_address in self.port.ip_helpers:
                         self.port.ip_helpers.remove(ip_address)
+        if "proxy-arp".startswith(args[0]):
+            self.port.ip_proxy_arp = False
 
     def do_standby(self, group, command, *args):
         vrrp = self.port.get_vrrp_group(group)
