@@ -281,6 +281,8 @@ def build_running_interface(port):
             data.append(" ip access-group %s in" % port.access_group_in)
         if port.access_group_out:
             data.append(" ip access-group %s out" % port.access_group_out)
+        if port.unicast_reverse_path_fowarding is True:
+            data.append(" ip verify unicast source reachable-via rx")
         if port.ip_redirect is False:
             data.append(" no ip redirects")
         for vrrp in port.vrrps:
@@ -291,7 +293,7 @@ def build_running_interface(port):
                 else:
                     for i, ip_address in enumerate(vrrp.ip_addresses):
                         data.append(" standby {group} ip {ip_address}{secondary}".format(
-                                group=group, ip_address=ip_address, secondary=' secondary' if i > 0 else ''))
+                            group=group, ip_address=ip_address, secondary=' secondary' if i > 0 else ''))
             if vrrp.timers_hello is not None and vrrp.timers_hold is not None:
                 data.append(" standby {group} timers {hello_time} {hold_time}".format(group=group, hello_time=vrrp.timers_hello, hold_time=vrrp.timers_hold))
             if vrrp.priority is not None:

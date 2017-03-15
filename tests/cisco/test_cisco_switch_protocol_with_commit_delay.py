@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from time import time
 import unittest
+from time import time
 
 from flexmock import flexmock_teardown
 from hamcrest import assert_that
 from hamcrest import greater_than
 
-from tests.util.global_reactor import cisco_privileged_password, cisco_switch_ssh_with_commit_delay_port, COMMIT_DELAY
+from tests.cisco import enable
 from tests.util.global_reactor import cisco_switch_ip
+from tests.util.global_reactor import cisco_switch_ssh_with_commit_delay_port, COMMIT_DELAY
 from tests.util.protocol_util import SshTester, with_protocol
 
 
@@ -48,9 +49,3 @@ class TestCiscoSwitchProtocolWithCommitDelay(unittest.TestCase):
 
         assert_that((end_time - start_time), greater_than(COMMIT_DELAY))
 
-
-def enable(t):
-    t.write("enable")
-    t.read("Password: ")
-    t.write_invisible(cisco_privileged_password)
-    t.read("my_switch#")
