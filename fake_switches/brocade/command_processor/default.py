@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fake_switches.brocade.command_processor.enabled import EnabledCommandProcessor
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 
 

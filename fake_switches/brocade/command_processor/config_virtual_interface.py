@@ -16,8 +16,6 @@ from netaddr import IPNetwork
 from netaddr.ip import IPAddress
 
 from fake_switches.brocade.command_processor.config_interface import ConfigInterfaceCommandProcessor
-from fake_switches.brocade.command_processor.config_virtual_interface_vrrp import \
-    ConfigVirtualInterfaceVrrpCommandProcessor
 
 
 class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):

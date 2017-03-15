@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from fake_switches.brocade.command_processor import explain_missing_port
-from fake_switches.brocade.command_processor.config_interface import ConfigInterfaceCommandProcessor
-from fake_switches.brocade.command_processor.config_virtual_interface import \
-    ConfigVirtualInterfaceCommandProcessor
-from fake_switches.brocade.command_processor.config_vlan import ConfigVlanCommandProcessor
-from fake_switches.brocade.command_processor.config_vrf import ConfigVrfCommandProcessor
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 from fake_switches.switch_configuration import Port, VlanPort
 

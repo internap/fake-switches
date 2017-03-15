@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
-
 import re
 import textwrap
-from fake_switches.command_processing.switch_tftp_parser import SwitchTftpParser
-from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
-from fake_switches.cisco.command_processor.config import ConfigCommandProcessor
-from fake_switches.switch_configuration import VlanPort, AggregatedPort
+from functools import partial
+
 from fake_switches import group_sequences
+from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
+from fake_switches.command_processing.switch_tftp_parser import SwitchTftpParser
+from fake_switches.switch_configuration import VlanPort, AggregatedPort
 
 
 class EnabledCommandProcessor(BaseCommandProcessor):
