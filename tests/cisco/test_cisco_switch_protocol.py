@@ -381,13 +381,11 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
         configuring_interface_vlan(t, "2999", do='standby 1 authentication VLAN2999')
         configuring_interface_vlan(t, "2999", do='standby 1 track 10 decrement 50')
         configuring_interface_vlan(t, "2999", do='standby 1 track 20 decrement 50')
-        configuring_interface_vlan(t, "2999", do='no ip proxy-arp')
 
         assert_interface_configuration(t, "Vlan2999", [
             "interface Vlan2999",
             " description hey ho",
             " ip address 1.1.1.2 255.255.255.0",
-            " no ip proxy-arp",
             " standby 1 ip 1.1.1.1",
             " standby 1 timers 5 15",
             " standby 1 priority 110",
@@ -405,7 +403,6 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
         configuring_interface_vlan(t, "2999", do="no standby 1 priority")
         configuring_interface_vlan(t, "2999", do="no standby 1 timers")
         configuring_interface_vlan(t, "2999", do="no standby 1 track 10")
-        configuring_interface_vlan(t, "2999", do="ip proxy-arp")
 
         assert_interface_configuration(t, "Vlan2999", [
             "interface Vlan2999",

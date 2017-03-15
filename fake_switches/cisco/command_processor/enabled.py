@@ -283,8 +283,6 @@ def build_running_interface(port):
             data.append(" ip access-group %s out" % port.access_group_out)
         if port.ip_redirect is False:
             data.append(" no ip redirects")
-        if port.ip_proxy_arp is False:
-            data.append(" no ip proxy-arp")
         for vrrp in port.vrrps:
             group = vrrp.group_id
             if vrrp.ip_addresses is not None:

@@ -208,7 +208,6 @@ class VlanPort(Port):
         self.vrrp_common_authentication = None
         self.vrrps = []
         self.ip_redirect = True
-        self.ip_proxy_arp = True
 
     def get_vrrp_group(self, group):
         return next((vrrp for vrrp in self.vrrps if vrrp.group_id == group), None)
