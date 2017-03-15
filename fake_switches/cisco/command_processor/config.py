@@ -15,15 +15,17 @@
 import re
 
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
-from fake_switches.cisco.command_processor.config_interface import ConfigInterfaceCommandProcessor
-from fake_switches.cisco.command_processor.config_vlan import ConfigVlanCommandProcessor
-from fake_switches.cisco.command_processor.config_vrf import ConfigVRFCommandProcessor
 from fake_switches.switch_configuration import VlanPort, AggregatedPort
 
 
 class ConfigCommandProcessor(BaseCommandProcessor):
-    config_interface_processor = ConfigInterfaceCommandProcessor
     interface_separator = ""
+
+    def __init__(self, config_vlan, config_vrf, config_interface):
+        super(ConfigCommandProcessor, self).__init__()
+        self.config_vlan_processor = config_vlan
+        self.config_vrf_processor = config_vrf
+        self.config_interface_processor = config_interface
 
     def get_prompt(self):
         return self.switch_configuration.name + "(config)#"
@@ -41,7 +43,7 @@ class ConfigCommandProcessor(BaseCommandProcessor):
             if not vlan:
                 vlan = self.switch_configuration.new("Vlan", number)
                 self.switch_configuration.add_vlan(vlan)
-            self.move_to(ConfigVlanCommandProcessor, vlan)
+            self.move_to(self.config_vlan_processor, vlan)
 
     def do_no_vlan(self, *args):
         vlan = self.switch_configuration.get_vlan(int(args[0]))
@@ -58,7 +60,7 @@ class ConfigCommandProcessor(BaseCommandProcessor):
         if "vrf".startswith(cmd):
             vrf = self.switch_configuration.new("VRF", args[0])
             self.switch_configuration.add_vrf(vrf)
-            self.move_to(ConfigVRFCommandProcessor, vrf)
+            self.move_to(self.config_vrf_processor, vrf)
         elif "route".startswith(cmd):
             static_route = self.switch_configuration.new("Route", *args)
             self.switch_configuration.add_static_route(static_route)

@@ -14,13 +14,18 @@
 
 import logging
 
-from fake_switches.command_processing.shell_session import \
-    ShellSession
+from fake_switches.brocade.brocade_core import BrocadeSwitchCore
+from fake_switches.brocade.command_processor.config_vrf import ConfigVrfCommandProcessor
 from fake_switches.brocade.command_processor.piping import \
     PipingProcessor
-from fake_switches.brocade.brocade_core import BrocadeSwitchCore
+from fake_switches.command_processing.shell_session import \
+    ShellSession
+from fake_switches.dell.command_processor.config import DellConfigCommandProcessor
+from fake_switches.dell.command_processor.config_interface import DellConfigInterfaceCommandProcessor
+from fake_switches.dell.command_processor.config_vlan import DellConfigureVlanCommandProcessor
 from fake_switches.dell.command_processor.default import \
     DellDefaultCommandProcessor
+from fake_switches.dell.command_processor.enabled import DellEnabledCommandProcessor
 from fake_switches.switch_configuration import Port
 from fake_switches.terminal import LoggingTerminalController
 
@@ -30,13 +35,20 @@ class DellSwitchCore(BrocadeSwitchCore):
         self.last_connection_id += 1
         self.logger = logging.getLogger("fake_switches.dell.%s.%s.%s" % (self.switch_configuration.name, self.last_connection_id, protocol))
 
-        command_processor = DellDefaultCommandProcessor(
+        processor = DellDefaultCommandProcessor(
+            enabled=DellEnabledCommandProcessor(
+                config=DellConfigCommandProcessor(
+                    config_vlan=DellConfigureVlanCommandProcessor(),
+                    config_vrf=ConfigVrfCommandProcessor(),
+                    config_interface=DellConfigInterfaceCommandProcessor()
+                )))
+        processor.init(
             switch_configuration=self.switch_configuration,
             terminal_controller=LoggingTerminalController(self.logger, terminal_controller),
             piping_processor=PipingProcessor(self.logger),
             logger=self.logger)
 
-        return DellShellSession(command_processor)
+        return DellShellSession(processor)
 
     @staticmethod
     def get_default_ports():

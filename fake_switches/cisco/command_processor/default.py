@@ -13,10 +13,13 @@
 # limitations under the License.
 
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
-from fake_switches.cisco.command_processor.enabled import EnabledCommandProcessor
 
 
 class DefaultCommandProcessor(BaseCommandProcessor):
+    def __init__(self, enabled):
+        super(DefaultCommandProcessor, self).__init__()
+        self.enabled_processor = enabled
+
     def get_prompt(self):
         return self.switch_configuration.name + ">"
 
@@ -34,7 +37,7 @@ class DefaultCommandProcessor(BaseCommandProcessor):
     def continue_enabling(self, line):
         self.replace_input = False
         if line == "" or line in self.switch_configuration.privileged_passwords:
-            self.move_to(EnabledCommandProcessor)
+            self.move_to(self.enabled_processor)
         else:
             self.write_line("% Access denied")
             self.write_line("")
