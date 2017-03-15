@@ -17,9 +17,9 @@ from fake_switches.switch_configuration import split_port_name, VlanPort
 
 
 class ConfigVlanCommandProcessor(BaseCommandProcessor):
-    def __init__(self, switch_configuration, terminal_controller, logger, piping_processor, vlan):
-        BaseCommandProcessor.__init__(self, switch_configuration, terminal_controller, logger, piping_processor)
-        self.vlan = vlan
+    def init(self, switch_configuration, terminal_controller, logger, piping_processor, *args):
+        super(ConfigVlanCommandProcessor, self).init(switch_configuration, terminal_controller, logger, piping_processor)
+        self.vlan = args[0]
 
     def get_prompt(self):
         return "SSH@%s(config-vlan-%s)#" % (self.switch_configuration.name, self.vlan.number)

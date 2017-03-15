@@ -17,12 +17,10 @@ from fake_switches.switch_configuration import AggregatedPort
 
 
 class Dell10GConfigInterfaceCommandProcessor(DellConfigInterfaceCommandProcessor):
-
-    def __init__(self, switch_configuration, terminal_controller, logger,
-                 piping_processor, port):
-        super(DellConfigInterfaceCommandProcessor, self).__init__(
-            switch_configuration, terminal_controller, logger, piping_processor,
-            port)
+    def init(self, switch_configuration, terminal_controller, logger,
+                 piping_processor, *args):
+        super(Dell10GConfigInterfaceCommandProcessor, self).init(switch_configuration, terminal_controller, logger, piping_processor,
+            args[0])
         self.description_strip_chars = "\"'"
 
     def get_prompt(self):

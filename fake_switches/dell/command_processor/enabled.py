@@ -15,16 +15,15 @@ import re
 from collections import namedtuple
 
 from fake_switches import group_sequences
-
 from fake_switches.command_processing.base_command_processor import \
     BaseCommandProcessor
-from fake_switches.dell.command_processor.config import \
-    DellConfigCommandProcessor
 from fake_switches.switch_configuration import VlanPort, AggregatedPort
 
 
 class DellEnabledCommandProcessor(BaseCommandProcessor):
-    configure_command_processor = DellConfigCommandProcessor
+    def __init__(self, config):
+        super(DellEnabledCommandProcessor, self).__init__()
+        self.config_processor = config
 
     def get_prompt(self):
         return "%s#" % self.switch_configuration.name
@@ -51,7 +50,7 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
         self.show_prompt()
 
     def do_configure(self, *_):
-        self.move_to(self.configure_command_processor)
+        self.move_to(self.config_processor)
 
     def do_show(self, *args):
         if "running-config".startswith(args[0]):

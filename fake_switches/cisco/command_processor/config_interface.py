@@ -20,10 +20,10 @@ from fake_switches.switch_configuration import VlanPort
 
 
 class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
-    def __init__(self, switch_configuration, terminal_controller, logger, piping_processor, port):
-        BaseCommandProcessor.__init__(self, switch_configuration, terminal_controller, logger, piping_processor)
+    def init(self, switch_configuration, terminal_controller, logger, piping_processor, *args):
+        super(ConfigInterfaceCommandProcessor, self).init(switch_configuration, terminal_controller, logger, piping_processor)
         self.description_strip_chars = "\""
-        self.port = port
+        self.port = args[0]
 
     def get_prompt(self):
         return self.switch_configuration.name + "(config-if)#"
@@ -36,7 +36,7 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
         elif args[0:2] == ("trunk", "encapsulation"):
             self.port.trunk_encapsulation_mode = args[2]
         elif args[0:4] == ("trunk", "allowed", "vlan", "add"):
-            if self.port.trunk_vlans is not None:  # for cisco, no list = all vlans
+            if self.port.trunk_vlans is not None: #for cisco, no list = all vlans
                 self.port.trunk_vlans += parse_vlan_list(args[4])
         elif args[0:4] == ("trunk", "allowed", "vlan", "remove"):
             if self.port.trunk_vlans is None:

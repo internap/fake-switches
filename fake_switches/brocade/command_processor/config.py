@@ -12,16 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from fake_switches.brocade.command_processor import explain_missing_port
-from fake_switches.brocade.command_processor.config_interface import ConfigInterfaceCommandProcessor
-from fake_switches.brocade.command_processor.config_virtual_interface import \
-    ConfigVirtualInterfaceCommandProcessor
-from fake_switches.brocade.command_processor.config_vlan import ConfigVlanCommandProcessor
-from fake_switches.brocade.command_processor.config_vrf import ConfigVrfCommandProcessor
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 from fake_switches.switch_configuration import Port, VlanPort
 
 
 class ConfigCommandProcessor(BaseCommandProcessor):
+    def __init__(self, config_vlan, config_vrf, config_interface, config_virtual_interface):
+        super(ConfigCommandProcessor, self).__init__()
+        self.config_vlan_processor = config_vlan
+        self.config_vrf_processor = config_vrf
+        self.config_interface_processor = config_interface
+        self.config_virtual_interface_processor = config_virtual_interface
+
     def get_prompt(self):
         return "SSH@%s(config)#" % self.switch_configuration.name
 
@@ -42,7 +44,7 @@ class ConfigCommandProcessor(BaseCommandProcessor):
             if len(args) > 0:
                 if "name".startswith(args[0]):
                     vlan.name = args[1]
-            self.move_to(ConfigVlanCommandProcessor, vlan)
+            self.move_to(self.config_vlan_processor, vlan)
 
     def do_no_vlan(self, *args):
         vlan = self.switch_configuration.get_vlan(int(args[0]))
@@ -70,9 +72,9 @@ class ConfigCommandProcessor(BaseCommandProcessor):
         port = self.switch_configuration.get_port_by_partial_name("".join(args))
         if port:
             if isinstance(port, VlanPort):
-                self.move_to(ConfigVirtualInterfaceCommandProcessor, port)
+                self.move_to(self.config_virtual_interface_processor, port)
             else:
-                self.move_to(ConfigInterfaceCommandProcessor, port)
+                self.move_to(self.config_interface_processor, port)
         else:
             if "ve".startswith(args[0]):
                 self.write_line("Error - invalid virtual ethernet interface number.")
@@ -106,7 +108,7 @@ class ConfigCommandProcessor(BaseCommandProcessor):
         if "vrf".startswith(cmd):
             vrf = self.switch_configuration.new("VRF", args[0])
             self.switch_configuration.add_vrf(vrf)
-            self.move_to(ConfigVrfCommandProcessor, vrf)
+            self.move_to(self.config_vrf_processor, vrf)
         elif "route".startswith(cmd):
             static_route = self.switch_configuration.new("Route", *args)
             self.switch_configuration.add_static_route(static_route)

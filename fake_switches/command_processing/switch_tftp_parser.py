@@ -25,12 +25,12 @@ class SwitchTftpParser(object):
         self.reader = reader if reader else tftp_reader
         self.logger = logging.getLogger("fake_switches.%s.tftp" % self.configuration.name)
 
-    def parse(self, url, filename, command_processor_class):
+    def parse(self, url, filename, command_processor):
         self.logger.info("Reading : %s/%s" % (url, filename))
 
         data = self.reader.read_tftp(url, filename).split("\n")
 
-        command_processor = command_processor_class(
+        command_processor.init(
             self.configuration, NoopTerminalController(),
             self.logger, NotPipingProcessor())
 

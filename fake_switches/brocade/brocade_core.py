@@ -15,7 +15,15 @@
 import logging
 
 from fake_switches import switch_core
+from fake_switches.brocade.command_processor.config import ConfigCommandProcessor
+from fake_switches.brocade.command_processor.config_interface import ConfigInterfaceCommandProcessor
+from fake_switches.brocade.command_processor.config_virtual_interface import ConfigVirtualInterfaceCommandProcessor
+from fake_switches.brocade.command_processor.config_virtual_interface_vrrp import \
+    ConfigVirtualInterfaceVrrpCommandProcessor
+from fake_switches.brocade.command_processor.config_vlan import ConfigVlanCommandProcessor
+from fake_switches.brocade.command_processor.config_vrf import ConfigVrfCommandProcessor
 from fake_switches.brocade.command_processor.default import DefaultCommandProcessor
+from fake_switches.brocade.command_processor.enabled import EnabledCommandProcessor
 from fake_switches.brocade.command_processor.piping import PipingProcessor
 from fake_switches.command_processing.shell_session import ShellSession
 from fake_switches.switch_configuration import Port
@@ -36,10 +44,20 @@ class BrocadeSwitchCore(switch_core.SwitchCore):
             "fake_switches.brocade.%s.%s.%s" % (self.switch_configuration.name, self.last_connection_id, protocol))
 
         command_processor = DefaultCommandProcessor(
-            switch_configuration=self.switch_configuration,
-            terminal_controller=LoggingTerminalController(self.logger, terminal_controller),
-            piping_processor=PipingProcessor(self.logger),
-            logger=self.logger)
+            enabled=EnabledCommandProcessor(
+                config=ConfigCommandProcessor(
+                    config_vlan=ConfigVlanCommandProcessor(),
+                    config_vrf=ConfigVrfCommandProcessor(),
+                    config_interface=ConfigInterfaceCommandProcessor(),
+                    config_virtual_interface=ConfigVirtualInterfaceCommandProcessor(
+                        config_virutal_interface_vrrp=ConfigVirtualInterfaceVrrpCommandProcessor()
+                    )
+                )
+            ))
+        command_processor.init(switch_configuration=self.switch_configuration,
+                               terminal_controller=LoggingTerminalController(self.logger, terminal_controller),
+                               piping_processor=PipingProcessor(self.logger),
+                               logger=self.logger)
 
         return BrocadeShellSession(command_processor)
 

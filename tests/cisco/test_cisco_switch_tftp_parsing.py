@@ -1,9 +1,12 @@
 import unittest
 
-from hamcrest import assert_that, equal_to
 import mock
-from fake_switches.command_processing.switch_tftp_parser import SwitchTftpParser
+from hamcrest import assert_that, equal_to
+
 from fake_switches.cisco.command_processor.config import ConfigCommandProcessor
+from fake_switches.cisco.command_processor.config_interface import ConfigInterfaceCommandProcessor
+from fake_switches.cisco.command_processor.config_vlan import ConfigVlanCommandProcessor
+from fake_switches.command_processing.switch_tftp_parser import SwitchTftpParser
 from fake_switches.switch_configuration import SwitchConfiguration, Port
 
 
@@ -25,8 +28,12 @@ name VLAN_2_0_0_0
         ])
 
         parser = SwitchTftpParser(config)
-
-        parser.parse("hostname", "filename", ConfigCommandProcessor)
+        config_processor = ConfigCommandProcessor(
+            config_vlan=ConfigVlanCommandProcessor(),
+            config_vrf=None,
+            config_interface=None
+        )
+        parser.parse("hostname", "filename", config_processor)
 
         tftp_reader_mock.assert_called_with("hostname", "filename")
 
@@ -69,8 +76,12 @@ no keepalive
         ])
 
         parser = SwitchTftpParser(config)
-
-        parser.parse("hostname", "filename", ConfigCommandProcessor)
+        config_processor = ConfigCommandProcessor(
+            config_vlan=ConfigVlanCommandProcessor(),
+            config_vrf=None,
+            config_interface=ConfigInterfaceCommandProcessor()
+        )
+        parser.parse("hostname", "filename", config_processor)
 
         vlan1000 = config.get_vlan(1000)
         assert_that(vlan1000.name, equal_to("VLAN_1_0_0_0"))
