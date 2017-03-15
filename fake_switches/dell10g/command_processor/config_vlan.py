@@ -18,7 +18,7 @@ from fake_switches.command_processing.base_command_processor import \
 
 class Dell10GConfigureVlanCommandProcessor(BaseCommandProcessor):
     def __init__(self, switch_configuration, terminal_controller, logger, piping_processor, vlan):
-        BaseCommandProcessor.__init__(self, switch_configuration, terminal_controller, logger, piping_processor)
+        BaseCommandProcessor.init(self, switch_configuration, terminal_controller, logger, piping_processor)
         self.vlan = vlan
 
     def get_prompt(self):

@@ -14,14 +14,9 @@
 
 from fake_switches.cisco.command_processor.config import \
     ConfigCommandProcessor
-from fake_switches.dell.command_processor.config_interface import \
-    DellConfigInterfaceCommandProcessor
-from fake_switches.dell.command_processor.config_vlan import \
-    DellConfigureVlanCommandProcessor
 
 
 class DellConfigCommandProcessor(ConfigCommandProcessor):
-    config_interface_processor = DellConfigInterfaceCommandProcessor
     interface_separator = ' '
 
     def get_prompt(self):
@@ -29,7 +24,7 @@ class DellConfigCommandProcessor(ConfigCommandProcessor):
 
     def do_vlan(self, *args):
         if "database".startswith(args[0]):
-            self.move_to(DellConfigureVlanCommandProcessor)
+            self.move_to(self.config_vlan_processor)
 
     def do_interface(self, *args):
         if 'vlan'.startswith(args[0]):

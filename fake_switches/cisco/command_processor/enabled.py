@@ -24,6 +24,9 @@ from fake_switches import group_sequences
 
 
 class EnabledCommandProcessor(BaseCommandProcessor):
+    def __init__(self, config):
+        super(EnabledCommandProcessor, self).__init__()
+        self.config_processor = config
 
     def get_prompt(self):
         return self.switch_configuration.name + "#"
@@ -33,7 +36,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
 
     def do_configure(self, *_):
         self.write_line("Enter configuration commands, one per line.  End with CNTL/Z.")
-        self.move_to(ConfigCommandProcessor)
+        self.move_to(self.config_processor)
 
     def do_show(self, *args):
         if "running-config".startswith(args[0]):
@@ -178,7 +181,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         self.write_line("Accessing %s..." % source_url)
         try:
             url, filename = re.match('tftp://([^/]*)/(.*)', source_url).group(1, 2)
-            SwitchTftpParser(self.switch_configuration).parse(url, filename, ConfigCommandProcessor)
+            SwitchTftpParser(self.switch_configuration).parse(url, filename, self.config_processor)
             self.write_line("Done (or some official message...)")
         except Exception as e:
             self.logger.warning("tftp parsing went wrong : %s" % str(e))

@@ -16,12 +16,9 @@ from fake_switches.brocade.command_processor.config_interface import ConfigInter
 
 
 class ConfigVirtualInterfaceVrrpCommandProcessor(ConfigInterfaceCommandProcessor):
-    def __init__(self, switch_configuration, terminal_controller, logger,
-                 piping_processor, port, vrrp):
-        super(ConfigVirtualInterfaceVrrpCommandProcessor, self).__init__(
-            switch_configuration, terminal_controller, logger, piping_processor,
-            port)
-        self.vrrp = vrrp
+    def init(self, switch_configuration, terminal_controller, logger, piping_processor, *args):
+        ConfigInterfaceCommandProcessor.init(self, switch_configuration, terminal_controller, logger, piping_processor, args[0])
+        self.vrrp = args[1]
 
     def get_prompt(self):
         return "SSH@%s(config-vif-%s-vrid-%s)#" % (

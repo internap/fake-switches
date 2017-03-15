@@ -26,7 +26,7 @@ name VLAN_2_0_0_0
 
         parser = SwitchTftpParser(config)
 
-        parser.parse("hostname", "filename", ConfigCommandProcessor)
+        parser.parse("hostname", "filename", ConfigCommandProcessor.build())
 
         tftp_reader_mock.assert_called_with("hostname", "filename")
 
@@ -70,7 +70,7 @@ no keepalive
 
         parser = SwitchTftpParser(config)
 
-        parser.parse("hostname", "filename", ConfigCommandProcessor)
+        parser.parse("hostname", "filename", ConfigCommandProcessor.build())
 
         vlan1000 = config.get_vlan(1000)
         assert_that(vlan1000.name, equal_to("VLAN_1_0_0_0"))

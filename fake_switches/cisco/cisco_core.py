@@ -15,6 +15,10 @@
 import logging
 
 from fake_switches import switch_core
+from fake_switches.cisco.command_processor.config_vrf import ConfigVRFCommandProcessor
+from fake_switches.cisco.command_processor.config import ConfigCommandProcessor
+from fake_switches.cisco.command_processor.config_interface import ConfigInterfaceCommandProcessor
+from fake_switches.cisco.command_processor.config_vlan import ConfigVlanCommandProcessor
 from fake_switches.cisco.command_processor.default import DefaultCommandProcessor
 from fake_switches.cisco.command_processor.enabled import EnabledCommandProcessor
 from fake_switches.cisco.command_processor.piping import PipingProcessor
@@ -31,21 +35,23 @@ class CiscoSwitchCore(switch_core.SwitchCore):
         self.logger = None
         self.last_connection_id = 0
 
+        self.processor = EnabledCommandProcessor(
+            config=ConfigCommandProcessor.build()
+        )
+        if not self.switch_configuration.auto_enabled:
+            self.processor = DefaultCommandProcessor(self.processor)
+
     def launch(self, protocol, terminal_controller):
         self.last_connection_id += 1
 
         self.logger = logging.getLogger("fake_switches.cisco.%s.%s.%s" % (self.switch_configuration.name, self.last_connection_id, protocol))
-        if self.switch_configuration.auto_enabled:
-            processor = EnabledCommandProcessor
-        else:
-            processor = DefaultCommandProcessor
 
-        return CiscoShellSession(
-            processor(
-                self.switch_configuration,
-                LoggingTerminalController(self.logger, terminal_controller),
-                self.logger,
-                PipingProcessor(self.logger)))
+        self.processor.init(
+            self.switch_configuration,
+            LoggingTerminalController(self.logger, terminal_controller),
+            self.logger,
+            PipingProcessor(self.logger))
+        return CiscoShellSession(self.processor)
 
     def get_netconf_protocol(self):
         return None

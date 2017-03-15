@@ -21,6 +21,10 @@ from fake_switches.brocade.command_processor.config_virtual_interface_vrrp impor
 
 
 class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
+    def __init__(self, config_virutal_interface_vrrp):
+        super(ConfigVirtualInterfaceCommandProcessor, self).__init__()
+        self.config_virutal_interface_vrrp = config_virutal_interface_vrrp
+
     def get_prompt(self):
         return "SSH@%s(config-vif-%s)#" % (self.switch_configuration.name, self.port.vlan_id)
 
@@ -67,7 +71,7 @@ class ConfigVirtualInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
                 if vrrp is None:
                     vrrp = self.switch_configuration.new("VRRP", group)
                     self.port.vrrps.append(vrrp)
-                self.move_to(ConfigVirtualInterfaceVrrpCommandProcessor, self.port, vrrp)
+                self.move_to(self.config_virutal_interface_vrrp, self.port, vrrp)
 
             if "auth-type".startswith(args[1]):
                 if "simple-text-auth".startswith(args[2]):
