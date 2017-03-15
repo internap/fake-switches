@@ -169,7 +169,7 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
         if "redirects".startswith(args[0]):
             self.port.ip_redirect = False
         if "verify unicast".startswith(args[0]) and isinstance(self.port, VlanPort):
-            self.port.unicast_reverse_path_fowarding = False
+            self.port.unicast_reverse_path_forwarding = False
         if "helper-address".startswith(args[0]):
             if len(args) > 2:
                 self.write_line(" ^")

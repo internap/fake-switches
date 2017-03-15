@@ -19,4 +19,4 @@ class Cisco6500SwitchCore(BaseCiscoSwitchCore):
 
 class Cisco6500ConfigInterfaceCommandProcessor(ConfigInterfaceCommandProcessor):
     def _handle_ip_verify_unicast(self):
-        self.port.unicast_reverse_path_fowarding = True
+        self.port.unicast_reverse_path_forwarding = True
