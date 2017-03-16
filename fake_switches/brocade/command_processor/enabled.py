@@ -13,20 +13,24 @@
 # limitations under the License.
 
 import re
+
 from fake_switches import group_sequences
 from fake_switches.brocade.command_processor import explain_missing_port
-from fake_switches.brocade.command_processor.config import ConfigCommandProcessor
-from fake_switches.command_processing.switch_tftp_parser import SwitchTftpParser
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
+from fake_switches.command_processing.switch_tftp_parser import SwitchTftpParser
 from fake_switches.switch_configuration import split_port_name, VlanPort
 
 
 class EnabledCommandProcessor(BaseCommandProcessor):
+    def __init__(self, config):
+        super(EnabledCommandProcessor, self).__init__()
+        self.config_processor = config
+
     def get_prompt(self):
         return "SSH@%s#" % self.switch_configuration.name
 
     def do_configure(self, *_):
-        self.move_to(ConfigCommandProcessor)
+        self.move_to(self.config_processor)
 
     def do_show(self, *args):
         if "running-config".startswith(args[0]):
@@ -58,7 +62,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
 
     def do_ncopy(self, protocol, url, filename, target):
         try:
-            SwitchTftpParser(self.switch_configuration).parse(url, filename, ConfigCommandProcessor)
+            SwitchTftpParser(self.switch_configuration).parse(url, filename, self.config_processor)
             self.write_line("done")
         except Exception as e:
             self.logger.warning("tftp parsing went wrong : %s" % str(e))

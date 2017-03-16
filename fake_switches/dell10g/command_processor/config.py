@@ -11,17 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 from fake_switches.dell.command_processor.config import DellConfigCommandProcessor
-from fake_switches.dell10g.command_processor.config_interface import \
-    Dell10GConfigInterfaceCommandProcessor
-from fake_switches.dell10g.command_processor.config_vlan import \
-    Dell10GConfigureVlanCommandProcessor
 
 
 class Dell10GConfigCommandProcessor(DellConfigCommandProcessor):
-    config_interface_processor = Dell10GConfigInterfaceCommandProcessor
-
     def do_vlan(self, raw_number, *_):
         number = int(raw_number)
         if number < 1 or number > 4094:
@@ -39,7 +32,7 @@ class Dell10GConfigCommandProcessor(DellConfigCommandProcessor):
             if not vlan:
                 vlan = self.switch_configuration.new("Vlan", number)
                 self.switch_configuration.add_vlan(vlan)
-            self.move_to(Dell10GConfigureVlanCommandProcessor, vlan)
+            self.move_to(self.config_vlan_processor, vlan)
 
     def do_no_vlan(self, number, *args):
         vlan = self.switch_configuration.get_vlan(int(number))

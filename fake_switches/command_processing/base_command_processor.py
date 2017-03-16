@@ -16,8 +16,7 @@ from fake_switches.command_processing.command_processor import CommandProcessor
 
 
 class BaseCommandProcessor(CommandProcessor):
-
-    def __init__(self, switch_configuration, terminal_controller, logger, piping_processor):
+    def init(self, switch_configuration, terminal_controller, logger, piping_processor, *args):
         """
         :type switch_configuration: fake_switches.switch_configuration.SwitchConfiguration
         :type terminal_controller: fake_switches.terminal.TerminalController
@@ -82,8 +81,14 @@ class BaseCommandProcessor(CommandProcessor):
             self.show_prompt()
         return processed
 
-    def move_to(self, new_process_class, *args):
-        self.sub_processor = new_process_class(self.switch_configuration, self.terminal_controller, self.logger, self.piping_processor, *args)
+    def move_to(self, new_processor, *args):
+        new_processor.init(self.switch_configuration,
+                           self.terminal_controller,
+                           self.logger,
+                           self.piping_processor,
+                           *args)
+        self.sub_processor = new_processor
+        self.logger.info("new subprocessor = {}".format(self.sub_processor.__class__.__name__))
         self.sub_processor.show_prompt()
 
     def continue_to(self, continuing_action):

@@ -13,9 +13,8 @@
 # limitations under the License.
 from fake_switches.dell.command_processor.default import DellDefaultCommandProcessor
 
-from fake_switches.dell10g.command_processor.enabled import \
-    Dell10GEnabledCommandProcessor
-
 
 class Dell10GDefaultCommandProcessor(DellDefaultCommandProcessor):
-    enabled_command_processor = Dell10GEnabledCommandProcessor
+    def __init__(self, enabled):
+        super(Dell10GDefaultCommandProcessor, self).__init__(enabled)
+        self.enabled_processor = enabled

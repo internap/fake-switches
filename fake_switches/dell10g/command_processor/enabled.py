@@ -17,13 +17,12 @@ from collections import namedtuple
 from fake_switches import group_sequences
 from fake_switches.dell.command_processor.enabled import DellEnabledCommandProcessor, to_vlan_ranges, _is_vlan_id, \
     _assemble_elements_on_lines
-from fake_switches.dell10g.command_processor.config import \
-    Dell10GConfigCommandProcessor
 from fake_switches.switch_configuration import VlanPort, AggregatedPort
 
 
 class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
-    configure_command_processor = Dell10GConfigCommandProcessor
+    def __init__(self, config):
+        super(Dell10GEnabledCommandProcessor, self).__init__(config)
 
     def get_port_configuration(self, port):
         conf = []
