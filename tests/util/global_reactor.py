@@ -16,12 +16,13 @@ import threading
 
 from fake_switches.brocade.brocade_core import BrocadeSwitchCore
 from fake_switches.cisco.cisco_core import CiscoSwitchCore
+from fake_switches.cisco6500.cisco_core import Cisco6500SwitchCore
 from fake_switches.dell.dell_core import DellSwitchCore
 from fake_switches.dell10g.dell_core import Dell10GSwitchCore
 from fake_switches.juniper.juniper_core import JuniperSwitchCore
 from fake_switches.juniper_qfx_copper.juniper_qfx_copper_core import JuniperQfxCopperSwitchCore
 from fake_switches.ssh_service import SwitchSshService
-from fake_switches.switch_configuration import SwitchConfiguration, Port
+from fake_switches.switch_configuration import SwitchConfiguration
 from fake_switches.telnet_service import SwitchTelnetService
 
 COMMIT_DELAY = 1
@@ -33,6 +34,9 @@ cisco_switch_ssh_with_commit_delay_port = 12002
 cisco_privileged_password = "CiSc000"
 cisco_auto_enabled_switch_telnet_port = 11004
 cisco_auto_enabled_switch_ssh_port = 11005
+cisco6500_switch_ip = "127.0.0.1"
+cisco6500_switch_telnet_port = 11013
+cisco6500_switch_ssh_port = 11014
 brocade_switch_ip = "127.0.0.1"
 brocade_switch_ssh_port = 11006
 brocade_privileged_password = 'Br0cad3'
@@ -77,6 +81,14 @@ class ThreadedReactor(threading.Thread):
         SwitchSshService(cisco_switch_ip, ssh_port=cisco_auto_enabled_switch_ssh_port,
                          switch_core=auto_enabled_switch_core, users={'root': b'root'}).hook_to_reactor(
             cls._threaded_reactor.reactor)
+
+        switch_core = Cisco6500SwitchCore(
+            SwitchConfiguration(cisco6500_switch_ip, name="my_switch", privileged_passwords=[cisco_privileged_password],
+                                ports=Cisco6500SwitchCore.get_default_ports()))
+        SwitchTelnetService(cisco6500_switch_ip, telnet_port=cisco6500_switch_telnet_port, switch_core=switch_core,
+                            users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+        SwitchSshService(cisco6500_switch_ip, ssh_port=cisco6500_switch_ssh_port, switch_core=switch_core,
+                         users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = BrocadeSwitchCore(
             SwitchConfiguration(brocade_switch_ip, name="my_switch", privileged_passwords=[brocade_privileged_password],

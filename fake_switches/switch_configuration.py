@@ -11,10 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from time import sleep
-from netaddr import IPNetwork, IPAddress
-
 import re
+from time import sleep
+
+from netaddr import IPNetwork, IPAddress
 
 
 class SwitchConfiguration(object):
@@ -208,7 +208,7 @@ class VlanPort(Port):
         self.vrrp_common_authentication = None
         self.vrrps = []
         self.ip_redirect = True
-        self.ip_proxy_arp = True
+        self.unicast_reverse_path_forwarding = False
 
     def get_vrrp_group(self, group):
         return next((vrrp for vrrp in self.vrrps if vrrp.group_id == group), None)

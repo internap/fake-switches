@@ -50,7 +50,7 @@ class BrocadeSwitchCore(switch_core.SwitchCore):
                     config_vrf=ConfigVrfCommandProcessor(),
                     config_interface=ConfigInterfaceCommandProcessor(),
                     config_virtual_interface=ConfigVirtualInterfaceCommandProcessor(
-                        config_virtual_interface_vrrp=ConfigVirtualInterfaceVrrpCommandProcessor()
+                        config_virutal_interface_vrrp=ConfigVirtualInterfaceVrrpCommandProcessor()
                     )
                 )
             ))
