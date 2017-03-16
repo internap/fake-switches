@@ -14,9 +14,12 @@
 
 import unittest
 
-from flexmock import flexmock_teardown
 import mock
+from flexmock import flexmock_teardown
 
+from tests.cisco import enable, create_interface_vlan, configuring, configuring_interface_vlan, \
+    assert_interface_configuration, remove_vlan, create_vlan, set_interface_on_vlan, configuring_interface, \
+    revert_switchport_mode_access, create_port_channel_interface, configuring_port_channel
 from tests.util.global_reactor import cisco_privileged_password
 from tests.util.global_reactor import cisco_switch_ssh_port, cisco_switch_telnet_port, cisco_switch_ip
 from tests.util.protocol_util import SshTester, TelnetTester, with_protocol
@@ -1453,137 +1456,6 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
 
         configuring(t, "default interface FastEthernet0/3")
 
-
-def enable(t):
-    t.write("enable")
-    t.read("Password: ")
-    t.write_invisible(cisco_privileged_password)
-    t.read("my_switch#")
-
-
-def create_vlan(t, vlan, name=None):
-    t.write("configure terminal")
-    t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
-    t.read("my_switch(config)#")
-    t.write("vlan %s" % vlan)
-    t.read("my_switch(config-vlan)#")
-    if name:
-        t.write("name %s" % name)
-        t.read("my_switch(config-vlan)#")
-    t.write("exit")
-    t.read("my_switch(config)#")
-    t.write("exit")
-    t.read("my_switch#")
-
-
-def create_interface_vlan(t, vlan):
-    t.write("configure terminal")
-    t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
-    t.read("my_switch(config)#")
-    t.write("interface vlan %s" % vlan)
-    t.read("my_switch(config-if)#")
-    t.write("exit")
-    t.read("my_switch(config)#")
-    t.write("exit")
-    t.read("my_switch#")
-
-
-def create_port_channel_interface(t, po_id):
-    t.write("configure terminal")
-    t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
-    t.read("my_switch(config)#")
-    t.write("interface port-channel %s" % po_id)
-    t.read("my_switch(config-if)#")
-    t.write("exit")
-    t.read("my_switch(config)#")
-    t.write("exit")
-    t.read("my_switch#")
-
-
-def remove_vlan(t, vlan):
-    configuring(t, do="no vlan %s" % vlan)
-
-
-def set_interface_on_vlan(t, interface, vlan):
-    configuring_interface(t, interface, do="switchport mode access")
-    configuring_interface(t, interface, do="switchport access vlan %s" % vlan)
-
-
-def revert_switchport_mode_access(t, interface):
-    configuring_interface(t, interface, do="no switchport access vlan")
-    configuring_interface(t, interface, do="no switchport mode access")
-
-
-def configuring(t, do):
-    t.write("configure terminal")
-    t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
-    t.read("my_switch(config)#")
-
-    t.write(do)
-
-    t.read("my_switch(config)#")
-    t.write("exit")
-    t.read("my_switch#")
-
-
-def configuring_interface(t, interface, do):
-    t.write("configure terminal")
-    t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
-    t.read("my_switch(config)#")
-    t.write("interface %s" % interface)
-    t.read("my_switch(config-if)#")
-
-    t.write(do)
-
-    t.read("my_switch(config-if)#")
-    t.write("exit")
-    t.read("my_switch(config)#")
-    t.write("exit")
-    t.read("my_switch#")
-
-
-def configuring_interface_vlan(t, interface, do):
-    t.write("configure terminal")
-    t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
-    t.read("my_switch(config)#")
-    t.write("interface vlan %s" % interface)
-    t.read("my_switch(config-if)#")
-
-    t.write(do)
-
-    t.read("my_switch(config-if)#")
-    t.write("exit")
-    t.read("my_switch(config)#")
-    t.write("exit")
-    t.read("my_switch#")
-
-
-def configuring_port_channel(t, number, do):
-    t.write("configure terminal")
-    t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
-    t.read("my_switch(config)#")
-    t.write("interface port-channel %s" % number)
-    t.read("my_switch(config-if)#")
-
-    t.write(do)
-
-    t.read("my_switch(config-if)#")
-    t.write("exit")
-    t.read("my_switch(config)#")
-    t.write("exit")
-    t.read("my_switch#")
-
-
-def assert_interface_configuration(t, interface, config):
-    t.write("show running-config interface %s " % interface)
-    t.readln("Building configuration...")
-    t.readln("")
-    t.readln("Current configuration : \d+ bytes", regex=True)
-    t.readln("!")
-    for line in config:
-        t.readln(line)
-    t.readln("")
-    t.read("my_switch#")
 
 
 class TestCiscoSwitchProtocolSSH(TestCiscoSwitchProtocol):

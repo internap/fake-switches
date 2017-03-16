@@ -27,9 +27,9 @@ from fake_switches.switch_configuration import Port
 from fake_switches.terminal import LoggingTerminalController
 
 
-class CiscoSwitchCore(switch_core.SwitchCore):
+class BaseCiscoSwitchCore(switch_core.SwitchCore):
     def __init__(self, switch_configuration):
-        super(CiscoSwitchCore, self).__init__(switch_configuration)
+        super(BaseCiscoSwitchCore, self).__init__(switch_configuration)
         self.switch_configuration.add_vlan(self.switch_configuration.new("Vlan", 1))
 
         self.logger = None
@@ -38,15 +38,10 @@ class CiscoSwitchCore(switch_core.SwitchCore):
     def launch(self, protocol, terminal_controller):
         self.last_connection_id += 1
 
-        self.logger = logging.getLogger("fake_switches.cisco.%s.%s.%s" % (self.switch_configuration.name, self.last_connection_id, protocol))
+        self.logger = logging.getLogger(
+            "fake_switches.cisco.%s.%s.%s" % (self.switch_configuration.name, self.last_connection_id, protocol))
 
-        processor = EnabledCommandProcessor(
-            config=ConfigCommandProcessor(
-                config_vlan=ConfigVlanCommandProcessor(),
-                config_vrf=ConfigVRFCommandProcessor(),
-                config_interface=ConfigInterfaceCommandProcessor()
-            )
-        )
+        processor = self.new_command_processor()
         if not self.switch_configuration.auto_enabled:
             processor = DefaultCommandProcessor(processor)
 
@@ -56,6 +51,9 @@ class CiscoSwitchCore(switch_core.SwitchCore):
             self.logger,
             PipingProcessor(self.logger))
         return CiscoShellSession(processor)
+
+    def new_command_processor(self):
+        raise NotImplementedError
 
     def get_netconf_protocol(self):
         return None
@@ -78,6 +76,20 @@ class CiscoSwitchCore(switch_core.SwitchCore):
         ]
 
 
+class Cisco2960SwitchCore(BaseCiscoSwitchCore):
+    def new_command_processor(self):
+        return EnabledCommandProcessor(
+            config=ConfigCommandProcessor(
+                config_vlan=ConfigVlanCommandProcessor(),
+                config_vrf=ConfigVRFCommandProcessor(),
+                config_interface=ConfigInterfaceCommandProcessor()
+            )
+        )
+
+
+CiscoSwitchCore = Cisco2960SwitchCore  # Backward compatibility
+
+
 class CiscoShellSession(ShellSession):
     def handle_unknown_command(self, line):
         self.command_processor.terminal_controller.write("No such command : %s\n" % line)
@@ -86,12 +98,12 @@ class CiscoShellSession(ShellSession):
 class Cisco2960_24TT_L_SwitchCore(CiscoSwitchCore):
     @staticmethod
     def get_default_ports():
-        return [Port("FastEthernet0/{0}".format(p+1)) for p in range(24)] + \
-               [Port("GigabitEthernet0/{0}".format(p+1)) for p in range(2)]
+        return [Port("FastEthernet0/{0}".format(p + 1)) for p in range(24)] + \
+               [Port("GigabitEthernet0/{0}".format(p + 1)) for p in range(2)]
 
 
 class Cisco2960_48TT_L_SwitchCore(CiscoSwitchCore):
     @staticmethod
     def get_default_ports():
-        return [Port("FastEthernet0/{0}".format(p+1)) for p in range(48)] + \
-               [Port("GigabitEthernet0/{0}".format(p+1)) for p in range(2)]
+        return [Port("FastEthernet0/{0}".format(p + 1)) for p in range(48)] + \
+               [Port("GigabitEthernet0/{0}".format(p + 1)) for p in range(2)]

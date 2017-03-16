@@ -128,6 +128,8 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
             self.port.ip_redirect = True
         if "proxy-arp".startswith(args[0]):
             self.port.ip_proxy_arp = True
+        if "verify".startswith(args[0]) and "unicast".startswith(args[1]) and isinstance(self.port, VlanPort):
+            self._handle_ip_verify_unicast()
         if "helper-address".startswith(args[0]):
             if len(args) == 1:
                 self.write_line("% Incomplete command.")
@@ -166,7 +168,8 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                 self.port.vrf = None
         if "redirects".startswith(args[0]):
             self.port.ip_redirect = False
-
+        if "verify".startswith(args[0]) and "unicast".startswith(args[1]) and isinstance(self.port, VlanPort):
+            self.port.unicast_reverse_path_forwarding = False
         if "helper-address".startswith(args[0]):
             if len(args) > 2:
                 self.write_line(" ^")
@@ -277,6 +280,14 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
     def create_port_channel(self, name):
         port = self.switch_configuration.new("AggregatedPort", name)
         self.port.switch_configuration.add_port(port)
+
+    def _handle_ip_verify_unicast(self):
+        self.write_line("% ip verify configuration not supported on interface Vl{}".format(self.port.vlan_id))
+        self.write_line(" - verification not supported by hardware")
+        self.write_line("% ip verify configuration not supported on interface Vl{}".format(self.port.vlan_id))
+        self.write_line(" - verification not supported by hardware")
+        self.write_line(
+            "%Restoring the original configuration failed on {} - Interface Support Failure".format(self.port.name))
 
 
 def parse_vlan_list(param):
