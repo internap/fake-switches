@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
+from fake_switches.brocade.command_processor.config_interface import ConfigInterfaceCommandProcessor
 
 
-class ConfigVirtualInterfaceVrrpCommandProcessor(BaseCommandProcessor):
+class ConfigVirtualInterfaceVrrpCommandProcessor(ConfigInterfaceCommandProcessor):
     def init(self, switch_configuration, terminal_controller, logger, piping_processor, *args):
-        super(ConfigVirtualInterfaceVrrpCommandProcessor, self).init(switch_configuration, terminal_controller, logger, piping_processor)
-        self.port, self.vrrp = args
+        super(ConfigVirtualInterfaceVrrpCommandProcessor, self).init(switch_configuration, terminal_controller, logger, piping_processor, args[0])
+        self.vrrp = args[1]
 
     def get_prompt(self):
         return "SSH@%s(config-vif-%s-vrid-%s)#" % (
@@ -91,6 +91,3 @@ class ConfigVirtualInterfaceVrrpCommandProcessor(BaseCommandProcessor):
 
     def do_no_activate(self, *_):
         self.vrrp.activated = False
-
-    def do_exit(self):
-        self.is_done = True
