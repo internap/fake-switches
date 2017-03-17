@@ -281,6 +281,8 @@ def build_running_interface(port):
             data.append(" ip access-group %s in" % port.access_group_in)
         if port.access_group_out:
             data.append(" ip access-group %s out" % port.access_group_out)
+        if port.unicast_reverse_path_forwarding is True:
+            data.append(" ip verify unicast source reachable-via rx")
         if port.ip_redirect is False:
             data.append(" no ip redirects")
         if port.ip_proxy_arp is False:
