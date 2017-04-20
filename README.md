@@ -23,6 +23,9 @@ machine for some network testing.
 This library is NOT supported by any vendor, it was built by
 reverse-engineering network equipment.
 
+Try it!
+=======
+Docker containers for [fake-switches 1.1.6](https://hub.docker.com/r/oookotooo/fake-switches/) and  [guide](https://github.com/oookotooo/SoftServe-1/blob/master/fake-switches-dockerfiles/README.md#guide-for-installing-it-locallynote-it-also-could-fail-once-but-go-ok-next-time--).
 
 Actual supported commands
 =========================
