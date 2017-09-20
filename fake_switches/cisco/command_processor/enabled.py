@@ -287,6 +287,8 @@ def build_running_interface(port):
             data.append(" no ip redirects")
         if port.ip_proxy_arp is False:
             data.append(" no ip proxy-arp")
+        if port.vrrp_version is not None:
+            data.append(" standby version {}".format(port.vrrp_version))
         for vrrp in port.vrrps:
             group = vrrp.group_id
             if vrrp.ip_addresses is not None:

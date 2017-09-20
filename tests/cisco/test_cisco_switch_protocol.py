@@ -1456,6 +1456,68 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
 
         configuring(t, "default interface FastEthernet0/3")
 
+    @with_protocol
+    def test_standby_version(self, t):
+        enable(t)
+
+        create_vlan(t, "2999")
+        create_interface_vlan(t, "2999")
+
+        configuring_interface_vlan(t, "2999", do='standby version 2')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            " standby version 2",
+            "end"])
+
+        configuring_interface_vlan(t, "2999", do='no standby version 2')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            "end"])
+
+        configuring_interface_vlan(t, "2999", do='standby version 2')
+        configuring_interface_vlan(t, "2999", do='standby version 1')
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            "end"])
+
+        t.write("configure terminal")
+        t.readln("Enter configuration commands, one per line.  End with CNTL/Z.")
+        t.read("my_switch(config)#")
+        t.write("interface vlan 2999")
+        t.read("my_switch(config-if)#")
+
+        t.write("standby version")
+        t.readln("% Incomplete command.")
+        t.readln("")
+        t.read("my_switch(config-if)#")
+
+        t.write("standby version 3")
+        t.readln(" ^")
+        t.readln("% Invalid input detected at '^' marker.")
+        t.readln("")
+        t.read("my_switch(config-if)#")
+
+        t.write("standby version 2 2")
+        t.readln(" ^")
+        t.readln("% Invalid input detected at '^' marker.")
+        t.readln("")
+        t.read("my_switch(config-if)#")
+
+        t.write("exit")
+        t.read("my_switch(config)#")
+        t.write("exit")
+        t.read("my_switch#")
+
+        assert_interface_configuration(t, "Vlan2999", [
+            "interface Vlan2999",
+            " no ip address",
+            "end"])
+
+        configuring(t, do="no interface vlan 2999")
+        remove_vlan(t, "2999")
 
 
 class TestCiscoSwitchProtocolSSH(TestCiscoSwitchProtocol):
