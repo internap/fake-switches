@@ -185,7 +185,47 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
         if "proxy-arp".startswith(args[0]):
             self.port.ip_proxy_arp = False
 
-    def do_standby(self, group, command, *args):
+    def do_standby(self, command, *args):
+        if "version".startswith(command):
+            if len(args) < 1:
+                self.write_line("% Incomplete command.")
+                self.write_line("")
+            elif len(args) == 1 and args[0] == "1":
+                self.port.vrrp_version = None
+            elif len(args) == 1 and args[0] == "2":
+                self.port.vrrp_version = "2"
+            else:
+                self.write_line(" ^")
+                self.write_line("% Invalid input detected at '^' marker.")
+                self.write_line("")
+        else:
+            self._handle_standby_group(command, args[0], *args[1:])
+
+    def do_no_standby(self, command, *args):
+        if "version".startswith(command):
+            self.port.vrrp_version = None
+        else:
+            self._handle_no_standby_group(command, *args)
+
+    def do_exit(self):
+        self.is_done = True
+
+    def port_channel_exists(self, name):
+        return self.switch_configuration.get_port_by_partial_name(name) is not None
+
+    def create_port_channel(self, name):
+        port = self.switch_configuration.new("AggregatedPort", name)
+        self.port.switch_configuration.add_port(port)
+
+    def _handle_ip_verify_unicast(self):
+        self.write_line("% ip verify configuration not supported on interface Vl{}".format(self.port.vlan_id))
+        self.write_line(" - verification not supported by hardware")
+        self.write_line("% ip verify configuration not supported on interface Vl{}".format(self.port.vlan_id))
+        self.write_line(" - verification not supported by hardware")
+        self.write_line(
+            "%Restoring the original configuration failed on {} - Interface Support Failure".format(self.port.name))
+
+    def _handle_standby_group(self, group, command, *args):
         vrrp = self.port.get_vrrp_group(group)
         if vrrp is None:
             vrrp = self.switch_configuration.new("VRRP", group)
@@ -230,7 +270,7 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
             if len(args) > 0 and " ".join(args[0:2]) == "delay minimum":
                 vrrp.preempt_delay_minimum = args[2]
 
-    def do_no_standby(self, group, *cmd_args):
+    def _handle_no_standby_group(self, group, *cmd_args):
         vrrp = self.port.get_vrrp_group(group)
 
         if vrrp is None:
@@ -270,24 +310,6 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                 else:
                     vrrp.preempt_delay_minimum = None
                     vrrp.preempt = None
-
-    def do_exit(self):
-        self.is_done = True
-
-    def port_channel_exists(self, name):
-        return self.switch_configuration.get_port_by_partial_name(name) is not None
-
-    def create_port_channel(self, name):
-        port = self.switch_configuration.new("AggregatedPort", name)
-        self.port.switch_configuration.add_port(port)
-
-    def _handle_ip_verify_unicast(self):
-        self.write_line("% ip verify configuration not supported on interface Vl{}".format(self.port.vlan_id))
-        self.write_line(" - verification not supported by hardware")
-        self.write_line("% ip verify configuration not supported on interface Vl{}".format(self.port.vlan_id))
-        self.write_line(" - verification not supported by hardware")
-        self.write_line(
-            "%Restoring the original configuration failed on {} - Interface Support Failure".format(self.port.name))
 
 
 def parse_vlan_list(param):

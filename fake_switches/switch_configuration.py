@@ -206,6 +206,7 @@ class VlanPort(Port):
         self.ips = []
         self.secondary_ips = []
         self.vrrp_common_authentication = None
+        self.vrrp_version = None
         self.vrrps = []
         self.ip_redirect = True
         self.ip_proxy_arp = True
