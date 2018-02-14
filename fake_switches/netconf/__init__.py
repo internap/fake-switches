@@ -15,6 +15,7 @@
 import re
 from lxml import etree
 
+
 RUNNING = "running"
 CANDIDATE = "candidate"
 NS_BASE_1_0 = "urn:ietf:params:xml:ns:netconf:base:1.0"
@@ -22,6 +23,7 @@ NS_BASE_1_0 = "urn:ietf:params:xml:ns:netconf:base:1.0"
 XML_ATTRIBUTES = "__xml_attributes__"
 XML_TEXT = "__xml_text__"
 XML_NS = "__xml_ns__"
+
 
 class SimpleDatastore(object):
     def __init__(self):
@@ -44,6 +46,7 @@ class SimpleDatastore(object):
 
     def unlock(self):
         pass
+
 
 class Response(object):
     def __init__(self, elements, require_disconnect=False):
@@ -79,6 +82,7 @@ def dict_2_etree(source_dict):
     append(root_etree, source_dict[root_element])
     return root_etree
 
+
 def resolve_source_name(xml_tag):
     if xml_tag.endswith(RUNNING):
         return RUNNING
@@ -86,6 +90,7 @@ def resolve_source_name(xml_tag):
         return CANDIDATE
     else:
         raise Exception("What is this source : %s" % xml_tag)
+
 
 def first(node):
     return node[0] if node else None
@@ -109,10 +114,32 @@ class NetconfError(Exception):
         self.info = info
         self.path = path
 
+    def to_dict(self):
+        return error_to_rpcerror_dict(self)
 
-class MultipleNetconfErrors(Exception):
+    def to_etree(self):
+        return dict_2_etree(self.to_dict())
+
+
+def error_to_rpcerror_dict(error):
+    error_specs = {
+        "error-message": str(error)
+    }
+
+    if error.path: error_specs["error-path"] = error.path
+    if error.type: error_specs["error-type"] = error.type
+    if error.tag: error_specs["error-tag"] = error.tag
+    if error.severity: error_specs["error-severity"] = error.severity
+    if error.info: error_specs["error-info"] = error.info
+    return {"rpc-error": error_specs}
+
+
+class MultipleNetconfErrors(NetconfError):
     def __init__(self, errors):
         self.errors = errors
+
+    def to_etree(self):
+        return [e.to_etree() for e in self.errors]
 
 
 class AlreadyLocked(NetconfError):
@@ -136,8 +163,8 @@ class AggregatePortOutOfRange(NetconfError):
 
 
 class PhysicalPortOutOfRange(NetconfError):
-    def __init__(self, port, interface):
-        super(PhysicalPortOutOfRange, self).__init__("port value outside range 1..127 for '{}' in '{}'".format(port, interface))
+    def __init__(self, port, interface, max_number):
+        super(PhysicalPortOutOfRange, self).__init__("port value outside range 1..{} for '{}' in '{}'".format(max_number, port, interface))
 
 
 class InvalidTrailingInput(NetconfError):
@@ -156,8 +183,8 @@ class InvalidNumericValue(NetconfError):
 
 
 class InvalidMTUValue(NetconfError):
-    def __init__(self, value):
-        super(InvalidMTUValue, self).__init__("Value {} is not within range (256..9216)".format(value))
+    def __init__(self, value, max_mtu):
+        super(InvalidMTUValue, self).__init__("Value {} is not within range (256..{})".format(value, max_mtu))
 
 
 class OperationNotSupported(NetconfError):
@@ -168,29 +195,6 @@ class OperationNotSupported(NetconfError):
             err_type="protocol",
             tag="operation-not-supported"
         )
-
-
-class TrunkShouldHaveVlanMembers(NetconfError):
-    def __init__(self, interface):
-        super(TrunkShouldHaveVlanMembers, self).__init__(msg='\nFor trunk interface, please ensure either vlan members is configured or inner-vlan-id-list is configured\n',
-                                                         severity='error',
-                                                         err_type='protocol',
-                                                         tag='operation-failed',
-                                                         info={'bad-element': 'ethernet-switching'},
-                                                         path='\n[edit interfaces {} unit 0 family]\n'.format(interface))
-
-class ConfigurationCheckOutFailed(NetconfError):
-    def __init__(self):
-        super(ConfigurationCheckOutFailed, self).__init__(msg='\nconfiguration check-out failed\n',
-                                                          severity='error',
-                                                          err_type='protocol',
-                                                          tag='operation-failed',
-                                                          info=None)
-
-
-class FailingCommitResults(Exception):
-    def __init__(self, netconf_errors):
-        self.netconf_errors = netconf_errors
 
 
 def xml_equals(actual_node, node):
@@ -205,6 +209,7 @@ def xml_equals(actual_node, node):
         if actual_node.attrib[name] != value: return False
     if actual_node.nsmap != node.nsmap: return False
     return _compare_children(node, actual_node)
+
 
 def _compare_children(expected, actual):
     for i, node in enumerate(expected):

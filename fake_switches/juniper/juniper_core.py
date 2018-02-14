@@ -26,13 +26,9 @@ from fake_switches.netconf.capabilities import Candidate1_0, ConfirmedCommit1_0,
 from fake_switches.netconf.netconf_protocol import NetconfProtocol
 
 
-class JuniperSwitchCore(switch_core.SwitchCore):
-    def __init__(self, switch_configuration, datastore_class=JuniperNetconfDatastore, aggregated_port_count=24):
-        super(JuniperSwitchCore, self).__init__(switch_configuration)
-
-        # the aggregated port are considered physical ports and are always existing in a junos environment
-        for i in range(0, aggregated_port_count):
-            switch_configuration.add_port(switch_configuration.new("AggregatedPort", name="ae{}".format(i)))
+class BaseJuniperSwitchCore(switch_core.SwitchCore):
+    def __init__(self, switch_configuration, datastore_class=JuniperNetconfDatastore):
+        super(BaseJuniperSwitchCore, self).__init__(switch_configuration)
 
         self.last_connection_id = 0
         self.datastore = datastore_class(self.switch_configuration)
@@ -48,17 +44,21 @@ class JuniperSwitchCore(switch_core.SwitchCore):
 
         return NetconfProtocol(
             datastore=self.datastore,
-            capabilities=[
-                Candidate1_0,
-                ConfirmedCommit1_0,
-                Validate1_0,
-                Url1_0,
-                NetconfJunos1_0,
-                DmiSystem1_0
-            ],
+            capabilities=self.capabilities(),
             additionnal_namespaces={"junos": NS_JUNOS},
-            logger=logging.getLogger("fake_switches.juniper.%s.%s.netconf" % (self.switch_configuration.name, self.last_connection_id))
+            logger=logging.getLogger(
+                "fake_switches.juniper.%s.%s.netconf" % (self.switch_configuration.name, self.last_connection_id))
         )
+
+    def capabilities(self):
+        return [
+            Candidate1_0,
+            ConfirmedCommit1_0,
+            Validate1_0,
+            Url1_0,
+            NetconfJunos1_0,
+            DmiSystem1_0
+        ]
 
     @staticmethod
     def get_default_ports():
@@ -68,6 +68,15 @@ class JuniperSwitchCore(switch_core.SwitchCore):
             Port("ge-0/0/3"),
             Port("ge-0/0/4")
         ]
+
+class JuniperSwitchCore(BaseJuniperSwitchCore):
+    def __init__(self, switch_configuration, datastore_class=JuniperNetconfDatastore, aggregated_port_count=24):
+
+        # the aggregated port are considered physical ports and are always existing in a junos environment
+        for i in range(0, aggregated_port_count):
+            switch_configuration.add_port(switch_configuration.new("AggregatedPort", name="ae{}".format(i)))
+
+        super(JuniperSwitchCore, self).__init__(switch_configuration, datastore_class)
 
 
 class NetconfJunos1_0(Capability):
@@ -81,6 +90,7 @@ class NetconfJunos1_0(Capability):
         running = self.datastore.to_etree(RUNNING)
         candidate = self.datastore.to_etree(CANDIDATE)
 
+        # NOTE(lindycoder): Not actually computing the diff, not needed so far, just show that there's a change
         data_string = textwrap.dedent(
             """
             <configuration-information>

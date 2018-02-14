@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from lxml import etree
+
 from fake_switches.netconf import resolve_source_name, Response, NS_BASE_1_0, first
 
 
@@ -123,3 +124,21 @@ class Url1_0(Capability):
         return "urn:ietf:params:xml:ns:netconf:capability:url:1.0?protocol=http,ftp,file"
 
 
+class NSLessCandidate1_0(Candidate1_0):
+    def get_url(self):
+        return "urn:ietf:params:netconf:capability:candidate:1.0"
+
+
+class NSLessConfirmedCommit1_0(ConfirmedCommit1_0):
+    def get_url(self):
+        return "urn:ietf:params:netconf:capability:confirmed-commit:1.0"
+
+
+class NSLessValidate1_0(Validate1_0):
+    def get_url(self):
+        return "urn:ietf:params:netconf:capability:validate:1.0"
+
+
+class NSLessUrl1_0(Url1_0):
+    def get_url(self):
+        return "urn:ietf:params:netconf:capability:url:1.0?scheme=http,ftp,file"

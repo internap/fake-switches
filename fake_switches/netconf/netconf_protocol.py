@@ -15,10 +15,11 @@
 import logging
 import re
 
-from twisted.internet.protocol import Protocol
 from lxml import etree
+from twisted.internet.protocol import Protocol
+
 from fake_switches.netconf import dict_2_etree, NS_BASE_1_0, normalize_operation_name, SimpleDatastore, \
-    Response, OperationNotSupported, NetconfError, FailingCommitResults, MultipleNetconfErrors
+    Response, OperationNotSupported, NetconfError
 from fake_switches.netconf.capabilities import Base1_0
 
 
@@ -77,15 +78,12 @@ class NetconfProtocol(Protocol):
                 try:
                     self.reply(message_id, getattr(capability, operation_name)(operation))
                 except NetconfError as e:
-                    self.reply(message_id, error_to_response(e))
-                except MultipleNetconfErrors as e:
-                    self.reply(message_id, errors_to_response(e.errors))
-                except FailingCommitResults as e:
-                    self.reply(message_id, commit_results_error_to_response(e))
+                    self.reply(message_id, Response(e.to_etree()))
+
                 handled = True
 
         if not handled:
-            self.reply(message_id, error_to_response(OperationNotSupported(operation_name)))
+            self.reply(message_id, Response(OperationNotSupported(operation_name).to_etree()))
 
     def reply(self, message_id, response):
         reply = etree.Element("rpc-reply", xmlns=NS_BASE_1_0, nsmap=self.additionnal_namespaces)
@@ -102,31 +100,6 @@ class NetconfProtocol(Protocol):
     def say(self, etree_root):
         self.logger.info("Saying : %s" % repr(etree.tostring(etree_root)))
         self.transport.write(etree.tostring(etree_root, pretty_print=True) + b"]]>]]>\n")
-
-
-def error_to_rpcerror_dict(error):
-    error_specs = {
-        "error-message": str(error)
-    }
-
-    if error.path: error_specs["error-path"] = error.path
-    if error.type: error_specs["error-type"] = error.type
-    if error.tag: error_specs["error-tag"] = error.tag
-    if error.severity: error_specs["error-severity"] = error.severity
-    if error.info: error_specs["error-info"] = error.info
-    return {"rpc-error": error_specs}
-
-
-def error_to_response(error):
-    return Response(dict_2_etree(error_to_rpcerror_dict(error)))
-
-
-def errors_to_response(errors):
-    return Response([dict_2_etree(error_to_rpcerror_dict(error)) for error in errors])
-
-
-def commit_results_error_to_response(commit_results_error):
-    return Response(dict_2_etree({'commit-results': [error_to_rpcerror_dict(e) for e in commit_results_error.netconf_errors]}))
 
 
 def remove_namespaces(xml_root):

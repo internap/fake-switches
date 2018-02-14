@@ -14,15 +14,15 @@
 from fake_switches.switch_configuration import AggregatedPort
 
 from fake_switches.juniper.juniper_netconf_datastore import JuniperNetconfDatastore, resolve_new_value, port_is_in_trunk_mode
-from fake_switches.netconf import FailingCommitResults, TrunkShouldHaveVlanMembers, ConfigurationCheckOutFailed
+from fake_switches.netconf import NetconfError
 
 
 class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
+    PORT_MODE_TAG = "interface-mode"
+    MAX_AGGREGATED_ETHERNET_INTERFACES = 999
+
     def __init__(self, configuration):
         super(JuniperQfxCopperNetconfDatastore, self).__init__(configuration)
-
-        self.PORT_MODE_TAG = "interface-mode"
-        self.MAX_AGGREGATED_ETHERNET_INTERFACES = 999
 
     def apply_trunk_native_vlan(self, interface_data, port):
         if port.trunk_native_vlan is not None:
@@ -42,9 +42,12 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
         for port in configuration.ports:
             if port_is_in_trunk_mode(port) and \
                     (port.trunk_vlans is None or len(port.trunk_vlans) == 0):
-                raise FailingCommitResults([TrunkShouldHaveVlanMembers(interface=port.name),
-                                            ConfigurationCheckOutFailed()])
+                raise self.member_list_trunk_vlan_error(port)
         return super(JuniperQfxCopperNetconfDatastore, self)._validate(configuration)
+
+    def member_list_trunk_vlan_error(self, port):
+        return FailingCommitResults([TrunkShouldHaveVlanMembers(interface=port.name),
+                                     ConfigurationCheckOutFailed()])
 
     def _assert_no_garbage(self, port):
         pass
@@ -85,3 +88,30 @@ class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
 
     def _format_protocol_port_name(self, port):
         return port.name
+
+
+class TrunkShouldHaveVlanMembers(NetconfError):
+    def __init__(self, interface):
+        super(TrunkShouldHaveVlanMembers, self).__init__(msg='\nFor trunk interface, please ensure either vlan members is configured or inner-vlan-id-list is configured\n',
+                                                         severity='error',
+                                                         err_type='protocol',
+                                                         tag='operation-failed',
+                                                         info={'bad-element': 'ethernet-switching'},
+                                                         path='\n[edit interfaces {} unit 0 family]\n'.format(interface))
+
+
+class ConfigurationCheckOutFailed(NetconfError):
+    def __init__(self):
+        super(ConfigurationCheckOutFailed, self).__init__(msg='\nconfiguration check-out failed\n',
+                                                          severity='error',
+                                                          err_type='protocol',
+                                                          tag='operation-failed',
+                                                          info=None)
+
+
+class FailingCommitResults(NetconfError):
+    def __init__(self, netconf_errors):
+        self.netconf_errors = netconf_errors
+
+    def to_dict(self):
+        return {'commit-results': [e.to_dict() for e in self.netconf_errors]}
