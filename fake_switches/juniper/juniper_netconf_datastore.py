@@ -27,14 +27,20 @@ NS_JUNOS = "http://xml.juniper.net/junos/11.4R1/junos"
 
 
 class JuniperNetconfDatastore(object):
+    VLANS_COLLECTION = "vlans"
+    VLANS_COLLECTION_OBJ = "vlan"
+    PORT_MODE_TAG = "port-mode"
+    ETHERNET_SWITCHING_TAG = "ethernet-switching"
+    MAX_AGGREGATED_ETHERNET_INTERFACES = 127
+    ETHER_OPTIONS_TAG = "ether-options"
+    MAX_PHYSICAL_PORT_NUMBER = 127
+    MAX_MTU = 9216
+
     def __init__(self, configuration):
         self.original_configuration = configuration
         self.configurations = {}
         self.reset()
         self.edit_errors = []
-
-        self.PORT_MODE_TAG = "port-mode"
-        self.MAX_AGGREGATED_ETHERNET_INTERFACES = 127
 
     def reset(self):
         self.configurations = {
@@ -61,8 +67,8 @@ class JuniperNetconfDatastore(object):
 
         _add_if_not_empty(configuration, "protocols", self._extract_protocols(self.configurations[source]))
 
-        _add_if_not_empty(configuration, "vlans",
-                         [{"vlan": vlan_to_etree(vlan)} for vlan in self.configurations[source].vlans])
+        _add_if_not_empty(configuration, self.VLANS_COLLECTION,
+                         [{self.VLANS_COLLECTION_OBJ: vlan_to_etree(vlan)} for vlan in self.configurations[source].vlans])
 
         return dict_2_etree({"data": {"configuration": configuration}})
 
@@ -183,26 +189,10 @@ class JuniperNetconfDatastore(object):
                 ether_options["ieee-802.3ad"] = {"bundle": port.aggregation_membership}
 
             if len(ether_options) > 0:
-                interface_data.append({"ether-options": ether_options})
+                interface_data.append({self.ETHER_OPTIONS_TAG: ether_options})
 
         if port.vendor_specific.get("has-ethernet-switching"):
-            ethernet_switching = {}
-            if port.mode is not None:
-                ethernet_switching[self.PORT_MODE_TAG] = port.mode
-
-            vlans = port.trunk_vlans or []
-            if port.access_vlan: vlans.append(port.access_vlan)
-
-            if len(vlans) > 0:
-                ethernet_switching["vlan"] = [{"members": str(v)} for v in vlans]
-
-            if ethernet_switching or not isinstance(port, AggregatedPort):
-                interface_data.append({"unit": {
-                    "name": "0",
-                    "family": {
-                        "ethernet-switching": ethernet_switching
-                    }
-                }})
+            self.ethernet_switching_to_etree(port, interface_data)
 
         self.apply_trunk_native_vlan(interface_data, port)
 
@@ -211,6 +201,22 @@ class JuniperNetconfDatastore(object):
             return interface_data
 
         return None
+
+    def ethernet_switching_to_etree(self, port, interface_data):
+        ethernet_switching = {}
+        if port.mode is not None:
+            ethernet_switching[self.PORT_MODE_TAG] = port.mode
+        vlans = port.trunk_vlans or []
+        if port.access_vlan: vlans.append(port.access_vlan)
+        if len(vlans) > 0:
+            ethernet_switching["vlan"] = [{"members": str(v)} for v in vlans]
+        if ethernet_switching or not isinstance(port, AggregatedPort):
+            interface_data.append({"unit": {
+                "name": "0",
+                "family": {
+                    self.ETHERNET_SWITCHING_TAG: ethernet_switching
+                }
+            }})
 
     def parse_interfaces(self, conf, etree_conf):
         handled_elements = []
@@ -225,7 +231,7 @@ class JuniperNetconfDatastore(object):
                 port.vendor_specific["has-ethernet-switching"] = True
                 conf.add_port(port)
 
-            raise_for_invalid_interface(port_name, self.MAX_AGGREGATED_ETHERNET_INTERFACES)
+            self.raise_for_invalid_interface(port_name, self.MAX_AGGREGATED_ETHERNET_INTERFACES)
 
             operation = resolve_operation(interface_node)
             if operation in ("delete", "replace"):
@@ -242,7 +248,7 @@ class JuniperNetconfDatastore(object):
 
     def apply_interface_data(self, interface_node, port):
         port.description = resolve_new_value(interface_node, "description", port.description)
-        port.mtu = resolve_new_value(interface_node, "mtu", port.mtu, transformer=_validate_mtu)
+        port.mtu = resolve_new_value(interface_node, "mtu", port.mtu, transformer=self._validate_mtu)
 
         shutdown_node = first(interface_node.xpath("disable"))
         if shutdown_node is not None:
@@ -250,7 +256,7 @@ class JuniperNetconfDatastore(object):
                 raise NotFound('')
             port.shutdown = resolve_operation(shutdown_node) != "delete"
 
-        ether_options_attributes = first(interface_node.xpath("ether-options"))
+        ether_options_attributes = first(interface_node.xpath(self.ETHER_OPTIONS_TAG))
         if ether_options_attributes is not None:
             if resolve_operation(ether_options_attributes) != "delete":
                 speed_node = first(ether_options_attributes.xpath("speed/*"))
@@ -277,7 +283,7 @@ class JuniperNetconfDatastore(object):
             port.trunk_vlans = None
             port.vendor_specific["has-ethernet-switching"] = False
         else:
-            port_attributes = first(interface_node.xpath("unit/family/ethernet-switching"))
+            port_attributes = first(interface_node.xpath("unit/family/{}".format(self.ETHERNET_SWITCHING_TAG)))
             if port_attributes is not None:
                 port.vendor_specific["has-ethernet-switching"] = True
 
@@ -292,21 +298,7 @@ class JuniperNetconfDatastore(object):
                     port.access_vlan = None
                     port.trunk_vlans = None
                 else:
-                    for member in port_attributes.xpath("vlan/members"):
-                        if resolve_operation(member) == "delete":
-                            if port_is_in_access_mode(port):
-                                port.access_vlan = None
-                            else:
-                                port.trunk_vlans.remove(int(member.text))
-                                if len(port.trunk_vlans) == 0:
-                                    port.trunk_vlans = None
-                        else:
-                            if port_is_in_access_mode(port):
-                                port.access_vlan = parse_range(member.text)[0]
-                            else:
-                                if port.trunk_vlans is None:
-                                    port.trunk_vlans = []
-                                port.trunk_vlans += parse_range(member.text)
+                    self.parse_vlan_members(port, port_attributes)
 
             if resolve_operation(first(self.get_trunk_native_vlan_node(interface_node))) == "delete":
                 port.trunk_native_vlan = None
@@ -319,9 +311,26 @@ class JuniperNetconfDatastore(object):
             port.lacp_active = first(interface_node.xpath("aggregated-ether-options/lacp/active")) is not None
             port.lacp_periodic = resolve_new_value(interface_node, "aggregated-ether-options/lacp/periodic", port.lacp_periodic)
 
+    def parse_vlan_members(self, port, port_attributes):
+        for member in port_attributes.xpath("vlan/members"):
+            if resolve_operation(member) == "delete":
+                if port_is_in_access_mode(port):
+                    port.access_vlan = None
+                else:
+                    port.trunk_vlans.remove(int(member.text))
+                    if len(port.trunk_vlans) == 0:
+                        port.trunk_vlans = None
+            else:
+                if port_is_in_access_mode(port):
+                    port.access_vlan = parse_range(member.text)[0]
+                else:
+                    if port.trunk_vlans is None:
+                        port.trunk_vlans = []
+                    port.trunk_vlans += parse_range(member.text)
+
     def parse_vlans(self, conf, etree_conf):
         handled_elements = []
-        for vlan_node in etree_conf.xpath("vlans/vlan/name/.."):
+        for vlan_node in etree_conf.xpath("{}/{}/name/..".format(self.VLANS_COLLECTION, self.VLANS_COLLECTION_OBJ)):
             handled_elements.append(vlan_node)
 
             vlan = conf.get_vlan_by_name(val(vlan_node, "name"))
@@ -342,8 +351,8 @@ class JuniperNetconfDatastore(object):
         return handled_elements
 
     def parse_trunk_native_vlan(self, interface_node, port):
-        if len(interface_node.xpath("unit/family/ethernet-switching/native-vlan-id")) == 1 and interface_node.xpath("unit/family/ethernet-switching/native-vlan-id")[0].text is not None:
-            port_attributes = first(interface_node.xpath("unit/family/ethernet-switching"))
+        if len(interface_node.xpath("unit/family/{}/native-vlan-id".format(self.ETHERNET_SWITCHING_TAG))) == 1 and interface_node.xpath("unit/family/{}/native-vlan-id".format(self.ETHERNET_SWITCHING_TAG))[0].text is not None:
+            port_attributes = first(interface_node.xpath("unit/family/{}".format(self.ETHERNET_SWITCHING_TAG)))
             return resolve_new_value(port_attributes, "native-vlan-id", port.trunk_native_vlan,
                               transformer=int)
         return port.trunk_native_vlan
@@ -354,24 +363,24 @@ class JuniperNetconfDatastore(object):
                 if not "unit" in interface_data[-1]:
                     interface_data.append({"unit": {
                         "family":{
-                            "ethernet-switching": {
+                            self.ETHERNET_SWITCHING_TAG: {
                                 "native-vlan-id": str(port.trunk_native_vlan)
                             }
                         }}})
                 else:
-                    interface_data[-1]['unit']['family']['ethernet-switching']['native-vlan-id'] = str(port.trunk_native_vlan)
+                    interface_data[-1]['unit']['family'][self.ETHERNET_SWITCHING_TAG]['native-vlan-id'] = str(port.trunk_native_vlan)
 
     def get_trunk_native_vlan_node(self, interface_node):
-        return interface_node.xpath("unit/family/ethernet-switching/native-vlan-id")
+        return interface_node.xpath("unit/family/{}/native-vlan-id".format(self.ETHERNET_SWITCHING_TAG))
 
     def _validate(self, configuration):
         vlan_list = [vlan.number for vlan in configuration.vlans]
 
         for port in configuration.ports:
-            self._assert_vlan_config(port, vlan_list)
+            self.validate_vlan_config(port, vlan_list)
             self._assert_no_garbage(port)
 
-    def _assert_vlan_config(self, port, vlan_list):
+    def validate_vlan_config(self, port, vlan_list):
         if port.access_vlan is not None and port.access_vlan not in vlan_list:
             raise UnknownVlan(port.access_vlan, port.name, 0)
         if port.trunk_native_vlan is not None and port.trunk_native_vlan not in vlan_list:
@@ -460,6 +469,33 @@ class JuniperNetconfDatastore(object):
     def _format_protocol_port_name(self, port):
         return "{}.0".format(port.name)
 
+    def raise_for_invalid_interface(self, interface, max_aggregated_interfaces):
+        interface_match = re.match(r'^(\w+)-\d/\d/(\d+)(\S*)', interface)
+        if interface_match and interface_match.group(2):
+            if interface_match and interface_match.group(3):
+                raise InvalidTrailingInput(interface_match.group(3), interface)
+
+            if interface_match and int(interface_match.group(2)) > self.MAX_PHYSICAL_PORT_NUMBER:
+                raise PhysicalPortOutOfRange(interface_match.group(2), interface, self.MAX_PHYSICAL_PORT_NUMBER)
+        else:
+            interface_match = re.match(r'^[a-z]+(\S+)', interface)
+            if interface_match and any(c.isalpha() for c in interface_match.group(1)):
+                raise InvalidInterfaceType(interface)
+
+            if interface_match and int(interface_match.group(1)) > max_aggregated_interfaces:
+                raise AggregatePortOutOfRange(interface_match.group(1), interface, max_range=max_aggregated_interfaces)
+
+    def _validate_mtu(self, value):
+        try:
+            int_val = int(value)
+        except ValueError:
+            raise InvalidNumericValue(value)
+
+        if 256 <= int_val <= self.MAX_MTU:
+            return value
+
+        raise InvalidMTUValue(value, self.MAX_MTU)
+
 
 def vlan_to_etree(vlan):
     vlan_data = [{"name": vlan.name}]
@@ -537,23 +573,6 @@ def _get_errors_for_unused_nodes(root, handled_elements):
         else:
             errors.extend(_get_errors_for_unused_nodes(element, handled_elements))
     return errors
-
-
-def raise_for_invalid_interface(interface, max_aggregated_interfaces):
-    interface_match = re.match(r'^(\w+)-\d/\d/(\d+)(\S*)', interface)
-    if interface_match and interface_match.group(2):
-        if interface_match and interface_match.group(3):
-            raise InvalidTrailingInput(interface_match.group(3), interface)
-
-        if interface_match and int(interface_match.group(2)) > 127:
-            raise PhysicalPortOutOfRange(interface_match.group(2), interface)
-    else:
-        interface_match = re.match(r'^[a-z]+(\S+)', interface)
-        if interface_match and any(c.isalpha() for c in interface_match.group(1)):
-            raise InvalidInterfaceType(interface)
-
-        if interface_match and int(interface_match.group(1)) > max_aggregated_interfaces:
-            raise AggregatePortOutOfRange(interface_match.group(1), interface, max_range=max_aggregated_interfaces)
 
 
 def resolve_new_value(node, value_name, actual_value, transformer=None):
@@ -649,18 +668,6 @@ def assign_auto_negotiation_state(ether_options_attributes, port):
         port.auto_negotiation = None
 
     return errors
-
-
-def _validate_mtu(value):
-    try:
-        int_val = int(value)
-    except ValueError:
-        raise InvalidNumericValue(value)
-
-    if 256 <= int_val <= 9216:
-        return value
-
-    raise InvalidMTUValue(value)
 
 
 class RSTPActiveWithoutEthernetSwitching(NetconfError):

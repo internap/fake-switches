@@ -20,6 +20,7 @@ from fake_switches.cisco6500.cisco_core import Cisco6500SwitchCore
 from fake_switches.dell.dell_core import DellSwitchCore
 from fake_switches.dell10g.dell_core import Dell10GSwitchCore
 from fake_switches.juniper.juniper_core import JuniperSwitchCore
+from fake_switches.juniper_mx.juniper_mx_core import JuniperMXSwitchCore
 from fake_switches.juniper_qfx_copper.juniper_qfx_copper_core import JuniperQfxCopperSwitchCore
 from fake_switches.ssh_service import SwitchSshService
 from fake_switches.switch_configuration import SwitchConfiguration
@@ -46,6 +47,8 @@ juniper_switch_netconf_port = 11007
 juniper_switch_netconf_with_commit_delay_port = 12007
 juniper_qfx_copper_switch_ip = "127.0.0.1"
 juniper_qfx_copper_switch_netconf_port = 11008
+juniper_mx_switch_ip = "127.0.0.1"
+juniper_mx_switch_netconf_port = 11015
 dell_switch_ip = "127.0.0.1"
 dell_switch_telnet_port = 11010
 dell_switch_ssh_port = 11009
@@ -107,6 +110,12 @@ class ThreadedReactor(threading.Thread):
                                 ports=JuniperQfxCopperSwitchCore.get_default_ports()),
             aggregated_port_count=4)
         SwitchSshService(juniper_qfx_copper_switch_ip, ssh_port=juniper_qfx_copper_switch_netconf_port,
+                         switch_core=switch_core, users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
+
+        switch_core = JuniperMXSwitchCore(
+            SwitchConfiguration(juniper_mx_switch_ip, name="super_juniper_mx",
+                                ports=JuniperMXSwitchCore.get_default_ports()))
+        SwitchSshService(juniper_mx_switch_ip, ssh_port=juniper_mx_switch_netconf_port,
                          switch_core=switch_core, users={'root': b'root'}).hook_to_reactor(cls._threaded_reactor.reactor)
 
         switch_core = DellSwitchCore(

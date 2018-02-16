@@ -1,6 +1,7 @@
 import logging
 import unittest
 
+import sys
 from hamcrest.core.base_matcher import BaseMatcher
 import re
 from hamcrest import assert_that, ends_with, equal_to, has_length, has_key
@@ -236,6 +237,8 @@ class XmlEqualsToMatcher(BaseMatcher):
         self.last_error = None
 
     def _matches(self, other):
+        if sys.version >= '3' and isinstance(other, bytes):
+            other = other.decode()
         otherxml = other if isinstance(other, _Element) else to_ele(other)
         try:
             self.compare_nodes(self.expected, otherxml)
