@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fake_switches.juniper.juniper_core import JuniperSwitchCore
+from fake_switches.juniper.juniper_core import BaseJuniperSwitchCore
 from fake_switches.juniper_qfx_copper.juniper_qfx_copper_netconf_datastore import JuniperQfxCopperNetconfDatastore
 
 
-class JuniperQfxCopperSwitchCore(JuniperSwitchCore):
-    def __init__(self, switch_configuration, aggregated_port_count=24):
+class JuniperQfxCopperSwitchCore(BaseJuniperSwitchCore):
+    def __init__(self, switch_configuration):
         super(JuniperQfxCopperSwitchCore, self).__init__(
             switch_configuration,
-            datastore_class=JuniperQfxCopperNetconfDatastore,
-            aggregated_port_count=aggregated_port_count)
+            datastore_class=JuniperQfxCopperNetconfDatastore)

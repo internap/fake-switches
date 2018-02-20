@@ -12,28 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-
-from flexmock import flexmock_teardown
-
 from tests.cisco import enable, create_interface_vlan, configuring, configuring_interface_vlan, \
     assert_interface_configuration
-from tests.util.global_reactor import cisco6500_switch_ip, cisco6500_switch_telnet_port, \
-    cisco6500_switch_ssh_port
-from tests.util.protocol_util import SshTester, TelnetTester, with_protocol
+from tests.util.protocol_util import SshTester, TelnetTester, with_protocol, ProtocolTest
 
 
-class Cisco6500UnicastTest(unittest.TestCase):
+class Cisco6500UnicastTest(ProtocolTest):
     __test__ = False
 
-    def create_client(self):
-        return SshTester("ssh", cisco6500_switch_ip, cisco6500_switch_ssh_port, u'root', u'root')
-
-    def setUp(self):
-        self.protocol = self.create_client()
-
-    def tearDown(self):
-        flexmock_teardown()
+    tester_class = SshTester
+    test_switch = "cisco6500"
 
     @with_protocol
     def test_set_unicast(self, t):
@@ -60,13 +48,9 @@ class Cisco6500UnicastTest(unittest.TestCase):
 
 class Cisco6500UnicastProtocolSSHTest(Cisco6500UnicastTest):
     __test__ = True
-
-    def create_client(self):
-        return SshTester("ssh", cisco6500_switch_ip, cisco6500_switch_ssh_port, u'root', u'root')
+    tester_class = SshTester
 
 
 class Cisco6500UnicastProtocolTelnetTest(Cisco6500UnicastTest):
     __test__ = True
-
-    def create_client(self):
-        return TelnetTester("telnet", cisco6500_switch_ip, cisco6500_switch_telnet_port, u'root', u'root')
+    tester_class = TelnetTester

@@ -15,19 +15,18 @@
 import logging
 import textwrap
 
-from lxml import etree
-
 from fake_switches import switch_core
-from fake_switches.switch_configuration import Port
 from fake_switches.juniper.juniper_netconf_datastore import JuniperNetconfDatastore, NS_JUNOS
 from fake_switches.netconf import OperationNotSupported, RUNNING, CANDIDATE, Response, xml_equals, NetconfError
 from fake_switches.netconf.capabilities import Candidate1_0, ConfirmedCommit1_0, Validate1_0, Url1_0, \
     Capability
 from fake_switches.netconf.netconf_protocol import NetconfProtocol
+from fake_switches.switch_configuration import Port, AggregatedPort
+from lxml import etree
 
 
 class BaseJuniperSwitchCore(switch_core.SwitchCore):
-    def __init__(self, switch_configuration, datastore_class=JuniperNetconfDatastore):
+    def __init__(self, switch_configuration, datastore_class):
         super(BaseJuniperSwitchCore, self).__init__(switch_configuration)
 
         self.last_connection_id = 0
@@ -62,21 +61,13 @@ class BaseJuniperSwitchCore(switch_core.SwitchCore):
 
     @staticmethod
     def get_default_ports():
-        return [
-            Port("ge-0/0/1"),
-            Port("ge-0/0/2"),
-            Port("ge-0/0/3"),
-            Port("ge-0/0/4")
-        ]
+        return [Port("ge-0/0/{}".format(i)) for i in range(1, 5)] + \
+               [AggregatedPort("ae{}".format(i)) for i in range(1, 24)]
+
 
 class JuniperSwitchCore(BaseJuniperSwitchCore):
-    def __init__(self, switch_configuration, datastore_class=JuniperNetconfDatastore, aggregated_port_count=24):
-
-        # the aggregated port are considered physical ports and are always existing in a junos environment
-        for i in range(0, aggregated_port_count):
-            switch_configuration.add_port(switch_configuration.new("AggregatedPort", name="ae{}".format(i)))
-
-        super(JuniperSwitchCore, self).__init__(switch_configuration, datastore_class)
+    def __init__(self, switch_configuration):
+        super(JuniperSwitchCore, self).__init__(switch_configuration, datastore_class=JuniperNetconfDatastore)
 
 
 class NetconfJunos1_0(Capability):

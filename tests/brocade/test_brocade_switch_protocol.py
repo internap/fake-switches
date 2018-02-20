@@ -1,24 +1,16 @@
-import unittest
-
-from flexmock import flexmock_teardown
-from tests.util.global_reactor import brocade_switch_ip, \
-    brocade_switch_ssh_port, brocade_privileged_password
 import mock
-from tests.util.protocol_util import SshTester, with_protocol
+from tests.util.protocol_util import SshTester, with_protocol, ProtocolTest
 
 
-class TestBrocadeSwitchProtocol(unittest.TestCase):
-    def setUp(self):
-        self.protocol = SshTester("ssh", brocade_switch_ip, brocade_switch_ssh_port, 'root', 'root')
-
-    def tearDown(self):
-        flexmock_teardown()
+class TestBrocadeSwitchProtocol(ProtocolTest):
+    tester_class = SshTester
+    test_switch = "brocade"
 
     @with_protocol
     def test_enable_command_requires_a_password(self, t):
         t.write("enable")
         t.read("Password:")
-        t.write_invisible(brocade_privileged_password)
+        t.write_invisible(t.conf["extra"]["password"])
         t.read("SSH@my_switch#")
 
     @with_protocol
@@ -40,7 +32,7 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
     def test_exiting_loses_the_connection(self, t):
         t.write("enable")
         t.read("Password:")
-        t.write_invisible(brocade_privileged_password)
+        t.write_invisible(t.conf["extra"]["password"])
         t.read("SSH@my_switch#")
         t.write("exit")
         t.read_eof()
@@ -1527,10 +1519,11 @@ class TestBrocadeSwitchProtocol(unittest.TestCase):
 
         remove_vlan(t, "1201")
 
+
 def enable(t):
     t.write("enable")
     t.read("Password:")
-    t.write_invisible(brocade_privileged_password)
+    t.write_invisible(t.conf["extra"].get("password", "root"))
     t.read("SSH@my_switch#")
 
 

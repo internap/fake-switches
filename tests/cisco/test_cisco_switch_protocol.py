@@ -12,36 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-
 import mock
-from flexmock import flexmock_teardown
 
 from tests.cisco import enable, create_interface_vlan, configuring, configuring_interface_vlan, \
     assert_interface_configuration, remove_vlan, create_vlan, set_interface_on_vlan, configuring_interface, \
     revert_switchport_mode_access, create_port_channel_interface, configuring_port_channel
-from tests.util.global_reactor import cisco_privileged_password
-from tests.util.global_reactor import cisco_switch_ssh_port, cisco_switch_telnet_port, cisco_switch_ip
-from tests.util.protocol_util import SshTester, TelnetTester, with_protocol
+from tests.util.protocol_util import SshTester, TelnetTester, with_protocol, ProtocolTest
 
 
-class TestCiscoSwitchProtocol(unittest.TestCase):
+class TestCiscoSwitchProtocol(ProtocolTest):
     __test__ = False
-
-    def create_client(self):
-        return SshTester("ssh", cisco_switch_ip, cisco_switch_ssh_port, u'root', u'root')
-
-    def setUp(self):
-        self.protocol = self.create_client()
-
-    def tearDown(self):
-        flexmock_teardown()
+    test_switch = "cisco"
 
     @with_protocol
     def test_enable_command_requires_a_password(self, t):
         t.write("enable")
         t.read("Password: ")
-        t.write_invisible(cisco_privileged_password)
+        t.write_invisible(t.conf["extra"]["password"])
         t.read("my_switch#")
 
     @with_protocol
@@ -64,7 +51,7 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
     def test_exiting_loses_the_connection(self, t):
         t.write("enable")
         t.read("Password: ")
-        t.write_invisible(cisco_privileged_password)
+        t.write_invisible(t.conf["extra"]["password"])
         t.read("my_switch#")
         t.write("exit")
         t.read_eof()
@@ -1522,13 +1509,9 @@ class TestCiscoSwitchProtocol(unittest.TestCase):
 
 class TestCiscoSwitchProtocolSSH(TestCiscoSwitchProtocol):
     __test__ = True
-
-    def create_client(self):
-        return SshTester("ssh", cisco_switch_ip, cisco_switch_ssh_port, u'root', u'root')
+    tester_class = SshTester
 
 
 class TestCiscoSwitchProtocolTelnet(TestCiscoSwitchProtocol):
     __test__ = True
-
-    def create_client(self):
-        return TelnetTester("telnet", cisco_switch_ip, cisco_switch_telnet_port, u'root', u'root')
+    tester_class = TelnetTester

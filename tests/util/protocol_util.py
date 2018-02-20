@@ -1,8 +1,11 @@
 import logging
-
-from hamcrest import assert_that, equal_to
-import pexpect
 import re
+import unittest
+
+import pexpect
+from flexmock import flexmock_teardown
+from hamcrest import assert_that, equal_to
+from tests.util.global_reactor import TEST_SWITCHES
 
 
 def with_protocol(test):
@@ -33,12 +36,13 @@ class LoggingFileInterface(object):
 
 
 class ProtocolTester(object):
-    def __init__(self, name, host, port, username, password):
+    def __init__(self, name, host, port, username, password, conf=None):
         self.name = name
         self.host = host
         self.port = port
         self.username = username
         self.password = password
+        self.conf = conf
 
         self.child = None
 
@@ -95,6 +99,8 @@ class ProtocolTester(object):
 
 
 class SshTester(ProtocolTester):
+    CONF_KEY = "ssh"
+
     def get_ssh_connect_command(self):
         return 'ssh %s@%s -p %s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
                % (self.username, self.host, self.port)
@@ -106,6 +112,8 @@ class SshTester(ProtocolTester):
 
 
 class TelnetTester(ProtocolTester):
+    CONF_KEY = "telnet"
+
     def get_ssh_connect_command(self):
         return 'telnet %s %s' \
                % (self.host, self.port)
@@ -116,3 +124,20 @@ class TelnetTester(ProtocolTester):
         self.wait_for("[pP]assword: ", True)
         self.write_invisible(self.password)
         self.wait_for('[>#]$', regex=True)
+
+
+class ProtocolTest(unittest.TestCase):
+    tester_class = SshTester
+    test_switch = None
+
+    def setUp(self):
+        conf = TEST_SWITCHES[self.test_switch]
+        self.protocol = self.tester_class(self.tester_class.CONF_KEY,
+                                          "127.0.0.1",
+                                          conf[self.tester_class.CONF_KEY],
+                                          u'root',
+                                          u'root',
+                                          conf)
+
+    def tearDown(self):
+        flexmock_teardown()

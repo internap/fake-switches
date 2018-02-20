@@ -12,28 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-
-from flexmock import flexmock_teardown
 from hamcrest import assert_that, is_not, has_item
 
 from tests.dell import enable, configuring_interface, \
     assert_interface_configuration, assert_running_config_contains_in_order, \
     get_running_config, configure, configuring_vlan, unconfigure_vlan, \
     configuring_a_vlan_on_interface, create_bond, remove_bond, \
-    ssh_protocol_factory, telnet_protocol_factory, configuring_bond
-from tests.util.protocol_util import with_protocol
+    configuring_bond
+from tests.util.protocol_util import with_protocol, ProtocolTest, SshTester, TelnetTester
 
 
-class DellConfigureInterfaceTest(unittest.TestCase):
+class DellConfigureInterfaceTest(ProtocolTest):
     __test__ = False
-    protocol_factory = ssh_protocol_factory
 
-    def setUp(self):
-        self.protocol = self.protocol_factory()
-
-    def tearDown(self):
-        flexmock_teardown()
+    tester_class = SshTester
+    test_switch = "dell"
 
     @with_protocol
     def test_show_run_vs_show_run_interface_same_output(self, t):
@@ -1003,11 +996,12 @@ class DellConfigureInterfaceTest(unittest.TestCase):
 
         remove_bond(t, 1)
 
+
 class DellConfigureInterfaceSshTest(DellConfigureInterfaceTest):
     __test__ = True
-    protocol_factory = ssh_protocol_factory
+    tester_class = SshTester
 
 
 class DellConfigureInterfaceTelnetTest(DellConfigureInterfaceTest):
     __test__ = True
-    protocol_factory = telnet_protocol_factory
+    tester_class = TelnetTester

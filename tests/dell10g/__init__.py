@@ -16,23 +16,11 @@ import pprint
 
 from hamcrest import assert_that, is_
 
-from tests.util.global_reactor import dell10g_privileged_password, dell10g_switch_ip, \
-    dell10g_switch_ssh_port, dell10g_switch_telnet_port
-from tests.util.protocol_util import SshTester, TelnetTester
-
-
-def ssh_protocol_factory(*_):
-    return SshTester("ssh", dell10g_switch_ip, dell10g_switch_ssh_port, 'root', 'root')
-
-
-def telnet_protocol_factory(*_):
-    return TelnetTester("ssh", dell10g_switch_ip, dell10g_switch_telnet_port, 'root', 'root')
-
 
 def enable(t):
     t.write("enable")
     t.read("Password:")
-    t.write_stars(dell10g_privileged_password)
+    t.write_stars(t.conf["extra"].get("password", "root"))
     t.readln("")
     t.read("my_switch#")
 

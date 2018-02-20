@@ -12,24 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-
-from flexmock import flexmock_teardown
-
 from tests.dell10g import enable, assert_running_config_contains_in_order, \
-    configuring_vlan, ssh_protocol_factory, telnet_protocol_factory, configuring, add_vlan, configuring_interface
-from tests.util.protocol_util import with_protocol
+    configuring_vlan, configuring, add_vlan, configuring_interface
+from tests.util.protocol_util import with_protocol, SshTester, ProtocolTest, TelnetTester
 
 
-class Dell10GEnabledTest(unittest.TestCase):
+class Dell10GEnabledTest(ProtocolTest):
     __test__ = False
-    protocol_factory = None
 
-    def setUp(self):
-        self.protocol = ssh_protocol_factory()
-
-    def tearDown(self):
-        flexmock_teardown()
+    tester_class = SshTester
+    test_switch = "dell10g"
 
     @with_protocol
     def test_terminal_length_0(self, t):
@@ -271,9 +263,9 @@ class Dell10GEnabledTest(unittest.TestCase):
 
 class Dell10GEnabledSshTest(Dell10GEnabledTest):
     __test__ = True
-    protocol_factory = ssh_protocol_factory
+    tester_class = SshTester
 
 
 class Dell10GEnabledTelnetTest(Dell10GEnabledTest):
     __test__ = True
-    protocol_factory = telnet_protocol_factory
+    tester_class = TelnetTester

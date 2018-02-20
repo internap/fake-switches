@@ -12,25 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-
-from flexmock import flexmock_teardown
 from hamcrest import assert_that, is_not, has_item
 
 from tests.dell10g import enable, assert_interface_configuration, assert_running_config_contains_in_order, \
-    get_running_config, configuring_interface, ssh_protocol_factory, telnet_protocol_factory, add_vlan, configuring, \
+    get_running_config, configuring_interface, add_vlan, configuring, \
     remove_bond, create_bond
-from tests.util.protocol_util import with_protocol
+from tests.util.protocol_util import with_protocol, ProtocolTest, SshTester, TelnetTester
 
 
-class Dell10GConfigureInterfaceSshTest(unittest.TestCase):
-    protocol_factory = ssh_protocol_factory
-
-    def setUp(self):
-        self.protocol = self.protocol_factory()
-
-    def tearDown(self):
-        flexmock_teardown()
+class Dell10GConfigureInterfaceSshTest(ProtocolTest):
+    tester_class = SshTester
+    test_switch = "dell10g"
 
     @with_protocol
     def test_show_run_vs_show_run_interface_same_output(self, t):
@@ -692,6 +684,5 @@ class Dell10GConfigureInterfaceSshTest(unittest.TestCase):
         t.read("my_switch#")
 
 
-
 class Dell10GConfigureInterfaceTelnetTest(Dell10GConfigureInterfaceSshTest):
-    protocol_factory = telnet_protocol_factory
+    tester_class = TelnetTester
