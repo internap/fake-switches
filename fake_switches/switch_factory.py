@@ -4,6 +4,7 @@ from fake_switches import switch_configuration
 from fake_switches.dell import dell_core
 from fake_switches.dell10g import dell_core as dell10g_core
 from fake_switches.juniper import juniper_core
+from fake_switches.juniper_mx import juniper_mx_core
 from fake_switches.juniper_qfx_copper import juniper_qfx_copper_core
 
 DEFAULT_MAPPING = {
@@ -15,6 +16,7 @@ DEFAULT_MAPPING = {
     'dell10g_generic': dell10g_core.DellSwitchCore,
     'juniper_generic': juniper_core.JuniperSwitchCore,
     'juniper_qfx_copper_generic': juniper_qfx_copper_core.JuniperQfxCopperSwitchCore,
+    'juniper_mx_generic': juniper_mx_core.JuniperMXSwitchCore
 }
 
 
