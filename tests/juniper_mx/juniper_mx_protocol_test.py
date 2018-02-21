@@ -20,6 +20,7 @@ from tests.juniper import BaseJuniper
 from tests.juniper.assertion_tools import has_xpath
 from tests.juniper_qfx_copper.juniper_qfx_copper_protocol_test import reset_interface
 from tests.netconf.netconf_protocol_test import xml_equals_to
+from tests.util.global_reactor import ThreadedReactor
 
 
 class JuniperMXProtocolTest(BaseJuniper):
@@ -864,7 +865,7 @@ class JuniperMXProtocolTest(BaseJuniper):
 
         self.cleanup(vlan("VLAN2995"), reset_interface("ae1"), reset_interface("xe-0/0/1"), reset_interface("xe-0/0/2"))
 
-    def test_auto_negotiation_and_no_aut0_negotiation_are_mutually_exclusive(self):
+    def test_auto_negotiation_and_no_auto_negotiation_are_mutually_exclusive(self):
         self.edit({
             "interfaces": [
                 {"interface": [
@@ -1090,6 +1091,110 @@ class JuniperMXProtocolTest(BaseJuniper):
 
         assert_that(str(exc.exception), contains_string("Value 0 is not within range (256..16360)"))
 
+    def test_add_a_routing_interface_to_vlan(self):
+        self.edit({
+            "bridge-domains": {
+                "domain": {
+                    "name": "VLAN123",
+                    "vlan-id": "123",
+                    "routing-interface": "irb.123"}}})
+        self.nc.commit()
+
+        vlan123 = self._get_vlan("VLAN123")
+
+        assert_that(vlan123.xpath("routing-interface")[0].text, is_("irb.123"))
+
+        self.edit({
+            "bridge-domains": {
+                "domain": [
+                    {"name": "VLAN123"},
+                    {"routing-interface": {XML_ATTRIBUTES: {"operation": "delete"}}}]}})
+        self.nc.commit()
+
+        vlan123 = self._get_vlan("VLAN123")
+
+        assert_that(vlan123.xpath("routing-interface"), has_length(0))
+
+        self.cleanup(vlan("VLAN123"))
+
+    def test_adding_a_full_interface_vlan_shows_the_vlan_number_on_the_vlan_port(self):
+        self.edit({
+            "bridge-domains": {
+                "domain": {
+                    "name": "VLAN100",
+                    "vlan-id": "200",
+                    "routing-interface": "irb.300"}},
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": {
+                                    "name": "3.3.3.2/27"}}}}}}})
+        self.nc.commit()
+
+        switch = ThreadedReactor.get_switch("juniper_mx")
+
+        assert_that(switch.switch_configuration.get_port("irb.300").vlan_id, is_(200))
+
+        irb = self._interface("irb")
+
+        assert_that(irb.xpath("unit"), has_length(1))
+        assert_that(irb.xpath("unit/name")[0].text, is_("300"))
+        assert_that(irb.xpath("unit/family/inet/address/name")[0].text, is_("3.3.3.2/27"))
+
+        self.cleanup(vlan("VLAN100"), reset_interface("irb"))
+
+    def test_adding_the_vlan_after_the_routing_interface_should_still_link_the_vlan_number(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": {
+                                    "name": "3.3.3.2/27"}}}}}}})
+        self.edit({
+            "bridge-domains": {
+                "domain": {
+                    "name": "VLAN100",
+                    "vlan-id": "200",
+                    "routing-interface": "irb.300"}}
+        })
+        self.nc.commit()
+
+        switch = ThreadedReactor.get_switch("juniper_mx")
+
+        assert_that(switch.switch_configuration.get_port("irb.300").vlan_id, is_(200))
+
+        self.cleanup(vlan("VLAN100"), reset_interface("irb"))
+
+    def test_multiple_ip_support(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": [
+                                {"address": {"name": "3.3.3.2/27"}},
+                                {"address": {"name": "4.4.4.2/27"}},
+                            ]}}}}})
+        self.nc.commit()
+
+        int_vlan = self._interface_vlan("300")
+
+        assert_that(int_vlan.xpath("family/inet/address"), has_length(2))
+        assert_that(int_vlan.xpath("family/inet/address/name")[0].text, is_("3.3.3.2/27"))
+        assert_that(int_vlan.xpath("family/inet/address/name")[1].text, is_("4.4.4.2/27"))
+
+        self.cleanup(reset_interface("irb"))
+
     def _interface(self, name):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": name}}}}
@@ -1099,6 +1204,25 @@ class JuniperMXProtocolTest(BaseJuniper):
             return result.xpath("data/configuration/interfaces/interface")[0]
         except IndexError:
             return None
+
+    def _interface_vlan(self, unit):
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {
+                "interfaces": {
+                    "interface": {
+                        "name": "irb",
+                        "unit": {"name": unit}}}}}
+        }))
+
+        try:
+            return result.xpath("data/configuration/interfaces/interface/unit")[0]
+        except IndexError:
+            return None
+
+    def _get_vlan(self, name):
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"bridge-domains": {"domain": {"name": name}}}}}))
+        return result.xpath("data/configuration/bridge-domains/domain")[0]
 
 
 def vlan(vlan_name):

@@ -144,6 +144,7 @@ class Vlan(object):
         self.name = name
         self.description = description
         self.switch_configuration = switch_configuration
+        self.vendor_specific = {}
 
 
 class Port(object):
