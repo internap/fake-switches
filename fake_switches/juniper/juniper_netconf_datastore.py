@@ -21,7 +21,7 @@ from fake_switches.netconf import XML_NS, XML_ATTRIBUTES, CANDIDATE, RUNNING, Al
     CannotLockUncleanCandidate, first,UnknownVlan, InvalidInterfaceType, InvalidTrailingInput, \
     AggregatePortOutOfRange, PhysicalPortOutOfRange,  MultipleNetconfErrors, InvalidNumericValue, InvalidMTUValue
 from fake_switches.netconf.netconf_protocol import dict_2_etree
-from fake_switches.switch_configuration import AggregatedPort
+from fake_switches.switch_configuration import AggregatedPort, VlanPort
 
 NS_JUNOS = "http://xml.juniper.net/junos/11.4R1/junos"
 
@@ -126,6 +126,24 @@ class JuniperNetconfDatastore(object):
                 if isinstance(actual_port, AggregatedPort):
                     actual_port.lacp_active = updated_port.lacp_active
                     actual_port.lacp_periodic = updated_port.lacp_periodic
+
+                if isinstance(actual_port, VlanPort):
+                    actual_port.vlan_id = updated_port.vlan_id
+                    actual_port.access_group_in = updated_port.access_group_in
+                    actual_port.access_group_out = updated_port.access_group_out
+                    for ip in actual_port.ips:
+                        if ip not in updated_port.ips:
+                            actual_port.remove_ip(ip)
+                    for ip in updated_port.ips:
+                        if ip not in actual_port.ips:
+                            actual_port.add_ip(ip)
+                    actual_port.secondary_ips = deepcopy(updated_port.secondary_ips)
+                    actual_port.vrrp_common_authentication = updated_port.vrrp_common_authentication
+                    actual_port.vrrp_version = updated_port.vrrp_version
+                    actual_port.vrrps = deepcopy(updated_port.vrrps)
+                    actual_port.ip_redirect = updated_port.ip_redirect
+                    actual_port.ip_proxy_arp = updated_port.ip_proxy_arp
+                    actual_port.unicast_reverse_path_forwarding = updated_port.unicast_reverse_path_forwarding
 
         for p in self.configurations[RUNNING].ports[:]:
             if self.configurations[CANDIDATE].get_port_by_partial_name(p.name) is None:

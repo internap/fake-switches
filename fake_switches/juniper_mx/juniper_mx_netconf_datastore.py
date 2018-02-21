@@ -98,8 +98,12 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
 
             inet = first(unit_node.xpath("family/inet".format(self.ETHERNET_SWITCHING_TAG)))
             if inet is not None:
-                for node in inet.xpath("address/name"):
-                    port.add_ip(IPNetwork(node.text))
+                for address in inet.xpath("address/name/.."):
+                    ip = IPNetwork(val(address, "name"))
+                    if resolve_operation(address) == "delete":
+                        port.remove_ip(ip)
+                    else:
+                        port.add_ip(ip)
 
     def handle_interface_operation(self, conf, operation, port):
         if operation == 'delete' and isinstance(port, AggregatedPort):
