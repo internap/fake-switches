@@ -1,5 +1,4 @@
 import os
-import random
 import socket
 import subprocess
 import sys
@@ -7,11 +6,11 @@ import time
 import unittest
 
 from hamcrest import assert_that, is_not, starts_with
-
+from tests.util import _unique_port
 from tests.util.protocol_util import SshTester
 
 TEST_BIND_HOST = '127.0.0.1'
-TEST_BIND_PORT = str(random.randint(20000, 22000))
+TEST_BIND_PORT = str(_unique_port())
 TEST_HOSTNAME = 'root'
 TEST_PASSWORD = 'root'
 

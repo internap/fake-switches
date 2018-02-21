@@ -12,30 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-
-from flexmock import flexmock_teardown
-
-from tests.dell10g import ssh_protocol_factory, telnet_protocol_factory
-from tests.util.global_reactor import dell10g_privileged_password
-from tests.util.protocol_util import with_protocol
+from tests.util.protocol_util import with_protocol, ProtocolTest, SshTester, TelnetTester
 
 
-class Dell10GUnprivilegedTest(unittest.TestCase):
+class Dell10GUnprivilegedTest(ProtocolTest):
     __test__ = False
-    protocol_factory = None
 
-    def setUp(self):
-        self.protocol = self.protocol_factory()
-
-    def tearDown(self):
-        flexmock_teardown()
+    tester_class = SshTester
+    test_switch = "dell10g"
 
     @with_protocol
     def test_entering_enable_mode_requires_a_password(self, t):
         t.write("enable")
         t.read("Password:")
-        t.write_stars(dell10g_privileged_password)
+        t.write_stars(t.conf["extra"]["password"])
         t.read("\r\n")
         t.read("my_switch#")
 
@@ -68,9 +58,9 @@ class Dell10GUnprivilegedTest(unittest.TestCase):
 
 class Dell10GUnprivilegedSshTest(Dell10GUnprivilegedTest):
     __test__ = True
-    protocol_factory = ssh_protocol_factory
+    tester_class = SshTester
 
 
 class Dell10GUnprivilegedTelnetTest(Dell10GUnprivilegedTest):
     __test__ = True
-    protocol_factory = telnet_protocol_factory
+    tester_class = TelnetTester

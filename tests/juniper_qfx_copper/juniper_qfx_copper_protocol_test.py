@@ -13,32 +13,18 @@
 # limitations under the License.
 
 
-from tests.juniper import BaseJuniper, vlan
-from lxml import etree
-
 from fake_switches.netconf import dict_2_etree, XML_TEXT, XML_ATTRIBUTES
 from hamcrest import assert_that, has_length, equal_to, has_items, is_, is_not, contains_string
-from ncclient import manager
+from lxml import etree
 from ncclient.operations import RPCError
 from tests import contains_regex
+from tests.juniper import BaseJuniper, vlan
 from tests.juniper.assertion_tools import has_xpath
 from tests.netconf.netconf_protocol_test import xml_equals_to
 
-from tests.util.global_reactor import juniper_qfx_copper_switch_ip, \
-    juniper_qfx_copper_switch_netconf_port
-
 
 class JuniperQfxCopperProtocolTest(BaseJuniper):
-
-    def create_client(self):
-        return manager.connect(
-            host=juniper_qfx_copper_switch_ip,
-            port=juniper_qfx_copper_switch_netconf_port,
-            username="root",
-            password="root",
-            hostkey_verify=False,
-            device_params={'name': 'junos'}
-        )
+    test_switch = "juniper_qfx"
 
     def test_capabilities(self):
         assert_that(self.nc.server_capabilities, has_items(

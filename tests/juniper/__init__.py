@@ -2,12 +2,26 @@ import unittest
 
 from fake_switches.netconf import dict_2_etree, XML_ATTRIBUTES
 from hamcrest import assert_that, has_length
+from ncclient import manager
+from tests.util.global_reactor import TEST_SWITCHES
 
 
 class BaseJuniper(unittest.TestCase):
+    test_switch = None
 
     def setUp(self):
+        self.conf = TEST_SWITCHES[self.test_switch]
         self.nc = self.create_client()
+
+    def create_client(self):
+        return manager.connect(
+            host="127.0.0.1",
+            port=self.conf["ssh"],
+            username="root",
+            password="root",
+            hostkey_verify=False,
+            device_params={'name': 'junos'}
+        )
 
     def tearDown(self):
         assert_that(self.nc.get_config(source="running").xpath("data/configuration/*"), has_length(0))

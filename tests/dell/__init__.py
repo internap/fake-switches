@@ -12,26 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from hamcrest import assert_that, is_
 import pprint
 
-from tests.util.global_reactor import dell_privileged_password, dell_switch_ip, \
-    dell_switch_ssh_port, dell_switch_telnet_port
-from tests.util.protocol_util import SshTester, TelnetTester
-
-
-def ssh_protocol_factory(*_):
-    return SshTester("ssh", dell_switch_ip, dell_switch_ssh_port, 'root', 'root')
-
-
-def telnet_protocol_factory(*_):
-    return TelnetTester("ssh", dell_switch_ip, dell_switch_telnet_port, 'root', 'root')
+from hamcrest import assert_that, is_
 
 
 def enable(t):
     t.write("enable")
     t.read("Password:")
-    t.write_stars(dell_privileged_password)
+    t.write_stars(t.conf["extra"].get("password", "root"))
     t.readln("")
     t.read("my_switch#")
 

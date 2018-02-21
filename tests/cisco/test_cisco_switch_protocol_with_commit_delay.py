@@ -12,29 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
 from time import time
 
-from flexmock import flexmock_teardown
 from hamcrest import assert_that
 from hamcrest import greater_than
-
 from tests.cisco import enable
-from tests.util.global_reactor import cisco_switch_ip
-from tests.util.global_reactor import cisco_switch_ssh_with_commit_delay_port, COMMIT_DELAY
-from tests.util.protocol_util import SshTester, with_protocol
+from tests.util.global_reactor import COMMIT_DELAY
+from tests.util.protocol_util import SshTester, with_protocol, ProtocolTest
 
 
-class TestCiscoSwitchProtocolWithCommitDelay(unittest.TestCase):
-
-    def create_client(self):
-        return SshTester("ssh", cisco_switch_ip, cisco_switch_ssh_with_commit_delay_port, 'root', 'root')
-
-    def setUp(self):
-        self.protocol = self.create_client()
-
-    def tearDown(self):
-        flexmock_teardown()
+class TestCiscoSwitchProtocolWithCommitDelay(ProtocolTest):
+    tester_class = SshTester
+    test_switch = "commit-delayed-cisco"
 
     @with_protocol
     def test_write_memory_with_commit_delay(self, t):

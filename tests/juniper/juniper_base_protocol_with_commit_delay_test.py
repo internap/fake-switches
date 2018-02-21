@@ -13,35 +13,15 @@
 # limitations under the License.
 
 from time import time
-import unittest
 
-from hamcrest import assert_that, has_length, greater_than
-
-from ncclient import manager
-from tests.util.global_reactor import juniper_switch_ip, \
-    juniper_switch_netconf_with_commit_delay_port, COMMIT_DELAY
 from fake_switches.netconf import dict_2_etree, XML_ATTRIBUTES
+from hamcrest import assert_that, has_length, greater_than
+from tests.juniper import BaseJuniper
+from tests.util.global_reactor import COMMIT_DELAY
 
 
-class JuniperBaseProtocolWithCommitDelayTest(unittest.TestCase):
-    def setUp(self):
-        self.nc = self.create_client()
-
-    def tearDown(self):
-        try:
-            self.nc.discard_changes()
-        finally:
-            self.nc.close_session()
-
-    def create_client(self):
-        return manager.connect(
-            host=juniper_switch_ip,
-            port=juniper_switch_netconf_with_commit_delay_port,
-            username="root",
-            password="root",
-            hostkey_verify=False,
-            device_params={'name': 'junos'}
-        )
+class JuniperBaseProtocolWithCommitDelayTest(BaseJuniper):
+    test_switch = "commit-delayed-juniper"
 
     def test_lock_edit_candidate_add_vlan_and_commit_with_commit_delay(self):
         with self.nc.locked(target='candidate'):

@@ -13,30 +13,18 @@
 # limitations under the License.
 
 
+from fake_switches.netconf import dict_2_etree, XML_ATTRIBUTES, XML_TEXT
 from hamcrest import assert_that, has_length, has_items, equal_to, is_, is_not, contains_string
-from ncclient import manager
 from ncclient.operations import RPCError
 from ncclient.xml_ import to_xml
-
-from fake_switches.netconf import dict_2_etree, XML_ATTRIBUTES, XML_TEXT
 from tests import contains_regex
 from tests.juniper import BaseJuniper, vlan
 from tests.juniper.assertion_tools import has_xpath
 from tests.netconf.netconf_protocol_test import xml_equals_to
-from tests.util.global_reactor import juniper_switch_ip, juniper_switch_netconf_port
 
 
 class JuniperBaseProtocolTest(BaseJuniper):
-
-    def create_client(self):
-        return manager.connect(
-            host=juniper_switch_ip,
-            port=juniper_switch_netconf_port,
-            username="root",
-            password="root",
-            hostkey_verify=False,
-            device_params={'name': 'junos'}
-        )
+    test_switch = "juniper"
 
     def test_capabilities(self):
         assert_that(self.nc.server_capabilities, has_items(

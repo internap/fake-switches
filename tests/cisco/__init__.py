@@ -1,10 +1,7 @@
-from tests.util.global_reactor import cisco_privileged_password
-
-
 def enable(t):
     t.write("enable")
     t.read("Password: ")
-    t.write_invisible(cisco_privileged_password)
+    t.write_invisible(t.conf["extra"].get("password", "root"))
     t.read("my_switch#")
 
 

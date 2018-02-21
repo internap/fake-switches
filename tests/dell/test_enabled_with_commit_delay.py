@@ -14,22 +14,16 @@
 
 from time import time
 
-import unittest
-
-from flexmock import flexmock_teardown
 from hamcrest import assert_that, less_than, greater_than
-
 from tests.dell import enable
-from tests.util.protocol_util import with_protocol, SshTester
-from tests.util.global_reactor import COMMIT_DELAY, dell_switch_ip, dell_switch_with_commit_delay_ssh_port
+from tests.util.global_reactor import COMMIT_DELAY
+from tests.util.protocol_util import with_protocol, SshTester, ProtocolTest
 
 
-class DellEnabledWithCommitDelayTest(unittest.TestCase):
-    def setUp(self):
-        self.protocol = SshTester("ssh", dell_switch_ip, dell_switch_with_commit_delay_ssh_port, 'root', 'root')
+class DellEnabledWithCommitDelayTest(ProtocolTest):
 
-    def tearDown(self):
-        flexmock_teardown()
+    tester_class = SshTester
+    test_switch = "commit-delayed-dell"
 
     @with_protocol
     def test_write_memory_with_delay(self, t):

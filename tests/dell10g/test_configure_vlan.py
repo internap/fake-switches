@@ -12,25 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
-
-from flexmock import flexmock_teardown
-
 from tests.dell10g import enable, configuring_vlan, \
-    assert_running_config_contains_in_order, ssh_protocol_factory,\
-    telnet_protocol_factory, add_vlan, configuring
-from tests.util.protocol_util import with_protocol
+    assert_running_config_contains_in_order, add_vlan, configuring
+from tests.util.protocol_util import with_protocol, ProtocolTest, SshTester, TelnetTester
 
 
-class Dell10GConfigureVlanTest(unittest.TestCase):
+class Dell10GConfigureVlanTest(ProtocolTest):
     __test__ = False
-    protocol_factory = None
 
-    def setUp(self):
-        self.protocol = self.protocol_factory()
-
-    def tearDown(self):
-        flexmock_teardown()
+    tester_class = SshTester
+    test_switch = "dell10g"
 
     @with_protocol
     def test_configuring_a_vlan(self, t):
@@ -55,9 +46,9 @@ class Dell10GConfigureVlanTest(unittest.TestCase):
 
 class Dell10GConfigureVlanSshTest(Dell10GConfigureVlanTest):
     __test__ = True
-    protocol_factory = ssh_protocol_factory
+    tester_class = SshTester
 
 
 class Dell10GConfigureVlanTelnetTest(Dell10GConfigureVlanTest):
     __test__ = True
-    protocol_factory = telnet_protocol_factory
+    tester_class = TelnetTester
