@@ -35,6 +35,7 @@ class JuniperNetconfDatastore(object):
     ETHER_OPTIONS_TAG = "ether-options"
     MAX_PHYSICAL_PORT_NUMBER = 127
     MAX_MTU = 9216
+    SYSTEM_INTERFACES = []
 
     def __init__(self, configuration):
         self.original_configuration = configuration
@@ -68,7 +69,7 @@ class JuniperNetconfDatastore(object):
         _add_if_not_empty(configuration, "protocols", self._extract_protocols(self.configurations[source]))
 
         _add_if_not_empty(configuration, self.VLANS_COLLECTION,
-                         [{self.VLANS_COLLECTION_OBJ: vlan_to_etree(vlan)} for vlan in self.configurations[source].vlans])
+                         [{self.VLANS_COLLECTION_OBJ: self.vlan_to_etree(vlan)} for vlan in self.configurations[source].vlans])
 
         return dict_2_etree({"data": {"configuration": configuration}})
 
@@ -95,6 +96,7 @@ class JuniperNetconfDatastore(object):
             else:
                 actual_vlan.number = updated_vlan.number
                 actual_vlan.description = updated_vlan.description
+                actual_vlan.vendor_specific = updated_vlan.vendor_specific
 
         for p in self.configurations[RUNNING].vlans[:]:
             if self.configurations[CANDIDATE].get_vlan_by_name(p.name) is None:
@@ -223,28 +225,33 @@ class JuniperNetconfDatastore(object):
         for interface_node in etree_conf.xpath("interfaces/interface/name/.."):
             handled_elements.append(interface_node)
 
-            port_name = val(interface_node, "name")
-
-            port = conf.get_port_by_partial_name(port_name)
-            if port is None and re.match("^ae\d+$",port_name):
-                port = self.original_configuration.new("AggregatedPort", port_name)
-                port.vendor_specific["has-ethernet-switching"] = True
-                conf.add_port(port)
-
-            self.raise_for_invalid_interface(port_name, self.MAX_AGGREGATED_ETHERNET_INTERFACES)
-
-            operation = resolve_operation(interface_node)
-            if operation in ("delete", "replace"):
-                backup = deepcopy(vars(port))
-
-                port.reset()
-
-                _restore_protocols_specific_data(backup, port)
-
-            if operation != "delete":
-                self.apply_interface_data(interface_node, port)
+            self.parse_interface(conf, interface_node)
 
         return handled_elements
+
+    def parse_interface(self, conf, interface_node):
+        port_name = val(interface_node, "name")
+        self.raise_for_invalid_interface(port_name, self.MAX_AGGREGATED_ETHERNET_INTERFACES)
+
+        port = conf.get_port_by_partial_name(port_name)
+        if port is None and re.match("^ae\d+$", port_name):
+            port = self.original_configuration.new("AggregatedPort", port_name)
+            port.vendor_specific["has-ethernet-switching"] = True
+            conf.add_port(port)
+
+        operation = resolve_operation(interface_node)
+        self.handle_interface_operation(conf, operation, port)
+
+        if operation != "delete":
+            self.apply_interface_data(interface_node, port)
+
+    def handle_interface_operation(self, conf, operation, port):
+        if operation in ("delete", "replace"):
+            backup = deepcopy(vars(port))
+
+            port.reset()
+
+            _restore_protocols_specific_data(backup, port)
 
     def apply_interface_data(self, interface_node, port):
         port.description = resolve_new_value(interface_node, "description", port.description)
@@ -345,10 +352,13 @@ class JuniperNetconfDatastore(object):
                     vlan = self.original_configuration.new("Vlan", name=val(vlan_node, "name"))
                     conf.add_vlan(vlan)
 
-                vlan.number = resolve_new_value(vlan_node, "vlan-id", vlan.number, transformer=int)
-                vlan.description = resolve_new_value(vlan_node, "description", vlan.description)
+                self.parse_vlan_attributes(conf, vlan, vlan_node)
 
         return handled_elements
+
+    def parse_vlan_attributes(self, conf, vlan, vlan_node):
+        vlan.number = resolve_new_value(vlan_node, "vlan-id", vlan.number, transformer=int)
+        vlan.description = resolve_new_value(vlan_node, "description", vlan.description)
 
     def parse_trunk_native_vlan(self, interface_node, port):
         if len(interface_node.xpath("unit/family/{}/native-vlan-id".format(self.ETHERNET_SWITCHING_TAG))) == 1 and interface_node.xpath("unit/family/{}/native-vlan-id".format(self.ETHERNET_SWITCHING_TAG))[0].text is not None:
@@ -373,6 +383,17 @@ class JuniperNetconfDatastore(object):
     def get_trunk_native_vlan_node(self, interface_node):
         return interface_node.xpath("unit/family/{}/native-vlan-id".format(self.ETHERNET_SWITCHING_TAG))
 
+    def vlan_to_etree(self, vlan):
+        vlan_data = [{"name": vlan.name}]
+
+        if vlan.description is not None:
+            vlan_data.append({"description": vlan.description})
+
+        if vlan.number is not None:
+            vlan_data.append({"vlan-id": str(vlan.number)})
+
+        return vlan_data
+
     def _validate(self, configuration):
         vlan_list = [vlan.number for vlan in configuration.vlans]
 
@@ -389,6 +410,7 @@ class JuniperNetconfDatastore(object):
             for trunk_vlan in port.trunk_vlans:
                 if trunk_vlan not in vlan_list:
                     raise UnknownVlan(trunk_vlan, port.name, 0)
+
 
     def _assert_no_garbage(self, port):
         if not port.vendor_specific.get("has-ethernet-switching"):
@@ -470,6 +492,9 @@ class JuniperNetconfDatastore(object):
         return "{}.0".format(port.name)
 
     def raise_for_invalid_interface(self, interface, max_aggregated_interfaces):
+        if interface in self.SYSTEM_INTERFACES:
+            return
+
         interface_match = re.match(r'^(\w+)-\d/\d/(\d+)(\S*)', interface)
         if interface_match and interface_match.group(2):
             if interface_match and interface_match.group(3):
@@ -495,18 +520,6 @@ class JuniperNetconfDatastore(object):
             return value
 
         raise InvalidMTUValue(value, self.MAX_MTU)
-
-
-def vlan_to_etree(vlan):
-    vlan_data = [{"name": vlan.name}]
-
-    if vlan.description is not None:
-        vlan_data.append({"description": vlan.description})
-
-    if vlan.number is not None:
-        vlan_data.append({"vlan-id": str(vlan.number)})
-
-    return vlan_data
 
 
 def parse_protocols(conf, etree_conf):

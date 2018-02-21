@@ -20,6 +20,7 @@ from fake_switches.netconf import NetconfError
 class JuniperQfxCopperNetconfDatastore(JuniperNetconfDatastore):
     PORT_MODE_TAG = "interface-mode"
     MAX_AGGREGATED_ETHERNET_INTERFACES = 999
+    SYSTEM_INTERFACES = ["irb"]
 
     def __init__(self, configuration):
         super(JuniperQfxCopperNetconfDatastore, self).__init__(configuration)
