@@ -105,6 +105,23 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
                     else:
                         port.add_ip(ip)
 
+                        for vrrp_node in address.xpath("vrrp-group/name/.."):
+                            group_id = val(vrrp_node, "name")
+                            vrrp_group = port.get_vrrp_group(group_id)
+
+                            if vrrp_group is not None and resolve_operation(vrrp_node) == "delete":
+                                port.vrrps.remove(vrrp_group)
+                            else:
+                                if vrrp_group is None:
+                                    vrrp_group = self.original_configuration.new("VRRP", group_id=group_id)
+                                    port.vrrps.append(vrrp_group)
+
+                                vrrp_group.related_ip_network = ip
+                                vrrp_group.ip_addresses = [vip.text for vip in vrrp_node.xpath("virtual-address")
+                                                           if resolve_operation(vip) != "delete"]
+                                vrrp_group.priority = resolve_new_value(vrrp_node, "priority", vrrp_group.priority)
+
+
     def handle_interface_operation(self, conf, operation, port):
         if operation == 'delete' and isinstance(port, AggregatedPort):
             conf.remove_port(port)
@@ -152,7 +169,7 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
 
             if vlan_port.ips:
                 unit["family"] = {
-                    "inet": [{"address": {"name": str(ip)}} for ip in vlan_port.ips]
+                    "inet": [{"address": self._address_etree(ip, vlan_port)} for ip in vlan_port.ips]
                 }
 
             units.append({"unit": unit})
@@ -162,6 +179,22 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
             return units
         else:
             return None
+
+    def _address_etree(self, ip, port):
+        out = [{"name": str(ip)}]
+
+        for vrrp in port.vrrps:
+            if vrrp.related_ip_network == ip:
+                vrrp_etree = [{"name": vrrp.group_id}]
+                for ip_address in vrrp.ip_addresses:
+                    vrrp_etree.append({"virtual-address": ip_address})
+
+                    if vrrp.priority is not None:
+                        vrrp_etree.append({"priority": vrrp.priority})
+
+                out.append({"vrrp-group": vrrp_etree})
+
+        return out
 
     def vlan_to_etree(self, vlan):
         etree = super(JuniperMxNetconfDatastore, self).vlan_to_etree(vlan)
@@ -178,6 +211,7 @@ def find_vlan_with_routing_interface(conf, interface_name):
             return vlan
 
     return None
+
 
 class TrunkShouldHaveVlanMembers(NetconfError):
     def __init__(self, interface):
