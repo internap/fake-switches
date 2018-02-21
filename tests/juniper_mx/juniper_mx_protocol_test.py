@@ -1195,6 +1195,39 @@ class JuniperMXProtocolTest(BaseJuniper):
 
         self.cleanup(reset_interface("irb"))
 
+    def test_ip_removal(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": [
+                                {"address": {"name": "3.3.3.2/27"}},
+                                {"address": {"name": "4.4.4.2/27"}},
+                            ]}}}}})
+        self.nc.commit()
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": [
+                                {"address": {"name": "4.4.4.2/27", XML_ATTRIBUTES: {"operation": "delete"}}},
+                            ]}}}}})
+        self.nc.commit()
+
+        int_vlan = self._interface_vlan("300")
+
+        assert_that(int_vlan.xpath("family/inet/address"), has_length(1))
+        assert_that(int_vlan.xpath("family/inet/address/name")[0].text, is_("3.3.3.2/27"))
+
+        self.cleanup(reset_interface("irb"))
+
     def _interface(self, name):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": name}}}}
