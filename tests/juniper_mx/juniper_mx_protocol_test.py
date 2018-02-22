@@ -1355,6 +1355,238 @@ class JuniperMXProtocolTest(BaseJuniper):
 
         self.cleanup(reset_interface("irb"))
 
+    def test_vrrp_preempt_hold_time(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "preempt": {"hold-time": "60"},
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("preempt/hold-time")[0].text, is_("60"))
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "preempt": {XML_ATTRIBUTES: {"operation": "delete"}},
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("preempt/hold-time"), has_length(0))
+
+        self.cleanup(reset_interface("irb"))
+
+    def test_vrrp_accept_data(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "accept-data": "",
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("accept-data"), has_length(1))
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "accept-data": {XML_ATTRIBUTES: {"operation": "delete"}},
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("accept-data"), has_length(0))
+
+        self.cleanup(reset_interface("irb"))
+
+    def test_vrrp_authentication_type(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "authentication-type": "simple",
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("authentication-type")[0].text, is_("simple"))
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "authentication-type": {XML_ATTRIBUTES: {"operation": "delete"}},
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("authentication-type"), has_length(0))
+
+        self.cleanup(reset_interface("irb"))
+
+    def test_vrrp_authentication_key(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "authentication-key": "VLAN300",
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("authentication-key")[0].text, is_("this is VLAN300 but hashed"))
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "authentication-key": {XML_ATTRIBUTES: {"operation": "delete"}},
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("authentication-key"), has_length(0))
+
+        self.cleanup(reset_interface("irb"))
+
+    def test_track_route(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "track": {
+                                            "route": {
+                                                "route_address": "0.0.0.0/0",
+                                                "routing-instance": "default",
+                                                "priority-cost": "50"}},
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("track/route/*"), has_length(3))
+        assert_that(vrrp.xpath("track/route/route_address")[0].text, is_("0.0.0.0/0"))
+        assert_that(vrrp.xpath("track/route/routing-instance")[0].text, is_("default"))
+        assert_that(vrrp.xpath("track/route/priority-cost")[0].text, is_("50"))
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "track": {XML_ATTRIBUTES: {"operation": "delete"}},
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("track"), has_length(0))
+
+        self.cleanup(reset_interface("irb"))
+
     def _interface(self, name):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": name}}}}

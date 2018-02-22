@@ -121,6 +121,31 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
                                                            if resolve_operation(vip) != "delete"]
                                 vrrp_group.priority = resolve_new_value(vrrp_node, "priority", vrrp_group.priority)
 
+                                vrrp_group.preempt_delay_minimum = resolve_new_value(vrrp_node, "preempt/hold-time", vrrp_group.preempt_delay_minimum)
+                                if resolve_operation(first(vrrp_node.xpath("preempt"))) == "delete":
+                                    vrrp_group.preempt_delay_minimum = None
+
+                                if first(vrrp_node.xpath("accept-data")) is not None:
+                                    if resolve_operation(first(vrrp_node.xpath("accept-data"))) == "delete":
+                                        vrrp_group.vendor_specific.pop("accept-data")
+                                    else:
+                                        vrrp_group.vendor_specific["accept-data"] = True
+                                elif "accept-data" in vrrp_group.vendor_specific:
+                                    vrrp_group.vendor_specific.pop("accept-data")
+
+                                vrrp_group.vendor_specific["authentication-type"] = resolve_new_value(vrrp_node, "authentication-type", vrrp_group.vendor_specific.get("authentication-type"))
+                                if vrrp_group.vendor_specific["authentication-type"] is None:
+                                    vrrp_group.vendor_specific.pop("authentication-type")
+
+                                vrrp_group.authentication = resolve_new_value(vrrp_node, "authentication-key", vrrp_group.authentication)
+
+                                track = first(vrrp_node.xpath("track"))
+                                if track is not None:
+                                    if resolve_operation(track) == "delete":
+                                        vrrp_group.track = {}
+                                    else:
+                                        vrrp_group.track = {val(track, "route/route_address"): val(track, "route/priority-cost")}
+
 
     def handle_interface_operation(self, conf, operation, port):
         if operation == 'delete' and isinstance(port, AggregatedPort):
@@ -191,6 +216,27 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
 
                     if vrrp.priority is not None:
                         vrrp_etree.append({"priority": vrrp.priority})
+
+                    if vrrp.preempt_delay_minimum is not None:
+                        vrrp_etree.append({"preempt": {"hold-time": vrrp.preempt_delay_minimum}})
+
+                    if vrrp.vendor_specific.get("accept-data") is not None:
+                        vrrp_etree.append({"accept-data": ""})
+
+                    if vrrp.vendor_specific.get("authentication-type") is not None:
+                        vrrp_etree.append({"authentication-type": vrrp.vendor_specific.get("authentication-type")})
+
+                    if vrrp.authentication is not None:
+                        vrrp_etree.append({"authentication-key": "this is {} but hashed".format(vrrp.authentication)})
+
+                    for address, decrement in vrrp.track.items():
+                        vrrp_etree.append({
+                            "track": {
+                                "route": {
+                                    "route_address": address,
+                                    "routing-instance": 'default',
+                                    "priority-cost": decrement,
+                                }}})
 
                 out.append({"vrrp-group": vrrp_etree})
 
