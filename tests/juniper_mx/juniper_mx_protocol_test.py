@@ -1228,6 +1228,133 @@ class JuniperMXProtocolTest(BaseJuniper):
 
         self.cleanup(reset_interface("irb"))
 
+    def test_vrrp_virtual_address(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": [
+                                        {"name": "0"},
+                                        {"virtual-address": "3.3.3.1"},
+                                        {"virtual-address": "3.3.3.3"},
+                                    ]},
+                                    {"vrrp-group": [
+                                        {"name": "1"},
+                                        {"virtual-address": "3.3.3.4"},
+                                    ]}]}}}}}})
+        self.nc.commit()
+
+        int_vlan = self._interface_vlan("300")
+
+        assert_that(int_vlan.xpath("family/inet/address/vrrp-group"), has_length(2))
+
+        vrrp0, vrrp1 = int_vlan.xpath("family/inet/address/vrrp-group")
+
+        assert_that(vrrp0.xpath("name")[0].text, is_("0"))
+        assert_that(vrrp0.xpath("virtual-address"), has_length(2))
+        assert_that(vrrp0.xpath("virtual-address")[0].text, is_("3.3.3.1"))
+        assert_that(vrrp0.xpath("virtual-address")[1].text, is_("3.3.3.3"))
+
+        assert_that(vrrp1.xpath("name")[0].text, is_("1"))
+        assert_that(vrrp1.xpath("virtual-address"), has_length(1))
+        assert_that(vrrp1.xpath("virtual-address")[0].text, is_("3.3.3.4"))
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": {
+                                    "name": "3.3.3.2/27",
+                                    "vrrp-group": [
+                                        {"name": "0"},
+                                        {"virtual-address": "3.3.3.1"},
+                                        {"virtual-address": {XML_ATTRIBUTES: {"operation": "delete"}}},
+                                    ]}}}}}}})
+        self.nc.commit()
+
+        int_vlan = self._interface_vlan("300")
+
+        vrrp0 = int_vlan.xpath("family/inet/address/vrrp-group")[0]
+
+        assert_that(vrrp0.xpath("virtual-address"), has_length(1))
+        assert_that(vrrp0.xpath("virtual-address")[0].text, is_("3.3.3.1"))
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": {
+                                    "name": "3.3.3.2/27",
+                                    "vrrp-group": {
+                                        XML_ATTRIBUTES: {"operation": "delete"},
+                                        "name": "0"}}}}}}}})
+        self.nc.commit()
+
+        int_vlan = self._interface_vlan("300")
+
+        assert_that(int_vlan.xpath("family/inet/address/vrrp-group"), has_length(1))
+
+        self.cleanup(reset_interface("irb"))
+
+    def test_vrrp_priority(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "priority": "90",
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("priority")[0].text, is_("90"))
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "address": [
+                                    {"name": "3.3.3.2/27"},
+                                    {"vrrp-group": {
+                                        "name": "0",
+                                        "virtual-address": "3.3.3.1",
+                                        "priority": {XML_ATTRIBUTES: {"operation": "delete"}},
+                                    }}]}}}}}})
+        self.nc.commit()
+
+        vrrp = self._vrrp("300", "3.3.3.2/27", "0")
+
+        assert_that(vrrp.xpath("priority"), has_length(0))
+
+        self.cleanup(reset_interface("irb"))
+
     def _interface(self, name):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": name}}}}
@@ -1249,6 +1376,25 @@ class JuniperMXProtocolTest(BaseJuniper):
 
         try:
             return result.xpath("data/configuration/interfaces/interface/unit")[0]
+        except IndexError:
+            return None
+
+    def _vrrp(self, unit, address, group):
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {
+                "interfaces": {
+                    "interface": {
+                        "name": "irb",
+                        "unit": {
+                            "name": unit,
+                            "family": {
+                                "inet": {
+                                    "address": {
+                                        "name": address,
+                                        "vrrp-group": {"name": group}}}}}}}}}}))
+
+        try:
+            return result.xpath("data/configuration/interfaces/interface/unit/family/inet/address/vrrp-group")[0]
         except IndexError:
             return None
 

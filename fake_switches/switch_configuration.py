@@ -195,6 +195,7 @@ class VRRP(object):
         self.preempt_delay_minimum = None
         self.activated = None
         self.advertising = None
+        self.related_ip_network = None
 
 
 class VlanPort(Port):
