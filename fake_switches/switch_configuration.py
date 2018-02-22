@@ -196,6 +196,7 @@ class VRRP(object):
         self.activated = None
         self.advertising = None
         self.related_ip_network = None
+        self.vendor_specific = {}
 
 
 class VlanPort(Port):
