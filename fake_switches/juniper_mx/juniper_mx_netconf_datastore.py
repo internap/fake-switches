@@ -146,6 +146,14 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
                                     else:
                                         vrrp_group.track = {val(track, "route/route_address"): val(track, "route/priority-cost")}
 
+    def _validate(self, conf):
+        ips = []
+        for p in conf.ports:
+            if hasattr(p, "ips"):
+                ips = ips + p.ips
+        if not len(ips) == len(set(ips)):
+            raise IpAlreadyInUse("Overlapping subnet is configured")
+        return super(JuniperMxNetconfDatastore, self)._validate(conf)
 
     def handle_interface_operation(self, conf, operation, port):
         if operation == 'delete' and isinstance(port, AggregatedPort):
@@ -294,3 +302,10 @@ class FailingCommitResults(NetconfError):
               ] + [e.to_dict() for e in self.netconf_errors]
             }
         }
+
+class IpAlreadyInUse(NetconfError):
+    def __init__(self, message):
+        super(IpAlreadyInUse, self).__init__(message,
+                                             severity="error",
+                                             err_type="protocol",
+                                             tag="operation-not-supported")

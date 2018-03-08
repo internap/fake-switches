@@ -1195,6 +1195,35 @@ class JuniperMXProtocolTest(BaseJuniper):
 
         self.cleanup(reset_interface("irb"))
 
+    def test_add_same_ip_in_2_vlans_reports_error(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": [
+                                {"address": {"name": "3.3.3.2/27"}},
+                            ]}}}}})
+        self.nc.commit()
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "400",
+                        "family": {
+                            "inet": [
+                                {"address": {"name": "3.3.3.2/27"}},
+                            ]}}}}})
+        with self.assertRaises(RPCError) as context:
+            self.nc.commit()
+
+        assert_that(context.exception._message, is_("Overlapping subnet is configured"))
+
+        self.cleanup(reset_interface("irb"))
+
     def test_ip_removal(self):
         self.edit({
             "interfaces": {
