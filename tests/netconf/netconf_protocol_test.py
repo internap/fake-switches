@@ -1,16 +1,16 @@
 import logging
+import re
+import sys
 import unittest
 
-import sys
-from hamcrest.core.base_matcher import BaseMatcher
-import re
-from hamcrest import assert_that, ends_with, equal_to, has_length, has_key
-from lxml.etree import _Element
-from mock import Mock
-from ncclient.xml_ import to_ele, to_xml
 from fake_switches.netconf import RUNNING, dict_2_etree
 from fake_switches.netconf.capabilities import filter_content
 from fake_switches.netconf.netconf_protocol import NetconfProtocol
+from hamcrest import assert_that, ends_with, equal_to, has_length, has_key
+from hamcrest.core.base_matcher import BaseMatcher
+from lxml.etree import _Element
+from mock import Mock
+from ncclient.xml_ import to_ele, to_xml
 
 
 class NetconfProtocolTest(unittest.TestCase):
@@ -215,6 +215,153 @@ class NetconfProtocolTest(unittest.TestCase):
         assert_that(content.xpath("//data/configuration/element"), has_length(1))
         assert_that(content.xpath("//data/configuration/element/*"), has_length(2))
         assert_that(content.xpath("//data/configuration/element/attribute/*"), has_length(1))
+
+    def test_filtering_multi_level_should_not_return_siblings(self):
+        content = dict_2_etree({
+            "data": {
+                "configuration": {
+                    "interfaces": {
+                        "interface": [
+                            {"name": "irb"},
+                            {"unit": {"name": "123"}}
+                        ]
+                    }
+                }
+            }
+        })
+
+        content_filter = dict_2_etree({
+            "filter": {
+                "configuration": {
+                    "interfaces": {
+                        "interface": {
+                            "name": "irb",
+                            "unit": {
+                                "name": "456"
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        filter_content(content, content_filter)
+
+        assert_that(content.xpath("//data/configuration/interfaces/interface/unit"), has_length(0))
+
+    def test_filtering_multi_with_intermediate_without_identification_layers(self):
+        content = dict_2_etree({
+            "data": {
+                "configuration": {
+                    "interfaces": {
+                        "interface": [
+                            {"name": "irb"},
+                            {"unit": {
+                                "name": "123",
+                                "family": {
+                                    "inet": {
+                                        "address": {
+                                            "name": "1.1.1.1/27"
+                                        }
+                                    }
+                                }
+                            }}
+                        ]
+                    }
+                }
+            }
+        })
+
+        content_filter = dict_2_etree({
+            "filter": {
+                "configuration": {
+                    "interfaces": {
+                        "interface": {
+                            "name": "irb",
+                            "unit": {
+                                "name": "123",
+                                "family": {
+                                    "inet": {
+                                        "address": {
+                                            "name": "1.1.1.1/27"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        filter_content(content, content_filter)
+
+        assert_that(content.xpath("//data/configuration/interfaces/interface/unit/family/inet/address/name"), has_length(1))
+
+    def test_filtering_multiple_identification_is_weirdly_supported(self):
+        content = dict_2_etree({
+            "data": {
+                "configuration": {
+                    "interfaces": [
+                        {"interface": [
+                            {"name": "key1"},
+                            {"name1": "key2"},
+                            {"unit": {"name": "123" }}]},
+                        {"interface": [
+                            {"name": "key1"},
+                            {"name1": "NOTKEY2"},
+                            {"unit": {"name": "123" }}]}
+                    ]
+                }
+            }
+        })
+
+        content_filter = dict_2_etree({
+            "filter": {
+                "configuration": {
+                    "interfaces": {
+                        "interface": [
+                            {"name": "key1"},
+                            {"name1": "key2"},
+                            {"unit": {"name": "123" }}
+                        ]
+                    }
+                }
+            }
+        })
+
+        filter_content(content, content_filter)
+
+        assert_that(content.xpath("//data/configuration/interfaces/interface/unit"), has_length(1))
+
+    def test_filtering_should_only_consider_non_empty_text_nodes(self):
+        content = dict_2_etree({
+            "data": {
+                "configuration": {
+                    "interfaces": {
+                        "interface": {
+                            "name": "key1"
+                        }
+                    }
+                }
+            }
+        })
+
+        content_filter = to_ele("""
+          <filter>
+            <configuration>
+                <interfaces>
+                  <interface>
+                    <name>key1</name>
+                  </interface>
+                </interfaces>
+            </configuration>
+          </filter>
+        """)
+
+        filter_content(content, content_filter)
+
+        assert_that(content.xpath("//data/configuration/interfaces/interface"), has_length(1))
 
     def say_hello(self):
         self.netconf.dataReceived(
