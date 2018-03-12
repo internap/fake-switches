@@ -68,11 +68,10 @@ class Base1_0(Capability):
 
 
 def filter_content(content, filtering):
-    valid_xpaths = list(crawl_for_leaves(filtering, base="//data"))
     valid_endpoints = []
     valid_endpoints_parents = []
-    for xpath in valid_xpaths:
-        for node in content.xpath(xpath):
+    for xpath in crawl_for_leaves(filtering, parent=""):
+        for node in content.xpath("//data" + xpath):
             valid_endpoints.append(node)
             n = node.getparent()
             while n is not None:
@@ -82,17 +81,26 @@ def filter_content(content, filtering):
     filter_by_valid_nodes(content, valid_endpoints, valid_endpoints_parents)
 
 
-def crawl_for_leaves(root, base):
-    for e in root:
-        new_base = "%s/%s" % (base, e.tag)
-        if len(e) == 0:
-            if e.text:
-                yield new_base + "[text()=\"%s\"]/.." % e.text
-            else:
-                yield new_base
+def crawl_for_leaves(root, parent):
+    element_identifiers = ["{}[text()=\"{}\"]/..".format(e.tag, e.text)
+                      for e in root if len(e) == 0 and e.text]
+
+    has_children = False
+
+    for current_element in root:
+        if _has_children(current_element):
+            has_children = True
+            for leaf in crawl_for_leaves(current_element, current_element.tag):
+                if element_identifiers:
+                    leaf = "/".join(element_identifiers) + "/" + leaf
+                yield parent + "/" + leaf
         else:
-            for leaf in crawl_for_leaves(e, new_base):
-                yield leaf
+            if not current_element.text:
+                yield parent + "/" + current_element.tag
+
+    if not has_children:
+        for identifier in element_identifiers:
+            yield parent + "/" + identifier
 
 
 def filter_by_valid_nodes(content, valid_endpoints, valid_endpoints_parents):
@@ -142,3 +150,7 @@ class NSLessValidate1_0(Validate1_0):
 class NSLessUrl1_0(Url1_0):
     def get_url(self):
         return "urn:ietf:params:netconf:capability:url:1.0?scheme=http,ftp,file"
+
+
+def _has_children(element):
+    return len(element) > 0
