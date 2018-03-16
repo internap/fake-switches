@@ -31,12 +31,20 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
     MAX_MTU = 16360
 
     def parse_vlan_members(self, port, port_attributes):
-        port.access_vlan = resolve_new_value(port_attributes, "vlan-id", port.access_vlan, transformer=int)
+        vlan_node = first(port_attributes.xpath("vlan-id"))
+        if vlan_node is not None:
+            if resolve_operation(vlan_node) == "delete":
+                port.access_vlan = None
+            else:
+                port.access_vlan = vlan_node.text
 
         for member in port_attributes.xpath("vlan-id-list"):
             if resolve_operation(member) == "delete":
-                port.trunk_vlans.remove(int(member.text))
-                if len(port.trunk_vlans) == 0:
+                if member.text:
+                    port.trunk_vlans.remove(int(member.text))
+                    if len(port.trunk_vlans) == 0:
+                        port.trunk_vlans = None
+                else:
                     port.trunk_vlans = None
             else:
                 if port.trunk_vlans is None:
