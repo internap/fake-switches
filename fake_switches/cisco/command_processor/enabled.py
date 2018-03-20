@@ -270,6 +270,8 @@ def build_running_interface(port):
         data.append(" channel-group %s mode active" % last_number(port.aggregation_membership))
     if port.vrf:
         data.append(" ip vrf forwarding %s" % port.vrf.name)
+    if port.ntp is False:
+        data.append(" ntp disable")
     if isinstance(port, VlanPort):
         if len(port.ips) > 0:
             for ip in port.ips[1:]:

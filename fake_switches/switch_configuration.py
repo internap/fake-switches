@@ -175,6 +175,7 @@ class Port(object):
         self.lldp_med_transmit_network_policy = None
         self.spanning_tree = None
         self.spanning_tree_portfast = None
+        self.ntp = None
 
     def get_subname(self, length):
         name, number = split_port_name(self.name)
