@@ -1616,6 +1616,39 @@ class JuniperMXProtocolTest(BaseJuniper):
 
         self.cleanup(reset_interface("irb"))
 
+    def test_icmp_redirects(self):
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "no-redirects": {}}}}}}})
+        self.nc.commit()
+
+        interface_vlan = self._interface_vlan("300")
+
+        assert_that(interface_vlan.xpath("family/inet/no-redirects"), has_length(1))
+
+        self.edit({
+            "interfaces": {
+                "interface": {
+                    "name": "irb",
+                    "unit": {
+                        "name": "300",
+                        "family": {
+                            "inet": {
+                                "no-redirects": {XML_ATTRIBUTES: {"operation": "delete"}}}}}}}})
+        self.nc.commit()
+
+        interface_vlan = self._interface_vlan("300")
+
+        assert_that(interface_vlan.xpath("family/inet/no-redirects"), has_length(0))
+
+        self.cleanup(reset_interface("irb"))
+
     def _interface(self, name):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": name}}}}
