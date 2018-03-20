@@ -98,6 +98,12 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
 
             inet = first(unit_node.xpath("family/inet".format(self.ETHERNET_SWITCHING_TAG)))
             if inet is not None:
+                if first(inet.xpath("no-redirects")) is not None:
+                    if resolve_operation(first(inet.xpath("no-redirects"))) == "delete":
+                        port.ip_redirect = True
+                    else:
+                        port.ip_redirect = False
+
                 for address in inet.xpath("address/name/.."):
                     ip = IPNetwork(val(address, "name"))
                     if resolve_operation(address) == "delete":
@@ -200,9 +206,16 @@ class JuniperMxNetconfDatastore(JuniperQfxCopperNetconfDatastore):
                 "name": vlan_port.vendor_specific["irb-unit"]
             }
 
+            inet = []
             if vlan_port.ips:
+                inet.extend([{"address": self._address_etree(ip, vlan_port)} for ip in vlan_port.ips])
+
+            if vlan_port.ip_redirect is False:
+                inet.append({"no-redirects": {}})
+
+            if inet:
                 unit["family"] = {
-                    "inet": [{"address": self._address_etree(ip, vlan_port)} for ip in vlan_port.ips]
+                    "inet": inet
                 }
 
             units.append({"unit": unit})
