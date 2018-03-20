@@ -288,6 +288,54 @@ class JuniperMXProtocolTest(BaseJuniper):
 
         self.cleanup(vlan("VLAN2995"), reset_interface("xe-0/0/3"))
 
+    def test_set_trunk_mode_access_mode_vlan_removal(self):
+        self.edit({
+            "bridge-domains": {
+                "domain": [
+                    {"name": "VLAN2995"},
+                    {"vlan-id": "2995"}]},
+            "interfaces": {
+                "interface": [
+                    {"name": "xe-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "bridge": {
+                                "interface-mode": "access",
+                                "vlan-id": "2995"}}}]}]}})
+        self.nc.commit()
+
+        self.edit({
+            "bridge-domains": {
+                "domain": [
+                    {"name": "VLAN2995"},
+                    {"vlan-id": "2995"}]},
+            "interfaces": {
+                "interface": [
+                    {"name": "xe-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "bridge": {
+                                "interface-mode": "trunk",
+                                "vlan-id": {XML_ATTRIBUTES: {"operation": "delete"}},
+                                "vlan-id-list": "2997"}
+                        }}]}]}})
+        self.nc.commit()
+
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "xe-0/0/3"}}}}
+        }))
+
+        int003 = result.xpath("data/configuration/interfaces/interface")[0]
+
+        assert_that(int003.xpath("unit/family/bridge/*"), has_length(2))
+        assert_that(int003.xpath("unit/family/bridge/vlan-id"), has_length(0))
+        assert_that(int003.xpath("unit/family/bridge/interface-mode")[0].text, equal_to("trunk"))
+        assert_that(int003.xpath("unit/family/bridge/vlan-id-list")[0].text, equal_to("2997"))
+
+        self.cleanup(vlan("VLAN2995"), reset_interface("xe-0/0/3"))
+
     def test_trunk_mode_does_not_allow_no_vlan_members(self):
         self.edit({
             "bridge-domains": [
@@ -412,6 +460,55 @@ class JuniperMXProtocolTest(BaseJuniper):
             "configuration": {"bridge-domains": {}}}
         }))
         assert_that(result.xpath("data/configuration/bridge-domains/domain"), has_length(0))
+
+    def test_trunk_mode_delete_all_vlan(self):
+        self.edit({
+            "bridge-domains": [
+                {"domain": [
+                    {"name": "VLAN2995"},
+                    {"vlan-id": "2995"}]},
+                {"domain": [
+                    {"name": "VLAN2996"},
+                    {"vlan-id": "2996"}]},
+                {"domain": [
+                    {"name": "VLAN2997"},
+                    {"vlan-id": "2997"}]},
+            ],
+            "interfaces": {
+                "interface": [
+                    {"name": "xe-0/0/3"},
+                    {"native-vlan-id": "2996"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "bridge": [
+                                {"interface-mode": "trunk"},
+                                {"vlan-id-list": "2995"},
+                                {"vlan-id-list": "2997"}
+                            ]}}]}]}})
+        self.nc.commit()
+
+        self.edit({
+            "interfaces": {
+                "interface": [
+                    {"name": "xe-0/0/3"},
+                    {"unit": [
+                        {"name": "0"},
+                        {"family": {
+                            "bridge": [{
+                                "vlan-id-list": {XML_ATTRIBUTES: {"operation": "delete"}}},
+                                {"vlan-id-list": "2996"}]
+                                }}]}]}})
+        self.nc.commit()
+        result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "xe-0/0/3"}}}}
+        }))
+        int003 = result.xpath("data/configuration/interfaces/interface")[0]
+        assert_that(int003.xpath("unit/family/bridge/vlan-id-list"), has_length(1))
+        assert_that(int003.xpath("unit/family/bridge/vlan-id-list")[0].text, equal_to("2996"))
+
+        self.cleanup(vlan("VLAN2995"), vlan("VLAN2996"), vlan("VLAN2997"),
+                     reset_interface("xe-0/0/3"))
 
     def test_interface_trunk_native_vlan_merge(self):
         self.edit({
