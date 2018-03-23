@@ -207,6 +207,14 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
         else:
             self._handle_no_standby_group(command, *args)
 
+    def do_ntp(self, *args):
+        if args[0] == "disable":
+            self.port.ntp = False
+
+    def do_no_ntp(self, *args):
+        if args[0] == "disable":
+            self.port.ntp = None
+
     def do_exit(self):
         self.is_done = True
 
