@@ -1506,6 +1506,23 @@ class TestCiscoSwitchProtocol(ProtocolTest):
         configuring(t, do="no interface vlan 2999")
         remove_vlan(t, "2999")
 
+    @with_protocol
+    def test_disable_ntp(self, t):
+        enable(t)
+
+        configuring_interface(t, "FastEthernet 0/3", do="ntp disable")
+
+        assert_interface_configuration(t, "FastEthernet0/3", [
+            "interface FastEthernet0/3",
+            " ntp disable",
+            "end"])
+
+        configuring_interface(t, "FastEthernet 0/3", do="no ntp disable")
+
+        assert_interface_configuration(t, "FastEthernet0/3", [
+            "interface FastEthernet0/3",
+            "end"])
+
 
 class TestCiscoSwitchProtocolSSH(TestCiscoSwitchProtocol):
     __test__ = True
