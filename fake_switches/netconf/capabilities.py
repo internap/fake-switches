@@ -61,7 +61,10 @@ class Base1_0(Capability):
 
         return Response(etree.Element("ok"))
 
-    def commit(self, _):
+    def commit_configuration(self, *args, **kwargs):
+        return self.commit(*args, **kwargs)
+
+    def commit(self, *args, **kwargs):
         self.datastore.commit_candidate()
         self.datastore.configurations.get('candidate').commit()
         return Response(etree.Element("ok"))

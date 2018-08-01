@@ -3,14 +3,15 @@ import re
 import sys
 import unittest
 
-from fake_switches.netconf import RUNNING, dict_2_etree
-from fake_switches.netconf.capabilities import filter_content
-from fake_switches.netconf.netconf_protocol import NetconfProtocol
 from hamcrest import assert_that, ends_with, equal_to, has_length, has_key
 from hamcrest.core.base_matcher import BaseMatcher
 from lxml.etree import _Element
 from mock import Mock
 from ncclient.xml_ import to_ele, to_xml
+
+from fake_switches.netconf import RUNNING, dict_2_etree
+from fake_switches.netconf.capabilities import filter_content
+from fake_switches.netconf.netconf_protocol import NetconfProtocol
 
 
 class NetconfProtocolTest(unittest.TestCase):
@@ -115,8 +116,7 @@ class NetconfProtocolTest(unittest.TestCase):
         self.assert_xml_response("""
             <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="urn:uuid:346c9f18-c420-11e4-8e4c-fa163ecd3b0a">
                 <ok/>
-            </rpc-reply>
-            """)
+            </rpc-reply>""")
 
     def test_reply_includes_additional_namespaces(self):
         self.netconf.additionnal_namespaces = {
@@ -134,13 +134,10 @@ class NetconfProtocolTest(unittest.TestCase):
             </nc:rpc>
             ]]>]]>""")
 
-        assert_that(self.netconf.transport.write.call_args[0][0].decode(), xml_equals_to("""
+        self.assert_xml_response("""
             <rpc-reply xmlns:junos="http://xml.juniper.net/junos/11.4R1/junos" xmlns:nc="urn:ietf:params:xml:ns:netconf:base:1.0" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="67890">
               <data/>
-            </rpc-reply>
-            ]]>]]>
-            """
-                                                                                ))
+            </rpc-reply>""")
 
     def test_filtering(self):
         content = dict_2_etree({
