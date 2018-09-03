@@ -85,12 +85,14 @@ $ docker run -P -d -e SWITCH_MODEL="another_model" internap/fake-switches
 Supported parameters
 --------------------
 
-- SWITCH_MODEL, defaults to _cisco_generic_
-- SWITCH_HOSTNAME, defaults to _switch_
-- SWITCH_USER, defaults to _root_
-- SWITCH_PASS, defaults to _root_
-- LISTEN_HOST, defaults to _0.0.0.0_
-- LISTEN_PORT, defaults to _22_
+| Name              | Default value     |
+| ----------------- | ----------------- |
+| SWITCH_MODEL 		| cisco_generic 	|
+| SWITCH_HOSTNAME 	| switch 			|
+| SWITCH_USERNAME 	| root 				|
+| SWITCH_PASSWORD 	| root 				|
+| LISTEN_HOST 		| 0.0.0.0 			|
+| LISTEN_PORT 		| 22 				|
 
 
 Building image from source
