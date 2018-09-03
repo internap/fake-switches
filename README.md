@@ -87,8 +87,8 @@ Supported parameters
 
 - SWITCH_MODEL, defaults to _cisco_generic_
 - SWITCH_HOSTNAME, defaults to _switch_
-- SWITCH_USER, defaults to _root_
-- SWITCH_PASS, defaults to _root_
+- SWITCH_USERNAME, defaults to _root_
+- SWITCH_PASSWORD, defaults to _root_
 - LISTEN_HOST, defaults to _0.0.0.0_
 - LISTEN_PORT, defaults to _22_
 
