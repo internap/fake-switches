@@ -9,3 +9,6 @@ class SwitchCore(object):
     @staticmethod
     def get_default_ports():
         raise NotImplementedError()
+
+    def get_netconf_protocol(self):
+        raise NotImplementedError()

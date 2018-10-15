@@ -1,4 +1,5 @@
 from fake_switches import switch_configuration
+from fake_switches.arista import arista_core
 from fake_switches.brocade import brocade_core
 from fake_switches.cisco import cisco_core
 from fake_switches.cisco6500 import cisco_core as cisco6500_core
@@ -9,6 +10,7 @@ from fake_switches.juniper_mx import juniper_mx_core
 from fake_switches.juniper_qfx_copper import juniper_qfx_copper_core
 
 DEFAULT_MAPPING = {
+    'arista_generic': arista_core.AristaSwitchCore,
     'brocade_generic': brocade_core.BrocadeSwitchCore,
     'cisco_generic': cisco_core.CiscoSwitchCore,
     'cisco_6500': cisco6500_core.Cisco6500SwitchCore,
