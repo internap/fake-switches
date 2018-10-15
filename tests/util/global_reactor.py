@@ -22,6 +22,12 @@ from tests.util import _juniper_ports_with_less_ae, _unique_port
 COMMIT_DELAY = 1
 
 TEST_SWITCHES = {
+    "arista": {
+        "model": "arista_generic",
+        "hostname": "my_arista",
+        "ssh": _unique_port(),
+        "extra": {},
+    },
     "brocade": {
         "model": "brocade_generic",
         "hostname": "my_switch",
