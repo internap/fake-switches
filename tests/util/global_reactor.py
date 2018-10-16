@@ -15,6 +15,7 @@
 import threading
 
 from fake_switches.switch_factory import SwitchFactory
+from fake_switches.transports.http_service import SwitchHttpService
 from fake_switches.transports.ssh_service import SwitchSshService
 from fake_switches.transports.telnet_service import SwitchTelnetService
 from tests.util import _juniper_ports_with_less_ae, _unique_port
@@ -26,6 +27,7 @@ TEST_SWITCHES = {
         "model": "arista_generic",
         "hostname": "my_arista",
         "ssh": _unique_port(),
+        "http": _unique_port(),
         "extra": {},
     },
     "brocade": {
@@ -168,6 +170,12 @@ class ThreadedReactor(threading.Thread):
                                  switch_core=switch_core,
                                  users={'root': b'root'}
                                  ).hook_to_reactor(cls._threaded_reactor.reactor)
+            if "http" in conf:
+                SwitchHttpService("127.0.0.1",
+                                  port=conf["http"],
+                                  switch_core=switch_core,
+                                  users={'root': b'root'}
+                                  ).hook_to_reactor(cls._threaded_reactor.reactor)
 
             cls._threaded_reactor.switches[name] = switch_core
 
