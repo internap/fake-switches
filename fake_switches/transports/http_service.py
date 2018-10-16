@@ -12,20 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 
-class SwitchCore(object):
-    def __init__(self, switch_configuration):
-        self.switch_configuration = switch_configuration
+from twisted.web.server import Site
 
-    def launch(self, protocol, terminal_controller):
-        raise NotImplementedError()
+from fake_switches.transports.base_transport import BaseTransport
 
-    @staticmethod
-    def get_default_ports():
-        raise NotImplementedError()
 
-    def get_netconf_protocol(self):
-        raise NotImplementedError()
+class SwitchHttpService(BaseTransport):
+    def hook_to_reactor(self, reactor):
+        site = Site(self.switch_core.get_http_resource())
 
-    def get_http_resource(self):
-        raise NotImplementedError()
+        lport = reactor.listenTCP(port=self.port, factory=site, interface=self.ip)
+        logging.info(lport)
+        logging.info("{} (HTTP): Registered on {} tcp/{}"
+                     .format(self.switch_core.switch_configuration.name, self.ip, self.port))
