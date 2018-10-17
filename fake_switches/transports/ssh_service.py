@@ -13,15 +13,15 @@
 # limitations under the License.
 
 import logging
-import warnings
 
-from twisted.cred import portal, checkers
 from twisted.conch import avatar, interfaces as conchinterfaces
-from twisted.conch.ssh import factory, keys, session
 from twisted.conch.insults import insults
+from twisted.conch.ssh import factory, keys, session
+from twisted.cred import portal, checkers
 from zope.interface import implementer
 
 from fake_switches.terminal.ssh import SwitchSSHShell
+from fake_switches.transports.base_transport import BaseTransport
 
 
 @implementer(conchinterfaces.ISession)
@@ -30,7 +30,7 @@ class SSHDemoAvatar(avatar.ConchUser):
         avatar.ConchUser.__init__(self)
         self.username = username
         self.switch_core = switch_core
-        self.channelLookup.update({b'session':session.SSHSession})
+        self.channelLookup.update({b'session': session.SSHSession})
 
         netconf_protocol = switch_core.get_netconf_protocol()
         if netconf_protocol:
@@ -61,7 +61,6 @@ class SSHDemoAvatar(avatar.ConchUser):
 class SSHDemoRealm:
     def __init__(self, switch_core):
         self.switch_core = switch_core
-
 
     def requestAvatar(self, avatarId, mind, *interfaces):
         if conchinterfaces.IConchUser in interfaces:
@@ -103,15 +102,7 @@ Jk9Gg4yPCL/ZKyIEQzqtkBUyK2P5x1OP32tcC9CxHZlXJLJdhtuQTw==
     return host_public_key, host_private_key
 
 
-class SwitchSshService(object):
-    def __init__(self, ip, ssh_port=22, switch_core=None, users=None, **_):
-        warnings.warn("Please use transports.ssh_service", DeprecationWarning)
-
-        self.ip = ip
-        self.port = ssh_port
-        self.switch_core = switch_core
-        self.users = users
-
+class SwitchSshService(BaseTransport):
     def hook_to_reactor(self, reactor):
         ssh_factory = factory.SSHFactory()
         ssh_factory.portal = portal.Portal(SSHDemoRealm(self.switch_core))
@@ -128,5 +119,6 @@ class SwitchSshService(object):
 
         lport = reactor.listenTCP(port=self.port, factory=ssh_factory, interface=self.ip)
         logging.info(lport)
-        logging.info("%s (SSH): Registered on %s tcp/%s" % (self.switch_core.switch_configuration.name, self.ip, self.port))
+        logging.info(
+            "%s (SSH): Registered on %s tcp/%s" % (self.switch_core.switch_configuration.name, self.ip, self.port))
         return lport
