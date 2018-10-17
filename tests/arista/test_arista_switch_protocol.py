@@ -125,6 +125,15 @@ class TestAristaSwitchProtocol(ProtocolTest):
         remove_vlan(t, "2222")
         remove_vlan(t, "3333")
 
+    @with_protocol
+    def test_show_vlan_without_enable(self, t):
+        t.write("show vlan")
+        t.readln("VLAN  Name                             Status    Ports")
+        t.readln("----- -------------------------------- --------- -------------------------------")
+        t.readln("1     default                          active")
+        t.readln("")
+        t.read("my_arista>")
+
 
 class TestAristaSwitchProtocolSSH(TestAristaSwitchProtocol):
     __test__ = True
