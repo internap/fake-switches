@@ -14,9 +14,9 @@
 
 import threading
 
-from fake_switches.ssh_service import SwitchSshService
 from fake_switches.switch_factory import SwitchFactory
-from fake_switches.telnet_service import SwitchTelnetService
+from fake_switches.transports.ssh_service import SwitchSshService
+from fake_switches.transports.telnet_service import SwitchTelnetService
 from tests.util import _juniper_ports_with_less_ae, _unique_port
 
 COMMIT_DELAY = 1
@@ -158,13 +158,13 @@ class ThreadedReactor(threading.Thread):
             switch_core = switch_factory.get(conf["model"], hostname=conf["hostname"], **conf["extra"] or {})
             if "telnet" in conf:
                 SwitchTelnetService("127.0.0.1",
-                                    telnet_port=conf["telnet"],
+                                    port=conf["telnet"],
                                     switch_core=switch_core,
                                     users={'root': b'root'}
                                     ).hook_to_reactor(cls._threaded_reactor.reactor)
             if "ssh" in conf:
                 SwitchSshService("127.0.0.1",
-                                 ssh_port=conf["ssh"],
+                                 port=conf["ssh"],
                                  switch_core=switch_core,
                                  users={'root': b'root'}
                                  ).hook_to_reactor(cls._threaded_reactor.reactor)
