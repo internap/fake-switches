@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import logging
-import warnings
 
 from twisted.internet.protocol import Factory
 
 from fake_switches.terminal.telnet import SwitchTelnetShell
+from fake_switches.transports.base_transport import BaseTransport
 
 
 class SwitchTelnetFactory(Factory):
@@ -28,14 +28,7 @@ class SwitchTelnetFactory(Factory):
         return SwitchTelnetShell(self.switch_core)
 
 
-class SwitchTelnetService(object):
-    def __init__(self, ip, telnet_port=23, switch_core=None, **_):
-        warnings.warn("Please use transports.telnet_service", DeprecationWarning)
-
-        self.ip = ip
-        self.port = telnet_port
-        self.switch_core = switch_core
-
+class SwitchTelnetService(BaseTransport):
     def hook_to_reactor(self, reactor):
         factory = SwitchTelnetFactory(self.switch_core)
         port = reactor.listenTCP(port=self.port, factory=factory, interface=self.ip)

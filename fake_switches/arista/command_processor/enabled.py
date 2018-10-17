@@ -44,12 +44,34 @@ class EnabledCommandProcessor(BaseCommandProcessor):
             for vlan in sorted(vlans, key=lambda v: v.number):
                 self.write_line("{: <5} {: <32} active".format(vlan.number, vlan_display_name(vlan)))
             self.write_line("")
+        elif "running-config".startswith(args[0]):
+            self._show_running_config()
 
     def do_exit(self):
         self.is_done = True
 
     def do_terminal(self, *_):
         self.write("Pagination disabled.")
+
+    def _show_running_config(self):
+        self._show_header()
+        self._show_vlans(sorted(self.switch_configuration.vlans, key=lambda v: v.number))
+        self.write_line("end")
+
+    def _show_header(self):
+        self.write_line("! Command: show running-config all")
+        self.write_line("! device: {} (vEOS, EOS-4.20.8M)".format(self.switch_configuration.name))
+        self.write_line("!")
+        self.write_line("! boot system flash:/vEOS-lab.swi")
+        self.write_line("!")
+
+    def _show_vlans(self, vlans):
+        for vlan in vlans:
+            self.write_line("vlan {}".format(vlan.number))
+            self.write_line("   name {}".format(vlan_display_name(vlan)))
+            self.write_line("   mac address learning")
+            self.write_line("   state active")
+            self.write_line("!")
 
 
 def vlan_name(vlan):
