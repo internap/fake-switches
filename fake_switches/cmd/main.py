@@ -3,7 +3,7 @@ import logging
 
 
 from fake_switches import switch_factory
-from fake_switches.ssh_service import SwitchSshService
+from fake_switches.transports.ssh_service import SwitchSshService
 from twisted.internet import reactor
 
 
@@ -12,6 +12,7 @@ logger = logging.getLogger()
 
 # NOTE(mmitchell): This is necessary because some imports will initialize the root logger.
 logger.setLevel('DEBUG')
+
 
 def main():
     parser = argparse.ArgumentParser(description='Fake-switch simulator launcher',
@@ -32,11 +33,10 @@ def main():
 
     ssh_service = SwitchSshService(
         ip=args.listen_host,
-        ssh_port=args.listen_port,
+        port=args.listen_port,
         switch_core=switch_core,
         users={args.username: args.password})
     ssh_service.hook_to_reactor(reactor)
 
     logger.info('Starting reactor')
     reactor.run()
-

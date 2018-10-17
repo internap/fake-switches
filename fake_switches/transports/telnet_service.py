@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import warnings
+import logging
 
 from twisted.internet.protocol import Factory
 
-from fake_switches import transports
 from fake_switches.terminal.telnet import SwitchTelnetShell
+from fake_switches.transports.base_transport import BaseTransport
 
-
-warnings.warn("Please use transports.telnet_service", DeprecationWarning)
 
 class SwitchTelnetFactory(Factory):
     def __init__(self, switch_core):
@@ -30,7 +28,10 @@ class SwitchTelnetFactory(Factory):
         return SwitchTelnetShell(self.switch_core)
 
 
-class SwitchTelnetService(transports.SwitchTelnetService):
-    def __init__(self, ip, telnet_port=23, switch_core=None, **_):
-        warnings.warn("Please use transports.telnet_service", DeprecationWarning)
-        super(SwitchTelnetService, self).__init__(ip=ip, port=telnet_port, switch_core=switch_core)
+class SwitchTelnetService(BaseTransport):
+    def hook_to_reactor(self, reactor):
+        factory = SwitchTelnetFactory(self.switch_core)
+        port = reactor.listenTCP(port=self.port, factory=factory, interface=self.ip)
+        logging.info("{} (TELNET): Registered on {} tcp/{}".format(
+            self.switch_core.switch_configuration.name, self.ip, self.port))
+        return port
