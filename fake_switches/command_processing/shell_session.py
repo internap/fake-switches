@@ -1,4 +1,4 @@
-# Copyright 2015 Internap.
+# Copyright 2018 Inap.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
 # limitations under the License.
 
 
-
 class ShellSession(object):
     def __init__(self, command_processor):
         self.command_processor = command_processor
@@ -22,7 +21,12 @@ class ShellSession(object):
 
     def receive(self, line):
         self.command_processor.logger.debug("received: %s" % line)
-        if not self.command_processor.process_command(line):
+        try:
+            processed = self.command_processor.process_command(line)
+        except TerminalExitSignal:
+            return False
+
+        if not processed:
             self.command_processor.logger.info("Command not supported : %s" % line)
 
             self.handle_unknown_command(line)
@@ -34,3 +38,6 @@ class ShellSession(object):
     def handle_unknown_command(self, line):
         pass
 
+
+class TerminalExitSignal(Exception):
+    pass
