@@ -14,10 +14,13 @@
 
 import logging
 
+from twisted.web import resource
+
 from fake_switches.arista.command_processor.config import ConfigCommandProcessor
 from fake_switches.arista.command_processor.config_vlan import ConfigVlanCommandProcessor
 from fake_switches.arista.command_processor.default import DefaultCommandProcessor
 from fake_switches.arista.command_processor.enabled import EnabledCommandProcessor
+from fake_switches.arista.eapi import EAPI
 from fake_switches.command_processing.piping_processor_base import NotPipingProcessor
 from fake_switches.command_processing.shell_session import ShellSession
 from fake_switches.switch_core import SwitchCore
@@ -61,6 +64,15 @@ class AristaSwitchCore(SwitchCore):
 
     def get_netconf_protocol(self):
         return None
+
+    def get_http_resource(self):
+        root = resource.Resource()
+        root.putChild(b'command-api', EAPI(
+            switch_configuration=self.switch_configuration,
+            command_processor=DefaultCommandProcessor(self.new_command_processor()),
+            logger=logging.getLogger("fake_switches.arista.{}.eapi".format(self.switch_configuration.name))
+        ))
+        return root
 
 
 class AristaShellSession(ShellSession):

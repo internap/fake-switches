@@ -113,7 +113,7 @@ custom classes that can act upon resources changes. For example :
 
 from twisted.internet import reactor
 from fake_switches.switch_configuration import SwitchConfiguration, Port
-from fake_switches.ssh_service import SwitchSshService
+from fake_switches.transports.ssh_service import SwitchSshService
 from fake_switches.cisco.cisco_core import CiscoSwitchCore
 
 class MySwitchConfiguration(SwitchConfiguration):
