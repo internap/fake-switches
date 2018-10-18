@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from fake_switches.arista.command_processor import vlan_display_name
+from fake_switches.arista.command_processor.default import DefaultCommandProcessor
 
-from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 
-
-class EnabledCommandProcessor(BaseCommandProcessor):
-    def __init__(self, config):
-        super(EnabledCommandProcessor, self).__init__()
+class EnabledCommandProcessor(DefaultCommandProcessor):
+    def __init__(self, display_class, config):
+        super(EnabledCommandProcessor, self).__init__(display_class, enabled=None)
         self.config_processor = config
 
     def get_prompt(self):
@@ -30,31 +30,30 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         self.move_to(self.config_processor)
 
     def do_show(self, *args):
-        if "vlan".startswith(args[0]):
-            if len(args) == 2:
-                vlans = list(filter(lambda e: e.number == int(args[1]), self.switch_configuration.vlans))
-                if len(vlans) == 0:
-                    self.write_line("% VLAN {} not found in current VLAN database".format(args[1]))
-                    return
-            else:
-                vlans = self.switch_configuration.vlans
-
-            self.write_line("VLAN  Name                             Status    Ports")
-            self.write_line("----- -------------------------------- --------- -------------------------------")
-            for vlan in sorted(vlans, key=lambda v: v.number):
-                self.write_line("{: <5} {: <32} active".format(vlan.number, vlan_display_name(vlan)))
-            self.write_line("")
-
-    def do_exit(self):
-        self.is_done = True
+        if "running-config".startswith(args[0]):
+            self._show_running_config()
+        else:
+            super(EnabledCommandProcessor, self).do_show(*args)
 
     def do_terminal(self, *_):
         self.write("Pagination disabled.")
 
+    def _show_running_config(self):
+        self._show_header()
+        self._show_vlans(sorted(self.switch_configuration.vlans, key=lambda v: v.number))
+        self.write_line("end")
 
-def vlan_name(vlan):
-    return vlan.name or ("default" if vlan.number == 1 else None)
+    def _show_header(self):
+        self.write_line("! Command: show running-config all")
+        self.write_line("! device: {} (vEOS, EOS-4.20.8M)".format(self.switch_configuration.name))
+        self.write_line("!")
+        self.write_line("! boot system flash:/vEOS-lab.swi")
+        self.write_line("!")
 
-
-def vlan_display_name(vlan):
-    return vlan_name(vlan) or "VLAN{:04d}".format(vlan.number)
+    def _show_vlans(self, vlans):
+        for vlan in vlans:
+            self.write_line("vlan {}".format(vlan.number))
+            self.write_line("   name {}".format(vlan_display_name(vlan)))
+            self.write_line("   mac address learning")
+            self.write_line("   state active")
+            self.write_line("!")

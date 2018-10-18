@@ -14,10 +14,14 @@
 
 import logging
 
+from twisted.web import resource
+
 from fake_switches.arista.command_processor.config import ConfigCommandProcessor
 from fake_switches.arista.command_processor.config_vlan import ConfigVlanCommandProcessor
 from fake_switches.arista.command_processor.default import DefaultCommandProcessor
+from fake_switches.arista.command_processor.terminal_display import TerminalDisplay
 from fake_switches.arista.command_processor.enabled import EnabledCommandProcessor
+from fake_switches.arista.eapi import EAPI
 from fake_switches.command_processing.piping_processor_base import NotPipingProcessor
 from fake_switches.command_processing.shell_session import ShellSession
 from fake_switches.switch_core import SwitchCore
@@ -39,7 +43,7 @@ class AristaSwitchCore(SwitchCore):
         self.logger = logging.getLogger("fake_switches.arista.{}.{}.{}"
                                         .format(self.switch_configuration.name, self.last_connection_id, protocol))
 
-        processor = DefaultCommandProcessor(self.new_command_processor())
+        processor = self.processor_stack(display_class=TerminalDisplay)
 
         processor.init(self.switch_configuration,
                        LoggingTerminalController(self.logger, terminal_controller),
@@ -52,15 +56,28 @@ class AristaSwitchCore(SwitchCore):
     def get_default_ports():
         return []
 
-    def new_command_processor(self):
-        return EnabledCommandProcessor(
-            config=ConfigCommandProcessor(
-                config_vlan=ConfigVlanCommandProcessor()
+    def processor_stack(self, display_class):
+        common = (display_class,)
+
+        return DefaultCommandProcessor(
+            *common, enabled=EnabledCommandProcessor(
+                *common, config=ConfigCommandProcessor(
+                    *common, config_vlan=ConfigVlanCommandProcessor(*common)
+                )
             )
         )
 
     def get_netconf_protocol(self):
         return None
+
+    def get_http_resource(self):
+        root = resource.Resource()
+        root.putChild(b'command-api', EAPI(
+            switch_configuration=self.switch_configuration,
+            processor_stack_factory=self.processor_stack,
+            logger=logging.getLogger("fake_switches.arista.{}.eapi".format(self.switch_configuration.name))
+        ))
+        return root
 
 
 class AristaShellSession(ShellSession):

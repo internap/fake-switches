@@ -10,14 +10,12 @@ asn1crypto==0.24.0        # via cryptography
 cffi==1.11.5              # via cryptography
 constantly==15.1.0        # via twisted
 cryptography==2.3.1       # via twisted
-enum34==1.1.6             # via cryptography
 idna==2.7                 # via cryptography
 incremental==17.5.0       # via twisted
-ipaddress==1.0.22         # via cryptography
-lxml==4.2.4
+lxml==4.2.5
 netaddr==0.7.19
 pyasn1==0.4.4             # via twisted
-pycparser==2.18           # via cffi
+pycparser==2.19           # via cffi
 six==1.11.0               # via cryptography
 twisted[conch]==16.6.0
 zope.interface==4.5.0     # via twisted

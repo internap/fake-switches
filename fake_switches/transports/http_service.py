@@ -11,17 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
+
+import logging
+
+from twisted.web.server import Site
+
+from fake_switches.transports.base_transport import BaseTransport
 
 
-class AristaBaseCommandProcessor(BaseCommandProcessor):
-    def __init__(self, display_class):
-        self.display = display_class(self)
+class SwitchHttpService(BaseTransport):
+    def hook_to_reactor(self, reactor):
+        site = Site(self.switch_core.get_http_resource())
 
-
-def vlan_name(vlan):
-    return vlan.name or ("default" if vlan.number == 1 else None)
-
-
-def vlan_display_name(vlan):
-    return vlan_name(vlan) or "VLAN{:04d}".format(vlan.number)
+        lport = reactor.listenTCP(port=self.port, factory=site, interface=self.ip)
+        logging.info(lport)
+        logging.info("{} (HTTP): Registered on {} tcp/{}"
+                     .format(self.switch_core.switch_configuration.name, self.ip, self.port))
