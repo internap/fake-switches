@@ -11,14 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from fake_switches.arista.command_processor import vlan_display_name
-from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
+from fake_switches.arista.command_processor import vlan_display_name, AristaBaseCommandProcessor
 from fake_switches.command_processing.shell_session import TerminalExitSignal
 
 
-class DefaultCommandProcessor(BaseCommandProcessor):
-    def __init__(self, enabled):
-        super(DefaultCommandProcessor, self).__init__()
+class DefaultCommandProcessor(AristaBaseCommandProcessor):
+    def __init__(self, display_class, enabled):
+        super(DefaultCommandProcessor, self).__init__(display_class)
         self.enabled_processor = enabled
 
     def get_prompt(self):
@@ -35,13 +34,22 @@ class DefaultCommandProcessor(BaseCommandProcessor):
             if len(args) == 2:
                 vlans = list(filter(lambda e: e.number == int(args[1]), self.switch_configuration.vlans))
                 if len(vlans) == 0:
-                    self.write_line("% VLAN {} not found in current VLAN database".format(args[1]))
+                    self.display.error("VLAN {} not found in current VLAN database".format(args[1]))
                     return
             else:
                 vlans = self.switch_configuration.vlans
 
-            self.write_line("VLAN  Name                             Status    Ports")
-            self.write_line("----- -------------------------------- --------- -------------------------------")
-            for vlan in sorted(vlans, key=lambda v: v.number):
-                self.write_line("{: <5} {: <32} active".format(vlan.number, vlan_display_name(vlan)))
-            self.write_line("")
+            self.display.show_vlans(_to_vlans_json(vlans))
+
+
+def _to_vlans_json(vlans):
+    return {
+        "vlans": {
+            str(vlan.number): {
+                "dynamic": False,
+                "interfaces": {},
+                "name": vlan_display_name(vlan),
+                "status": "active"
+            } for vlan in vlans
+        }
+    }
