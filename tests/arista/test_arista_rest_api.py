@@ -15,6 +15,7 @@ import unittest
 
 import pyeapi
 from hamcrest import assert_that, is_
+from pyeapi.api.vlans import Vlans
 from pyeapi.eapilib import CommandError
 
 from tests.util.global_reactor import TEST_SWITCHES
@@ -85,6 +86,13 @@ class TestAristaRestApi(unittest.TestCase):
             "Error [1002]: CLI command 1 of 1 'show vlan shizzle' failed: invalid command "
             "[Invalid input]"
         ))
+
+    def test_add_and_remove_vlan(self):
+        result = Vlans(self.node).configure_vlan("737", ["name wwaaat!"])
+        assert_that(result, is_(True))
+
+        result = Vlans(self.node).delete("737")
+        assert_that(result, is_(True))
 
 
 class AnyId(object):

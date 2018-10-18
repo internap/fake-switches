@@ -122,7 +122,7 @@ class JsonDriver(object):
     display_class = JsonDisplay
 
     def format_output(self, command_processor):
-        obj = command_processor.display.display_object
+        obj = command_processor.display.display_object or {}
         obj['sourceDetail'] = ''
         return obj
 
