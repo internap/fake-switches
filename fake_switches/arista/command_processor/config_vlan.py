@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from fake_switches.arista.command_processor import AristaBaseCommandProcessor
 
-from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 
-
-class ConfigVlanCommandProcessor(BaseCommandProcessor):
+class ConfigVlanCommandProcessor(AristaBaseCommandProcessor):
     def init(self, switch_configuration, terminal_controller, logger, piping_processor, *args):
-        super(ConfigVlanCommandProcessor, self).init(switch_configuration, terminal_controller, logger, piping_processor)
+        super(ConfigVlanCommandProcessor, self).init(switch_configuration, terminal_controller, logger,
+                                                     piping_processor)
         self.vlan = args[0]
 
     def get_prompt(self):
