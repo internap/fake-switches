@@ -11,15 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from fake_switches.arista.command_processor import AristaBaseCommandProcessor
 
-from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 
-
-class ConfigCommandProcessor(BaseCommandProcessor):
+class ConfigCommandProcessor(AristaBaseCommandProcessor):
     interface_separator = ""
 
-    def __init__(self, config_vlan):
-        super(ConfigCommandProcessor, self).__init__()
+    def __init__(self, display_class, config_vlan):
+        super(ConfigCommandProcessor, self).__init__(display_class)
         self.config_vlan_processor = config_vlan
 
     def get_prompt(self):
@@ -29,13 +28,13 @@ class ConfigCommandProcessor(BaseCommandProcessor):
         try:
             number = int(raw_number)
         except ValueError:
-            self.write_line("% Invalid input")
+            self.display.error("Invalid input")
             return
 
         if number < 0 or number > 4094:
-            self.write_line("% Invalid input")
+            self.display.error("Invalid input")
         elif number == 0:
-            self.write_line("% Incomplete command")
+            self.display.error("Incomplete command")
         else:
             vlan = self.switch_configuration.get_vlan(number)
             if not vlan:

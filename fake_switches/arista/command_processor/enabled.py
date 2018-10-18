@@ -16,8 +16,8 @@ from fake_switches.arista.command_processor.default import DefaultCommandProcess
 
 
 class EnabledCommandProcessor(DefaultCommandProcessor):
-    def __init__(self, config):
-        super(EnabledCommandProcessor, self).__init__(enabled=None)
+    def __init__(self, display_class, config):
+        super(EnabledCommandProcessor, self).__init__(display_class, enabled=None)
         self.config_processor = config
 
     def get_prompt(self):
