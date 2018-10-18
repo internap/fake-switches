@@ -20,13 +20,16 @@ from tests.util.global_reactor import TEST_SWITCHES
 
 
 class TestAristaRestApi(unittest.TestCase):
+    switch_name = "arista"
+
+    def setUp(self):
+        conf = TEST_SWITCHES[self.switch_name]
+        self.node = pyeapi.connect(transport="http", host="127.0.0.1", port=conf["http"],
+                                   username="root", password="root", return_node=True)
+        self.connection = self.node.connection
+
     def test_get_vlan(self):
-
-        conf = TEST_SWITCHES["arista"]
-        node = pyeapi.connect(transport="http", host="127.0.0.1", port=conf["http"],
-                              username="root", password="root", return_node=True)
-
-        result = node.api('vlans').get(1)
+        result = self.node.api('vlans').get(1)
 
         assert_that(result, is_({
             "name": "default",
@@ -34,3 +37,34 @@ class TestAristaRestApi(unittest.TestCase):
             "trunk_groups": [],
             "vlan_id": 1
         }))
+
+    def test_execute_show_vlan(self):
+        result = self.connection.execute("show vlan")
+
+        assert_that(result, is_({
+            "id": AnyId(),
+            "jsonrpc": "2.0",
+            "result": [
+                {
+                    "sourceDetail": "",
+                    "vlans": {
+                        "1": {
+                            "dynamic": False,
+                            "interfaces": {},
+                            "name": "default",
+                            "status": "active"
+                        }
+                    }
+                }
+            ]
+        }))
+
+
+class AnyId(object):
+    def __eq__(self, o):
+        try:
+            int(o)
+        except ValueError:
+            return False
+
+        return True
