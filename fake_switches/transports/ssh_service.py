@@ -103,6 +103,9 @@ Jk9Gg4yPCL/ZKyIEQzqtkBUyK2P5x1OP32tcC9CxHZlXJLJdhtuQTw==
 
 
 class SwitchSshService(BaseTransport):
+    def __init__(self, ip=None, port=22, switch_core=None, users=None):
+        super(SwitchSshService, self).__init__(ip, port, switch_core, users)
+
     def hook_to_reactor(self, reactor):
         ssh_factory = factory.SSHFactory()
         ssh_factory.portal = portal.Portal(SSHDemoRealm(self.switch_core))

@@ -20,6 +20,9 @@ from fake_switches.transports.base_transport import BaseTransport
 
 
 class SwitchHttpService(BaseTransport):
+    def __init__(self, ip=None, port=80, switch_core=None, users=None):
+        super(SwitchHttpService, self).__init__(ip, port, switch_core, users)
+
     def hook_to_reactor(self, reactor):
         site = Site(self.switch_core.get_http_resource())
 
