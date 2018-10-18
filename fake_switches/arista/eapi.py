@@ -35,12 +35,12 @@ class EAPI(resource.Resource, object):
         content = json.loads(request.content.read().decode())
         self.logger.info("Request in: {}".format(content))
 
-        buffer = BufferingTerminalController()
+        driver = driver_for(content["params"]["format"])
 
-        command_processor = self.processor_stack_factory(display_class=TerminalDisplay)
+        command_processor = self.processor_stack_factory(display_class=driver.display_class)
         command_processor.init(
             switch_configuration=self.switch_configuration,
-            terminal_controller=buffer,
+            terminal_controller=BufferingTerminalController(),
             logger=self.logger,
             piping_processor=NotPipingProcessor()
         )
@@ -53,16 +53,45 @@ class EAPI(resource.Resource, object):
 
         for cmd in content["params"]["cmds"]:
             command_processor.process_command(cmd)
-            result["result"].append({
-                "output": strip_prompt(command_processor, buffer.pop())
-            })
+            result["result"].append(driver.format_output(command_processor))
 
         return json.dumps(result).encode()
 
 
-def strip_prompt(command_processor, content):
-    prompt = command_processor.get_prompt()
-    return content[:-len(prompt)]
+def driver_for(format):
+    return {
+        "json": JsonDriver(),
+        "text": TextDriver()
+    }[format]
+
+
+class JsonDisplay(object):
+    def __init__(self, *_):
+        self.display_object = None
+
+    def __getattr__(self, item):
+        def collector(obj):
+            self.display_object = obj
+
+        return collector
+
+
+class JsonDriver(object):
+    display_class = JsonDisplay
+
+    def format_output(self, command_processor):
+        obj = command_processor.display.display_object
+        obj['sourceDetail'] = ''
+        return obj
+
+
+class TextDriver(object):
+    display_class = TerminalDisplay
+
+    def format_output(self, command_processor):
+        return {
+            "output": strip_prompt(command_processor, command_processor.terminal_controller.pop())
+        }
 
 
 class BufferingTerminalController(TerminalController):
@@ -77,3 +106,8 @@ class BufferingTerminalController(TerminalController):
 
     def write(self, text):
         self.buffer += text
+
+
+def strip_prompt(command_processor, content):
+    prompt = command_processor.get_prompt()
+    return content[:-len(prompt)]
