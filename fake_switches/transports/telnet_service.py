@@ -29,6 +29,9 @@ class SwitchTelnetFactory(Factory):
 
 
 class SwitchTelnetService(BaseTransport):
+    def __init__(self, ip=None, port=23, switch_core=None, users=None):
+        super(SwitchTelnetService, self).__init__(ip, port, switch_core, users)
+
     def hook_to_reactor(self, reactor):
         factory = SwitchTelnetFactory(self.switch_core)
         port = reactor.listenTCP(port=self.port, factory=factory, interface=self.ip)
