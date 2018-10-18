@@ -32,9 +32,14 @@ class DefaultCommandProcessor(AristaBaseCommandProcessor):
     def do_show(self, *args):
         if "vlan".startswith(args[0]):
             if len(args) == 2:
-                vlans = list(filter(lambda e: e.number == int(args[1]), self.switch_configuration.vlans))
+                number = self.read_vlan_number(args[1])
+                if number is None:
+                    return
+
+                vlans = list(filter(lambda e: e.number == number, self.switch_configuration.vlans))
                 if len(vlans) == 0:
-                    self.display.error("VLAN {} not found in current VLAN database".format(args[1]))
+                    self.display.invalid_result("VLAN {} not found in current VLAN database".format(args[1]),
+                                                json_data=_to_vlans_json([]))
                     return
             else:
                 vlans = self.switch_configuration.vlans

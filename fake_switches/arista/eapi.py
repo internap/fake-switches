@@ -48,12 +48,28 @@ class EAPI(resource.Resource, object):
         result = {
             "jsonrpc": content["jsonrpc"],
             "id": content["id"],
-            "result": []
         }
 
-        for cmd in content["params"]["cmds"]:
-            command_processor.process_command(cmd)
-            result["result"].append(driver.format_output(command_processor))
+        command_index = 1
+        command_results = []
+        try:
+            for cmd in content["params"]["cmds"]:
+                command_processor.process_command(cmd)
+                command_results.append(driver.format_output(command_processor))
+                command_index += 1
+            result["result"] = command_results
+        except CommandProcessorError as e:
+            command_results.append(driver.format_errors([str(e)], base_obj=e.json_data))
+            result["error"] = {
+                "data": command_results,
+                "message": "CLI command {index} of {count} '{cmd}' failed: {error}".format(
+                    index=command_index,
+                    count=len(content["params"]["cmds"]),
+                    cmd=content["params"]["cmds"][command_index - 1],
+                    error=e.error
+                ),
+                "code": e.code
+            }
 
         return json.dumps(result).encode()
 
@@ -65,9 +81,35 @@ def driver_for(format):
     }[format]
 
 
+class CommandProcessorError(Exception):
+    code = None
+    error = None
+
+    def __init__(self, message, json_data):
+        super(CommandProcessorError, self).__init__(message)
+
+        self.json_data = json_data
+
+
+class InvalidCommand(CommandProcessorError):
+    code = 1002
+    error = "invalid command"
+
+
+class InvalidResult(CommandProcessorError):
+    code = 1000
+    error = "could not run command"
+
+
 class JsonDisplay(object):
     def __init__(self, *_):
         self.display_object = None
+
+    def invalid_command(self, message, json_data=None):
+        raise InvalidCommand(message, json_data=json_data)
+
+    def invalid_result(self, message, json_data=None):
+        raise InvalidResult(message, json_data=json_data)
 
     def __getattr__(self, item):
         def collector(obj):
@@ -84,6 +126,12 @@ class JsonDriver(object):
         obj['sourceDetail'] = ''
         return obj
 
+    def format_errors(self, errors, base_obj):
+        obj = base_obj or {}
+        obj['sourceDetail'] = ''
+        obj['errors'] = errors
+        return obj
+
 
 class TextDriver(object):
     display_class = TerminalDisplay
@@ -92,6 +140,9 @@ class TextDriver(object):
         return {
             "output": strip_prompt(command_processor, command_processor.terminal_controller.pop())
         }
+
+    def format_errors(self, errors, base_obj):
+        raise NotImplementedError
 
 
 class BufferingTerminalController(TerminalController):
