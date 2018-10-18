@@ -16,6 +16,7 @@ import json
 
 from twisted.web import resource
 
+from fake_switches.arista.command_processor.terminal_display import TerminalDisplay
 from fake_switches.command_processing.piping_processor_base import NotPipingProcessor
 from fake_switches.terminal import TerminalController
 
@@ -23,11 +24,11 @@ from fake_switches.terminal import TerminalController
 class EAPI(resource.Resource, object):
     isLeaf = True
 
-    def __init__(self, switch_configuration, command_processor, logger):
+    def __init__(self, switch_configuration, processor_stack_factory, logger):
         super(EAPI, self).__init__()
 
         self.switch_configuration = switch_configuration
-        self.command_processor = command_processor
+        self.processor_stack_factory = processor_stack_factory
         self.logger = logger
 
     def render_POST(self, request):
@@ -35,7 +36,9 @@ class EAPI(resource.Resource, object):
         self.logger.info("Request in: {}".format(content))
 
         buffer = BufferingTerminalController()
-        self.command_processor.init(
+
+        command_processor = self.processor_stack_factory(display_class=TerminalDisplay)
+        command_processor.init(
             switch_configuration=self.switch_configuration,
             terminal_controller=buffer,
             logger=self.logger,
@@ -49,9 +52,9 @@ class EAPI(resource.Resource, object):
         }
 
         for cmd in content["params"]["cmds"]:
-            self.command_processor.process_command(cmd)
+            command_processor.process_command(cmd)
             result["result"].append({
-                "output": strip_prompt(self.command_processor, buffer.pop())
+                "output": strip_prompt(command_processor, buffer.pop())
             })
 
         return json.dumps(result).encode()
