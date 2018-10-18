@@ -25,17 +25,9 @@ class ConfigCommandProcessor(AristaBaseCommandProcessor):
         return self.switch_configuration.name + "(config)#"
 
     def do_vlan(self, raw_number, *_):
-        try:
-            number = int(raw_number)
-        except ValueError:
-            self.display.error("Invalid input")
-            return
+        number = self.read_vlan_number(raw_number)
 
-        if number < 0 or number > 4094:
-            self.display.error("Invalid input")
-        elif number == 0:
-            self.display.error("Incomplete command")
-        else:
+        if number is not None:
             vlan = self.switch_configuration.get_vlan(number)
             if not vlan:
                 vlan = self.switch_configuration.new("Vlan", number)

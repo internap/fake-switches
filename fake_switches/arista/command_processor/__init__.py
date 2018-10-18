@@ -18,6 +18,21 @@ class AristaBaseCommandProcessor(BaseCommandProcessor):
     def __init__(self, display_class):
         self.display = display_class(self)
 
+    def read_vlan_number(self, input):
+        try:
+            number = int(input)
+        except ValueError:
+            self.display.invalid_command("Invalid input")
+            return None
+
+        if number < 0 or number > 4094:
+            self.display.invalid_command("Invalid input")
+        elif number == 0:
+            self.display.invalid_command("Incomplete command")
+        else:
+            return number
+
+        return None
 
 def vlan_name(vlan):
     return vlan.name or ("default" if vlan.number == 1 else None)

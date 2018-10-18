@@ -15,6 +15,7 @@ import unittest
 
 import pyeapi
 from hamcrest import assert_that, is_
+from pyeapi.eapilib import CommandError
 
 from tests.util.global_reactor import TEST_SWITCHES
 
@@ -58,6 +59,32 @@ class TestAristaRestApi(unittest.TestCase):
                 }
             ]
         }))
+
+    def test_execute_show_vlan_unknown_vlan(self):
+        with self.assertRaises(CommandError) as expect:
+            self.connection.execute("show vlan 999")
+
+        assert_that(str(expect.exception), is_(
+            "Error [1000]: CLI command 1 of 1 'show vlan 999' failed: could not run command "
+            "[VLAN 999 not found in current VLAN database]"
+        ))
+
+        assert_that(expect.exception.output, is_([
+            {
+                'vlans': {},
+                'sourceDetail': '',
+                'errors': ['VLAN 999 not found in current VLAN database']
+            }
+        ]))
+
+    def test_execute_show_vlan_invalid_input(self):
+        with self.assertRaises(CommandError) as expect:
+            self.connection.execute("show vlan shizzle")
+
+        assert_that(str(expect.exception), is_(
+            "Error [1002]: CLI command 1 of 1 'show vlan shizzle' failed: invalid command "
+            "[Invalid input]"
+        ))
 
 
 class AnyId(object):

@@ -17,7 +17,13 @@ class TerminalDisplay(object):
     def __init__(self, processor):
         self.processor = processor
 
-    def error(self, message):
+    def invalid_command(self, message, json_data=None):
+        self._error(message)
+
+    def invalid_result(self, message, json_data=None):
+        self._error(message)
+
+    def _error(self, message):
         self.processor.write_line("% {}".format(message))
 
     def show_vlans(self, vlans_json):
