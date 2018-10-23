@@ -37,7 +37,7 @@ class EAPI(resource.Resource, object):
 
         driver = driver_for(content["params"]["format"])
 
-        command_processor = self.processor_stack_factory(display_class=driver.display_class)
+        command_processor = self.processor_stack_factory(display=driver.display_class())
         command_processor.init(
             switch_configuration=self.switch_configuration,
             terminal_controller=BufferingTerminalController(),
@@ -105,14 +105,14 @@ class JsonDisplay(object):
     def __init__(self, *_):
         self.display_object = None
 
-    def invalid_command(self, message, json_data=None):
+    def invalid_command(self, processor, message, json_data=None):
         raise InvalidCommand(message, json_data=json_data)
 
-    def invalid_result(self, message, json_data=None):
+    def invalid_result(self, processor, message, json_data=None):
         raise InvalidResult(message, json_data=json_data)
 
     def __getattr__(self, item):
-        def collector(obj):
+        def collector(processor, obj):
             self.display_object = obj
 
         return collector

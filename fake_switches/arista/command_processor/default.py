@@ -38,13 +38,13 @@ class DefaultCommandProcessor(AristaBaseCommandProcessor):
 
                 vlans = list(filter(lambda e: e.number == number, self.switch_configuration.vlans))
                 if len(vlans) == 0:
-                    self.display.invalid_result("VLAN {} not found in current VLAN database".format(args[1]),
+                    self.display.invalid_result(self, "VLAN {} not found in current VLAN database".format(args[1]),
                                                 json_data=_to_vlans_json([]))
                     return
             else:
                 vlans = self.switch_configuration.vlans
 
-            self.display.show_vlans(_to_vlans_json(vlans))
+            self.display.show_vlans(self, _to_vlans_json(vlans))
 
 
 def _to_vlans_json(vlans):

@@ -15,20 +15,20 @@ from fake_switches.command_processing.base_command_processor import BaseCommandP
 
 
 class AristaBaseCommandProcessor(BaseCommandProcessor):
-    def __init__(self, display_class):
-        self.display = display_class(self)
+    def __init__(self, display):
+        self.display = display
 
     def read_vlan_number(self, input):
         try:
             number = int(input)
         except ValueError:
-            self.display.invalid_command("Invalid input")
+            self.display.invalid_command(self, "Invalid input")
             return None
 
         if number < 0 or number > 4094:
-            self.display.invalid_command("Invalid input")
+            self.display.invalid_command(self, "Invalid input")
         elif number == 0:
-            self.display.invalid_command("Incomplete command")
+            self.display.invalid_command(self, "Incomplete command")
         else:
             return number
 
