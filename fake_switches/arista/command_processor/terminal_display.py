@@ -14,24 +14,21 @@
 
 
 class TerminalDisplay(object):
-    def __init__(self, processor):
-        self.processor = processor
+    def invalid_command(self, processor, message, json_data=None):
+        self._error(processor, message)
 
-    def invalid_command(self, message, json_data=None):
-        self._error(message)
+    def invalid_result(self, processor, message, json_data=None):
+        self._error(processor, message)
 
-    def invalid_result(self, message, json_data=None):
-        self._error(message)
+    def _error(self, processor, message):
+        processor.write_line("% {}".format(message))
 
-    def _error(self, message):
-        self.processor.write_line("% {}".format(message))
-
-    def show_vlans(self, vlans_json):
-        self.processor.write_line("VLAN  Name                             Status    Ports")
-        self.processor.write_line("----- -------------------------------- --------- -------------------------------")
+    def show_vlans(self, processor, vlans_json):
+        processor.write_line("VLAN  Name                             Status    Ports")
+        processor.write_line("----- -------------------------------- --------- -------------------------------")
 
         for vlan_number in sorted(vlans_json["vlans"].keys(), key=lambda e: int(e)):
-            self.processor.write_line("{: <5} {: <32} active"
+            processor.write_line("{: <5} {: <32} active"
                                       .format(vlan_number, vlans_json["vlans"][vlan_number]["name"]))
 
-        self.processor.write_line("")
+        processor.write_line("")
