@@ -61,7 +61,8 @@ class ConfigCommandProcessor(AristaBaseCommandProcessor):
 
     def do_no_interface(self, *args):
         port = self.switch_configuration.get_port_by_partial_name(self.read_interface_name(args))
-        self.switch_configuration.remove_port(port)
+        if port is not None:
+            self.switch_configuration.remove_port(port)
         self.sub_processor = None
 
     def do_exit(self):

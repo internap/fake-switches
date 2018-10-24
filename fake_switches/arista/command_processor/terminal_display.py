@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from fake_switches.switch_configuration import split_port_name
 
 
 class TerminalDisplay(object):
@@ -37,20 +38,25 @@ class TerminalDisplay(object):
         processor.write_line("")
 
     def show_interface(self, processor, interfaces_json):
-        interface = list(interfaces_json["interfaces"].values())[0]
-        int_address = interface["interfaceAddress"][0]
+        for interface in sorted(interfaces_json["interfaces"].values(), key=lambda e: int(split_port_name(e["name"])[1])):
+            processor.write_line("{} is up, line protocol is up (connected)".format(interface["name"]))
+            processor.write_line("  Hardware is Vlan, address is {} (bia {})"
+                                 .format(_mac6to3(interface["physicalAddress"]),
+                                         _mac6to3(interface["burnedInAddress"])))
 
-        processor.write_line("{} is up, line protocol is up (connected)".format(interface["name"]))
-        processor.write_line("  Hardware is Vlan, address is {} (bia {})"
-                             .format(_mac6to3(interface["physicalAddress"]),
-                                     _mac6to3(interface["burnedInAddress"])))
+            int_address = next(iter(interface["interfaceAddress"]), None)
+            if int_address is not None:
+                primary = _to_cidr(int_address["primaryIp"])
+                if primary == "0.0.0.0/0":
+                    processor.write_line("  No Internet protocol address assigned")
+                else:
+                    processor.write_line("  Internet address is {}".format(primary))
+                    for secondary_ip in int_address["secondaryIpsOrderedList"]:
+                        processor.write_line("  Secondary address is {}".format(_to_cidr(secondary_ip)))
+                    processor.write_line("  Broadcast address is 255.255.255.255")
 
-        processor.write_line("  Internet address is {}".format(_to_cidr(int_address["primaryIp"])))
-        for secondary_ip in int_address["secondaryIpsOrderedList"]:
-            processor.write_line("  Secondary address is {}".format(_to_cidr(secondary_ip)))
-        processor.write_line("  Broadcast address is 255.255.255.255")
-        processor.write_line("  IP MTU 1500 bytes")
-        processor.write_line("  Up 00 minutes, 00 seconds")
+            processor.write_line("  IP MTU 1500 bytes")
+            processor.write_line("  Up 00 minutes, 00 seconds")
 
 
 def _to_cidr(ip):

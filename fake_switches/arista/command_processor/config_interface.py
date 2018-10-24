@@ -50,6 +50,8 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
                         current=existing_ip.network,
                         owner=ip_owner.name))
 
+            self.port.vendor_specific["has-internet-protocol"] = True
+
         else:
             raise NotImplementedError
 

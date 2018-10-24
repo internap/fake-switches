@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from netaddr import IPNetwork
+
 from fake_switches.arista.command_processor import vlan_display_name, AristaBaseCommandProcessor
 from fake_switches.command_processing.shell_session import TerminalExitSignal
 
@@ -54,14 +56,21 @@ class DefaultCommandProcessor(AristaBaseCommandProcessor):
         self.display.show_vlans(self, _to_vlans_json(vlans))
 
     def _show_interfaces(self, *args):
-        if 0 < len(args) > 2:
+        if len(args) > 2:
             raise NotImplementedError
 
-        interface_name = self.read_interface_name(args)
+        if len(args) == 0:
+            interfaces = self.switch_configuration.get_vlan_ports()
+        else:
+            interface = self.switch_configuration.get_port_by_partial_name(self.read_interface_name(args))
 
-        self.display.show_interface(self, _to_ip_interface_json(
-            self.switch_configuration.get_port_by_partial_name(interface_name)
-        ))
+            if interface is None:
+                self.display.invalid_command(self, "Interface does not exist", json_data=None)
+                return
+
+            interfaces = [interface]
+
+        self.display.show_interface(self, _to_ip_interface_json(interfaces))
 
 
 def _to_vlans_json(vlans):
@@ -77,7 +86,7 @@ def _to_vlans_json(vlans):
     }
 
 
-def _to_ip_interface_json(interface):
+def _to_ip_interface_json(interfaces):
     return {
         "interfaces": {
             interface.name: {
@@ -93,17 +102,22 @@ def _to_ip_interface_json(interface):
                 "mtu": 1500,
                 "name": interface.name,
                 "physicalAddress": "00:00:00:00:00:00"
-            }
+            } for interface in interfaces
         }
     }
 
 
 def _interface_address_json(interface):
     if len(interface.ips) == 0:
-        return []
+        if interface.vendor_specific.get("has-internet-protocol", False):
+            primary_ipn = IPNetwork("0.0.0.0/0")
+            secondary_ipns = []
+        else:
+            return []
+    else:
+        primary_ipn = interface.ips[0]
+        secondary_ipns = interface.ips[1:]
 
-    primary_ipn = interface.ips[0]
-    secondary_ipns = interface.ips[1:]
     return [{
         "broadcastAddress": "255.255.255.255",
         "dhcp": False,
