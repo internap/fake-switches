@@ -23,12 +23,40 @@ class TerminalDisplay(object):
     def _error(self, processor, message):
         processor.write_line("% {}".format(message))
 
+    def warning(self, processor, message, json_data=None):
+        processor.write_line("! {}".format(message))
+
     def show_vlans(self, processor, vlans_json):
         processor.write_line("VLAN  Name                             Status    Ports")
         processor.write_line("----- -------------------------------- --------- -------------------------------")
 
         for vlan_number in sorted(vlans_json["vlans"].keys(), key=lambda e: int(e)):
             processor.write_line("{: <5} {: <32} active"
-                                      .format(vlan_number, vlans_json["vlans"][vlan_number]["name"]))
+                                 .format(vlan_number, vlans_json["vlans"][vlan_number]["name"]))
 
         processor.write_line("")
+
+    def show_interface(self, processor, interfaces_json):
+        interface = list(interfaces_json["interfaces"].values())[0]
+        int_address = interface["interfaceAddress"][0]
+
+        processor.write_line("{} is up, line protocol is up (connected)".format(interface["name"]))
+        processor.write_line("  Hardware is Vlan, address is {} (bia {})"
+                             .format(_mac6to3(interface["physicalAddress"]),
+                                     _mac6to3(interface["burnedInAddress"])))
+
+        processor.write_line("  Internet address is {}".format(_to_cidr(int_address["primaryIp"])))
+        for secondary_ip in int_address["secondaryIpsOrderedList"]:
+            processor.write_line("  Secondary address is {}".format(_to_cidr(secondary_ip)))
+        processor.write_line("  Broadcast address is 255.255.255.255")
+        processor.write_line("  IP MTU 1500 bytes")
+        processor.write_line("  Up 00 minutes, 00 seconds")
+
+
+def _to_cidr(ip):
+    return "{}/{}".format(ip["address"], ip["maskLen"])
+
+
+def _mac6to3(mac6):
+    parts = mac6.split(":")
+    return ".".join(parts[part_id] + parts[part_id + 1] for part_id in range(0, 3))

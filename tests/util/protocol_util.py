@@ -1,14 +1,17 @@
 import logging
 import re
 import unittest
+from functools import wraps
 
 import pexpect
 from flexmock import flexmock_teardown
 from hamcrest import assert_that, equal_to
+
 from tests.util.global_reactor import TEST_SWITCHES
 
 
 def with_protocol(test):
+    @wraps(test)
     def wrapper(self):
         try:
             logging.info(">>>> CONNECTING [%s]" % self.protocol.name)
@@ -19,7 +22,6 @@ def with_protocol(test):
         finally:
             self.protocol.disconnect()
 
-    wrapper.__name__ = test.__name__
     return wrapper
 
 

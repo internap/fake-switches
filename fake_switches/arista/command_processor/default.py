@@ -31,20 +31,37 @@ class DefaultCommandProcessor(AristaBaseCommandProcessor):
 
     def do_show(self, *args):
         if "vlan".startswith(args[0]):
-            if len(args) == 2:
-                number = self.read_vlan_number(args[1])
-                if number is None:
-                    return
+            self._show_vlan(*args[1:])
+        elif "interfaces".startswith(args[0]):
+            self._show_interfaces(*args[1:])
+        else:
+            raise NotImplementedError
 
-                vlans = list(filter(lambda e: e.number == number, self.switch_configuration.vlans))
-                if len(vlans) == 0:
-                    self.display.invalid_result(self, "VLAN {} not found in current VLAN database".format(args[1]),
-                                                json_data=_to_vlans_json([]))
-                    return
-            else:
-                vlans = self.switch_configuration.vlans
+    def _show_vlan(self, *args):
+        if len(args) == 1:
+            number = self.read_vlan_number(args[0])
+            if number is None:
+                return
 
-            self.display.show_vlans(self, _to_vlans_json(vlans))
+            vlans = list(filter(lambda e: e.number == number, self.switch_configuration.vlans))
+            if len(vlans) == 0:
+                self.display.invalid_result(self, "VLAN {} not found in current VLAN database".format(args[0]),
+                                            json_data=_to_vlans_json([]))
+                return
+        else:
+            vlans = self.switch_configuration.vlans
+
+        self.display.show_vlans(self, _to_vlans_json(vlans))
+
+    def _show_interfaces(self, *args):
+        if 0 < len(args) > 2:
+            raise NotImplementedError
+
+        interface_name = self.read_interface_name(args)
+
+        self.display.show_interface(self, _to_ip_interface_json(
+            self.switch_configuration.get_port_by_partial_name(interface_name)
+        ))
 
 
 def _to_vlans_json(vlans):
@@ -58,3 +75,59 @@ def _to_vlans_json(vlans):
             } for vlan in vlans
         }
     }
+
+
+def _to_ip_interface_json(interface):
+    return {
+        "interfaces": {
+            interface.name: {
+                "bandwidth": 0,
+                "burnedInAddress": "00:00:00:00:00:00",
+                "description": "",
+                "forwardingModel": "routed",
+                "hardware": "vlan",
+                "interfaceAddress": _interface_address_json(interface),
+                "interfaceStatus": "connected",
+                "lastStatusChangeTimestamp": 0.0,
+                "lineProtocolStatus": "up",
+                "mtu": 1500,
+                "name": interface.name,
+                "physicalAddress": "00:00:00:00:00:00"
+            }
+        }
+    }
+
+
+def _interface_address_json(interface):
+    if len(interface.ips) == 0:
+        return []
+
+    primary_ipn = interface.ips[0]
+    secondary_ipns = interface.ips[1:]
+    return [{
+        "broadcastAddress": "255.255.255.255",
+        "dhcp": False,
+        "primaryIp": {
+            "address": str(primary_ipn.ip),
+            "maskLen": primary_ipn.prefixlen
+        },
+        "secondaryIps": {
+            str(ipn.ip): {
+                "address": str(ipn.ip),
+                "maskLen": ipn.prefixlen
+            } for ipn in secondary_ipns
+        },
+        "secondaryIpsOrderedList": [
+            {
+                "address": str(ipn.ip),
+                "maskLen": ipn.prefixlen
+            }
+            for ipn in secondary_ipns
+        ],
+        "virtualIp": {
+            "address": "0.0.0.0",
+            "maskLen": 0
+        },
+        "virtualSecondaryIps": {},
+        "virtualSecondaryIpsOrderedList": []
+    }]

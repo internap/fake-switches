@@ -17,10 +17,11 @@ import logging
 from twisted.web import resource
 
 from fake_switches.arista.command_processor.config import ConfigCommandProcessor
+from fake_switches.arista.command_processor.config_interface import ConfigInterfaceCommandProcessor
 from fake_switches.arista.command_processor.config_vlan import ConfigVlanCommandProcessor
 from fake_switches.arista.command_processor.default import DefaultCommandProcessor
-from fake_switches.arista.command_processor.terminal_display import TerminalDisplay
 from fake_switches.arista.command_processor.enabled import EnabledCommandProcessor
+from fake_switches.arista.command_processor.terminal_display import TerminalDisplay
 from fake_switches.arista.eapi import EAPI
 from fake_switches.command_processing.piping_processor_base import NotPipingProcessor
 from fake_switches.command_processing.shell_session import ShellSession
@@ -62,8 +63,8 @@ class AristaSwitchCore(SwitchCore):
         return DefaultCommandProcessor(
             *common, enabled=EnabledCommandProcessor(
                 *common, config=ConfigCommandProcessor(
-                    *common, config_vlan=ConfigVlanCommandProcessor(*common)
-                )
+                    *common, config_vlan=ConfigVlanCommandProcessor(*common),
+                    config_interface=ConfigInterfaceCommandProcessor(*common))
             )
         )
 

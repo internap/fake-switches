@@ -31,17 +31,20 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
 
     def do_show(self, *args):
         if "running-config".startswith(args[0]):
-            self._show_running_config()
+            self._show_running_config(*args[1:])
         else:
             super(EnabledCommandProcessor, self).do_show(*args)
 
     def do_terminal(self, *_):
         self.write("Pagination disabled.")
 
-    def _show_running_config(self):
-        self._show_header()
-        self._show_vlans(sorted(self.switch_configuration.vlans, key=lambda v: v.number))
-        self.write_line("end")
+    def _show_running_config(self, *args):
+        if "interfaces".startswith(args[0]):
+            self._show_run_interfaces(self._requested_interfaces(args[1:]))
+        else:
+            self._show_header()
+            self._show_run_vlans(sorted(self.switch_configuration.vlans, key=lambda v: v.number))
+            self.write_line("end")
 
     def _show_header(self):
         self.write_line("! Command: show running-config all")
@@ -50,10 +53,24 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
         self.write_line("! boot system flash:/vEOS-lab.swi")
         self.write_line("!")
 
-    def _show_vlans(self, vlans):
+    def _show_run_vlans(self, vlans):
         for vlan in vlans:
             self.write_line("vlan {}".format(vlan.number))
             self.write_line("   name {}".format(vlan_display_name(vlan)))
             self.write_line("   mac address learning")
             self.write_line("   state active")
             self.write_line("!")
+
+    def _requested_interfaces(self, tokens):
+        if len(tokens) > 1:
+            raise NotImplementedError
+
+        return [self.switch_configuration.get_port_by_partial_name(tokens[0])]
+
+    def _show_run_interfaces(self, interfaces):
+        for interface in interfaces:
+            self.write_line("interface {}".format(interface.name))
+            for ip in interface.ips[:1]:
+                self.write_line("   ip address {}".format(ip))
+            for ip in interface.ips[1:]:
+                self.write_line("   ip address {} secondary".format(ip))
