@@ -103,6 +103,14 @@ TEST_SWITCHES = {
         "ssh": _unique_port(),
         "extra": {},
     },
+    "commit-delayed-arista": {
+        "model": "arista_generic",
+        "hostname": "my_arista",
+        "ssh": _unique_port(),
+        "extra": {
+            "commit_delay": COMMIT_DELAY
+        },
+    },
     "commit-delayed-brocade": {
         "model": "brocade_generic",
         "hostname": "my_switch",

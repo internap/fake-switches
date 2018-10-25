@@ -38,6 +38,10 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
     def do_terminal(self, *_):
         self.write("Pagination disabled.")
 
+    def do_write(self, *_):
+        self.switch_configuration.commit()
+        self.write_line("Copy completed successfully.")
+
     def _show_running_config(self, *args):
         if "interfaces".startswith(args[0]):
             self._show_run_interfaces(self._requested_interfaces(args[1:]))

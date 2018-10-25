@@ -134,6 +134,14 @@ class TestAristaSwitchProtocol(ProtocolTest):
         t.readln("")
         t.read("my_arista>")
 
+    @with_protocol
+    def test_write_memory(self, t):
+        enable(t)
+
+        t.write("write memory")
+        t.readln("Copy completed successfully.")
+        t.read("my_arista#")
+
 
 class TestAristaSwitchProtocolSSH(TestAristaSwitchProtocol):
     __test__ = True
