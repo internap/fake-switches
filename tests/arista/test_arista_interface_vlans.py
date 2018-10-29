@@ -15,7 +15,7 @@ from hamcrest import assert_that, is_
 from pyeapi.eapilib import CommandError
 
 from tests.arista import enable, remove_vlan, create_vlan, create_interface_vlan, configuring_interface_vlan, \
-    remove_interface_vlan, with_eapi
+    remove_interface_vlan, with_eapi, assert_interface_configuration
 from tests.util.protocol_util import ProtocolTest, SshTester, with_protocol
 
 
@@ -315,7 +315,6 @@ class TestAristaInterfaceVlans(ProtocolTest):
         t.readln("  Up 00 minutes, 00 seconds")
         t.read("my_arista#")
 
-
         result = api.enable("show interfaces Vlan299")
         assert_that(result, is_([
             {
@@ -362,7 +361,6 @@ class TestAristaInterfaceVlans(ProtocolTest):
 
         remove_interface_vlan(t, "299")
         remove_vlan(t, "299")
-
 
     @with_protocol
     def test_interface_vlan_name_parsing(self, t):
@@ -499,10 +497,3 @@ class TestAristaInterfaceVlans(ProtocolTest):
 
         t.write("no interface vlan 123")
         t.read("my_arista(config)#")
-
-
-def assert_interface_configuration(t, interface, config):
-    t.write("show running-config interfaces {}".format(interface))
-    for line in config:
-        t.readln(line)
-    t.read("my_arista#")

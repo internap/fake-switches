@@ -37,3 +37,10 @@ class TestAristaRunningConfig(ProtocolTest):
         t.readln("!")
         t.readln("end")
         t.read("my_arista#")
+
+    @with_protocol
+    def test_running_config_unknown_interface(self, t):
+        enable(t)
+
+        t.write("show running-config interface vlan 999")
+        t.read("my_arista#")
