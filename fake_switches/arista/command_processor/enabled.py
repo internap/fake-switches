@@ -13,6 +13,8 @@
 # limitations under the License.
 from fake_switches.arista.command_processor import vlan_display_name
 from fake_switches.arista.command_processor.default import DefaultCommandProcessor
+from fake_switches.dell.command_processor.enabled import to_vlan_ranges
+from fake_switches.switch_configuration import VlanPort
 
 
 class EnabledCommandProcessor(DefaultCommandProcessor):
@@ -67,12 +69,17 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
             self.write_line("   state active")
             self.write_line("!")
 
-    def _show_run_interfaces(self, interfaces):
-        for interface in interfaces:
-            self.write_line("interface {}".format(interface.name))
-            for ip in interface.ips[:1]:
-                self.write_line("   ip address {}".format(ip))
-            for ip in interface.ips[1:]:
-                self.write_line("   ip address {} secondary".format(ip))
-            for ip_helper in interface.ip_helpers:
-                self.write_line("   ip helper-address {}".format(ip_helper))
+    def _show_run_interfaces(self, ports):
+        for port in ports:
+            self.write_line("interface {}".format(port.name))
+            if port.trunk_vlans is not None:
+                self.write_line("   switchport trunk allowed vlan %s" % to_vlan_ranges(port.trunk_vlans))
+            if port.mode is not None:
+                self.write_line("   switchport mode {}".format(port.mode))
+            if isinstance(port, VlanPort):
+                for ip in port.ips[:1]:
+                    self.write_line("   ip address {}".format(ip))
+                for ip in port.ips[1:]:
+                    self.write_line("   ip address {} secondary".format(ip))
+                for ip_helper in port.ip_helpers:
+                    self.write_line("   ip helper-address {}".format(ip_helper))

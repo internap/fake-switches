@@ -15,7 +15,7 @@ import re
 
 from netaddr import IPNetwork
 
-from fake_switches.arista.command_processor import AristaBaseCommandProcessor
+from fake_switches.arista.command_processor import AristaBaseCommandProcessor, with_params, with_vlan_list
 from fake_switches.switch_configuration import split_port_name
 
 
@@ -42,6 +42,31 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
             self._remove_ip(args[1:])
         elif "helper-address".startswith(args[0]):
             self._remove_ip_helper(args[1:])
+        else:
+            raise NotImplementedError
+
+    def do_switchport(self, *args):
+        operations = [
+            (("mode",), self._switchport_mode),
+            (("trunk", "allowed", "vlan", "add"), self._switchport_trunk_allowed_vlan_add),
+            (("trunk", "allowed", "vlan", "remove"), self._switchport_trunk_allowed_vlan_remove),
+            (("trunk", "allowed", "vlan", "none"), self._switchport_trunk_allowed_vlan_none),
+            (("trunk", "allowed", "vlan", "all"), self._switchport_trunk_allowed_vlan_all),
+            (("trunk", "allowed", "vlan"), self._switchport_trunk_allowed_vlan)
+        ]
+
+        for cmd, target in operations:
+            if _is_cmd(args, *cmd):
+                target(*args[len(cmd):])
+                return
+
+        self.display.invalid_command(self, "Incomplete command")
+
+    def do_no_switchport(self, *args):
+        if _is_cmd(args, "mode"):
+            self.port.mode = None
+        elif _is_cmd(args, "trunk", "allowed", "vlan"):
+            self.port.trunk_vlans = None
         else:
             raise NotImplementedError
 
@@ -125,6 +150,43 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
 
         return args[0]
 
+    @with_params(1)
+    def _switchport_mode(self, mode):
+        mode = mode.lower()
+        if mode not in ("trunk",):
+            self.display.invalid_command(self, "Invalid input")
+            return
+
+        self.port.mode = mode
+
+    @with_params(1)
+    @with_vlan_list
+    def _switchport_trunk_allowed_vlan_add(self, vlans):
+        if not _has_all_vlans(self.port):
+            self.port.trunk_vlans += vlans
+
+    @with_params(1)
+    @with_vlan_list
+    def _switchport_trunk_allowed_vlan_remove(self, vlans):
+        if self.port.trunk_vlans is None:
+            self.port.trunk_vlans = list(range(1, 4095))
+        for v in vlans:
+            if v in self.port.trunk_vlans:
+                self.port.trunk_vlans.remove(v)
+
+    @with_params(0)
+    def _switchport_trunk_allowed_vlan_none(self):
+        self.port.trunk_vlans = []
+
+    @with_params(0)
+    def _switchport_trunk_allowed_vlan_all(self, *extra):
+        self.port.trunk_vlans = None
+
+    @with_params(1)
+    @with_vlan_list
+    def _switchport_trunk_allowed_vlan(self, vlans):
+        self.port.trunk_vlans = vlans
+
 
 def _read_ip(tokens):
     if "/" in tokens[0]:
@@ -139,3 +201,15 @@ def _read_ip(tokens):
 
 def _is_word(word):
     return re.match("^[[a-zA-Z0-9\-.]+$", word)
+
+
+def _is_cmd(args, *expected):
+    for arg, expectation in zip(args, expected):
+        if not expectation.startswith(arg):
+            return False
+
+    return True
+
+
+def _has_all_vlans(port):
+    return port.trunk_vlans is None
