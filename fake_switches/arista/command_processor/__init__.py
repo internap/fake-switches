@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
+from functools import wraps
 
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
+from fake_switches.dell.command_processor.config_interface import parse_vlan_list
 
 
 class AristaBaseCommandProcessor(BaseCommandProcessor):
@@ -58,7 +60,9 @@ class AristaBaseCommandProcessor(BaseCommandProcessor):
 
             number = str(number)
         else:
-            raise NotImplementedError
+            existing_port = self.switch_configuration.get_port_by_partial_name(name + number)
+            if existing_port is None:
+                raise NotImplementedError
 
         return name + number
 
@@ -78,3 +82,33 @@ def safe_split_port_name(name):
         return name[0:number_start], name[number_start:]
     else:
         return name, ''
+
+
+def with_params(count):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(self, *params):
+            if len(params) < count:
+                self.display.invalid_command(self, "Incomplete command")
+            elif len(params) > count:
+                self.display.invalid_command(self, "Invalid input")
+            else:
+                return fn(self, *params)
+
+        return wrapper
+
+    return decorator
+
+
+def with_vlan_list(fn):
+    @wraps(fn)
+    def wrapper(self, vlans):
+        try:
+            vlans = parse_vlan_list(vlans)
+        except ValueError:
+            self.display.invalid_command(self, "Invalid input")
+            return
+
+        return fn(self, vlans)
+
+    return wrapper

@@ -25,6 +25,7 @@ from fake_switches.arista.command_processor.terminal_display import TerminalDisp
 from fake_switches.arista.eapi import EAPI
 from fake_switches.command_processing.piping_processor_base import NotPipingProcessor
 from fake_switches.command_processing.shell_session import ShellSession
+from fake_switches.switch_configuration import Port
 from fake_switches.switch_core import SwitchCore
 from fake_switches.terminal import LoggingTerminalController
 
@@ -55,7 +56,12 @@ class AristaSwitchCore(SwitchCore):
 
     @staticmethod
     def get_default_ports():
-        return []
+        return [
+            Port("Ethernet1"),
+            Port("Ethernet2"),
+            Port("Ethernet3"),
+            Port("Ethernet4")
+        ]
 
     def processor_stack(self, display):
         common = (display,)

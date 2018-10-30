@@ -70,6 +70,20 @@ def configuring_interface_vlan(t, vlan, do):
     t.write("exit")
     t.read("my_arista#")
 
+def configuring_interface(t, interface, do):
+    t.write("configure terminal")
+    t.read("my_arista(config)#")
+    t.write("interface {}".format(interface))
+    t.read("my_arista(config-if-{})#".format(interface))
+
+    t.write(do)
+
+    t.read("my_arista(config-if-{})#".format(interface))
+    t.write("exit")
+    t.read("my_arista(config)#")
+    t.write("exit")
+    t.read("my_arista#")
+
 
 def remove_vlan(t, vlan):
     configuring(t, do="no vlan {}".format(vlan))
