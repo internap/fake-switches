@@ -38,19 +38,24 @@ class AristaBaseCommandProcessor(BaseCommandProcessor):
 
         return None
 
-    def read_interface_name(self, tokens):
-        if len(tokens) == 1:
-            name, number = safe_split_port_name(tokens[0])
-        elif len(tokens) == 2:
-            name = tokens[0]
-            number = tokens[1]
-        else:
+    def read_interface_name(self, tokens, return_remaining=False):
+        if len(tokens) == 0:
             self.display.invalid_command(self, "Invalid input")
+            return None
+
+        name, number = safe_split_port_name(tokens[0])
+        if number is not None:
+            remaining_tokens = tokens[1:]
+        elif len(tokens) > 1:
+            name, number = tokens[0:2]
+            remaining_tokens = tokens[2:]
+        else:
+            self.display.invalid_command(self, "Incomplete command")
             return None
 
         name = name.capitalize()
         if name == "Vlan":
-            if number == "":
+            if number is None:
                 self.display.invalid_command(self, "Incomplete command")
                 return None
 
@@ -64,7 +69,23 @@ class AristaBaseCommandProcessor(BaseCommandProcessor):
             if existing_port is None:
                 raise NotImplementedError
 
-        return name + number
+        full_name = name + number
+
+        return full_name if not return_remaining else (full_name, remaining_tokens)
+
+    def read_multiple_interfaces_name(self, tokens):
+        names = []
+        while len(tokens) > 0:
+            result = self.read_interface_name(tokens, return_remaining=True)
+            if result is None:
+                self.display.invalid_command(self, "Invalid input")
+                return
+
+            name, tokens = result
+
+            names.append(name)
+
+        return names
 
 
 def vlan_name(vlan):
@@ -81,7 +102,7 @@ def safe_split_port_name(name):
         number_start, _ = matches.span()
         return name[0:number_start], name[number_start:]
     else:
-        return name, ''
+        return name, None
 
 
 def with_params(count):
