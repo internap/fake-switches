@@ -46,9 +46,9 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
 
     def _show_running_config(self, *args):
         if "interfaces".startswith(args[0]):
-            interface = self.switch_configuration.get_port_by_partial_name(self.read_interface_name(args[1:]))
-            if interface is not None:
-                self._show_run_interfaces([interface])
+            names = self.read_multiple_interfaces_name(args[1:])
+            if names is not None:
+                self._show_run_interfaces(sorted(filter(lambda e: e, (self.switch_configuration.get_port_by_partial_name(p) for p in names)), key=lambda e: e.name))
         else:
             self._show_header()
             self._show_run_vlans(sorted(self.switch_configuration.vlans, key=lambda v: v.number))
