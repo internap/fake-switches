@@ -44,7 +44,9 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
 
     def _show_running_config(self, *args):
         if "interfaces".startswith(args[0]):
-            self._show_run_interfaces(self._requested_interfaces(args[1:]))
+            interface = self.switch_configuration.get_port_by_partial_name(self.read_interface_name(args[1:]))
+            if interface is not None:
+                self._show_run_interfaces([interface])
         else:
             self._show_header()
             self._show_run_vlans(sorted(self.switch_configuration.vlans, key=lambda v: v.number))
@@ -65,12 +67,6 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
             self.write_line("   state active")
             self.write_line("!")
 
-    def _requested_interfaces(self, tokens):
-        if len(tokens) > 1:
-            raise NotImplementedError
-
-        return [self.switch_configuration.get_port_by_partial_name(tokens[0])]
-
     def _show_run_interfaces(self, interfaces):
         for interface in interfaces:
             self.write_line("interface {}".format(interface.name))
@@ -78,3 +74,5 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
                 self.write_line("   ip address {}".format(ip))
             for ip in interface.ips[1:]:
                 self.write_line("   ip address {} secondary".format(ip))
+            for ip_helper in interface.ip_helpers:
+                self.write_line("   ip helper-address {}".format(ip_helper))

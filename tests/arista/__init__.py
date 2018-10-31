@@ -88,3 +88,10 @@ def configuring(t, do):
     t.read("my_arista(config)#")
     t.write("exit")
     t.read("my_arista#")
+
+
+def assert_interface_configuration(t, interface, config):
+    t.write("show running-config interfaces {}".format(interface))
+    for line in config:
+        t.readln(line)
+    t.read("my_arista#")
