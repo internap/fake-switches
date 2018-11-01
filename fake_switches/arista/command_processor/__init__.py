@@ -16,6 +16,7 @@ from functools import wraps
 
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 from fake_switches.dell.command_processor.config_interface import parse_vlan_list
+from fake_switches.switch_configuration import split_port_name
 
 
 class AristaBaseCommandProcessor(BaseCommandProcessor):
@@ -133,3 +134,8 @@ def with_vlan_list(fn):
         return fn(self, vlans)
 
     return wrapper
+
+
+def short_port_name(port_name):
+    name, if_id = split_port_name(port_name)
+    return "{}{}".format(name[:2], if_id)

@@ -15,8 +15,8 @@ import re
 
 from netaddr import IPNetwork
 
-from fake_switches.arista.command_processor import AristaBaseCommandProcessor, with_params, with_vlan_list
-from fake_switches.switch_configuration import split_port_name
+from fake_switches.arista.command_processor import AristaBaseCommandProcessor, with_params, with_vlan_list, \
+    short_port_name
 
 
 class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
@@ -26,8 +26,7 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
         self.port = args[0]
 
     def get_prompt(self):
-        name, if_id = split_port_name(self.port.name)
-        return self.switch_configuration.name + "(config-if-{}{})#".format(name[:2], if_id)
+        return self.switch_configuration.name + "(config-if-{})#".format(short_port_name(self.port.name))
 
     def do_ip(self, *args):
         if "address".startswith(args[0]):

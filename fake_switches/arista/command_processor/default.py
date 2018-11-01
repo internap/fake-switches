@@ -15,6 +15,7 @@ from netaddr import IPNetwork
 
 from fake_switches.arista.command_processor import vlan_display_name, AristaBaseCommandProcessor
 from fake_switches.command_processing.shell_session import TerminalExitSignal
+from fake_switches.dell.command_processor.enabled import to_vlan_ranges
 from fake_switches.switch_configuration import VlanPort
 
 
@@ -35,6 +36,8 @@ class DefaultCommandProcessor(AristaBaseCommandProcessor):
     def do_show(self, *args):
         if "vlan".startswith(args[0]):
             self._show_vlan(*args[1:])
+        elif "interfaces".startswith(args[0]) and "switchport".startswith(args[-1]):
+            self._show_interfaces_switchport(*args[1:-1])
         elif "interfaces".startswith(args[0]):
             self._show_interfaces(*args[1:])
         else:
@@ -72,6 +75,23 @@ class DefaultCommandProcessor(AristaBaseCommandProcessor):
             ports = [port]
 
         self.display.show_interface(self, _to_interface_json(ports))
+
+    def _show_interfaces_switchport(self, *args):
+        if len(args) == 0:
+            ports = list(filter(lambda p: not isinstance(p, VlanPort), self.switch_configuration.ports))
+        else:
+            result = self.read_interface_name(args, return_remaining=True)
+            if result is None:
+                return
+
+            port_name, remaining = result
+            if len(remaining) > 0:
+                self.display.invalid_command(self, "Invalid input")
+                return
+
+            ports = [self.switch_configuration.get_port_by_partial_name(port_name)]
+
+        self.display.show_interface_switchport(self, _to_switchport_json(ports))
 
 
 def _to_vlans_json(vlans):
@@ -215,3 +235,39 @@ def _interface_address_json(port):
         "virtualSecondaryIps": {},
         "virtualSecondaryIpsOrderedList": []
     }]
+
+
+def _to_switchport_json(ports):
+    return {
+        "switchports": {
+            port.name: {
+                "enabled": True,
+                "switchportInfo": {
+                    "accessVlanId": 1,
+                    "accessVlanName": "default",
+                    "dot1qVlanTagRequired": False,
+                    "dot1qVlanTagRequiredStatus": False,
+                    "dynamicAllowedVlans": {},
+                    "dynamicTrunkGroups": [],
+                    "macLearning": True,
+                    "mode": port.mode or "access",
+                    "sourceportFilterMode": "enabled",
+                    "staticTrunkGroups": [],
+                    "tpid": "0x8100",
+                    "tpidStatus": True,
+                    "trunkAllowedVlans": _allow_vlans(port.trunk_vlans),
+                    "trunkingNativeVlanId": 1,
+                    "trunkingNativeVlanName": "default"
+                }
+            } for port in ports
+        }
+    }
+
+
+def _allow_vlans(vlans):
+    if vlans is None:
+        return "ALL"
+    if len(vlans) == 0:
+        return "NONE"
+
+    return to_vlan_ranges(vlans)
