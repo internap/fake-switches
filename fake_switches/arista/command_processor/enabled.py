@@ -73,7 +73,7 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
         for port in ports:
             self.write_line("interface {}".format(port.name))
             if port.trunk_vlans is not None:
-                self.write_line("   switchport trunk allowed vlan %s" % to_vlan_ranges(port.trunk_vlans))
+                self.write_line("   switchport trunk allowed vlan {}".format(to_vlan_ranges(port.trunk_vlans)))
             if port.mode is not None:
                 self.write_line("   switchport mode {}".format(port.mode))
             if isinstance(port, VlanPort):

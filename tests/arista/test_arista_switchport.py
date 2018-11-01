@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from tests.arista import enable, assert_interface_configuration, configuring_interface
+from hamcrest import assert_that, is_
+
+from tests.arista import enable, assert_interface_configuration, configuring_interface, with_eapi, create_vlan, \
+    remove_vlan
 from tests.util.protocol_util import ProtocolTest, SshTester, with_protocol
 
 
@@ -232,3 +235,159 @@ class TestAristaInterfaceVlans(ProtocolTest):
         t.read("my_arista(config)#")
         t.write("exit")
         t.read("my_arista#")
+
+    @with_protocol
+    @with_eapi
+    def test_show_interfaces_switchport(self, t, api):
+        t.write("show interfaces switchport")
+        t.readln("Default switchport mode: access")
+        t.readln("")
+        t.readln("Name: Et1")
+        t.readln("Switchport: Enabled")
+        t.readln("Administrative Mode: static access")
+        t.readln("Operational Mode: static access")
+        t.readln("MAC Address Learning: enabled")
+        t.readln("Dot1q ethertype/TPID: 0x8100 (active)")
+        t.readln("Dot1q Vlan Tag Required (Administrative/Operational): No/No")
+        t.readln("Access Mode VLAN: 1 (default)")
+        t.readln("Trunking Native Mode VLAN: 1 (default)")
+        t.readln("Administrative Native VLAN tagging: disabled")
+        t.readln("Trunking VLANs Enabled: ALL")
+        t.readln("Static Trunk Groups:")
+        t.readln("Dynamic Trunk Groups:")
+        t.readln("Source interface filtering: enabled")
+        t.readln("")
+        t.readln("Name: Et2")
+        t.readln("Switchport: Enabled")
+        t.readln("Administrative Mode: static access")
+        t.readln("Operational Mode: static access")
+        t.readln("MAC Address Learning: enabled")
+        t.readln("Dot1q ethertype/TPID: 0x8100 (active)")
+        t.readln("Dot1q Vlan Tag Required (Administrative/Operational): No/No")
+        t.readln("Access Mode VLAN: 1 (default)")
+        t.readln("Trunking Native Mode VLAN: 1 (default)")
+        t.readln("Administrative Native VLAN tagging: disabled")
+        t.readln("Trunking VLANs Enabled: ALL")
+        t.readln("Static Trunk Groups:")
+        t.readln("Dynamic Trunk Groups:")
+        t.readln("Source interface filtering: enabled")
+        t.readln("")
+        t.read("my_arista>")
+
+        result = api.enable(["show interfaces switchport"], strict=True)
+
+        expected_json_content = {
+            "sourceDetail": "",
+            "switchports": {
+                "Ethernet1": {
+                    "enabled": True,
+                    "switchportInfo": {
+                        "accessVlanId": 1,
+                        "accessVlanName": "default",
+                        "dot1qVlanTagRequired": False,
+                        "dot1qVlanTagRequiredStatus": False,
+                        "dynamicAllowedVlans": {},
+                        "dynamicTrunkGroups": [],
+                        "macLearning": True,
+                        "mode": "access",
+                        "sourceportFilterMode": "enabled",
+                        "staticTrunkGroups": [],
+                        "tpid": "0x8100",
+                        "tpidStatus": True,
+                        "trunkAllowedVlans": "ALL",
+                        "trunkingNativeVlanId": 1,
+                        "trunkingNativeVlanName": "default"
+                    }
+                },
+                "Ethernet2": {
+                    "enabled": True,
+                    "switchportInfo": {
+                        "accessVlanId": 1,
+                        "accessVlanName": "default",
+                        "dot1qVlanTagRequired": False,
+                        "dot1qVlanTagRequiredStatus": False,
+                        "dynamicAllowedVlans": {},
+                        "dynamicTrunkGroups": [],
+                        "macLearning": True,
+                        "mode": "access",
+                        "sourceportFilterMode": "enabled",
+                        "staticTrunkGroups": [],
+                        "tpid": "0x8100",
+                        "tpidStatus": True,
+                        "trunkAllowedVlans": "ALL",
+                        "trunkingNativeVlanId": 1,
+                        "trunkingNativeVlanName": "default"
+                    }
+                }
+            }
+        }
+
+        assert_that(result, is_([
+            {
+                "command": "show interfaces switchport",
+                "encoding": "json",
+                "response": expected_json_content,
+                "result": expected_json_content
+            }
+        ]))
+
+    @with_protocol
+    def test_show_interfaces_switchport_trunk_vlans(self, t):
+        enable(t)
+
+        create_vlan(t, "13")
+        create_vlan(t, "14")
+
+        configuring_interface(t, "Et1", do="switchport mode trunk")
+        configuring_interface(t, "Et1", do="switchport trunk allowed vlan 13-14")
+
+        t.write("show interfaces et1 switchport")
+        t.readln("Name: Et1")
+        t.readln("Switchport: Enabled")
+        t.readln("Administrative Mode: trunk")
+        t.readln("Operational Mode: trunk")
+        t.readln("MAC Address Learning: enabled")
+        t.readln("Dot1q ethertype/TPID: 0x8100 (active)")
+        t.readln("Dot1q Vlan Tag Required (Administrative/Operational): No/No")
+        t.readln("Access Mode VLAN: 1 (default)")
+        t.readln("Trunking Native Mode VLAN: 1 (default)")
+        t.readln("Administrative Native VLAN tagging: disabled")
+        t.readln("Trunking VLANs Enabled: 13-14")
+        t.readln("Static Trunk Groups:")
+        t.readln("Dynamic Trunk Groups:")
+        t.readln("Source interface filtering: enabled")
+        t.readln("")
+        t.read("my_arista#")
+
+        configuring_interface(t, "Et1", do="switchport trunk allowed vlan none")
+
+        t.write("show interfaces ethernet 1 switchport")
+        t.readln("Name: Et1")
+        t.readln("Switchport: Enabled")
+        t.readln("Administrative Mode: trunk")
+        t.readln("Operational Mode: trunk")
+        t.readln("MAC Address Learning: enabled")
+        t.readln("Dot1q ethertype/TPID: 0x8100 (active)")
+        t.readln("Dot1q Vlan Tag Required (Administrative/Operational): No/No")
+        t.readln("Access Mode VLAN: 1 (default)")
+        t.readln("Trunking Native Mode VLAN: 1 (default)")
+        t.readln("Administrative Native VLAN tagging: disabled")
+        t.readln("Trunking VLANs Enabled: NONE")
+        t.readln("Static Trunk Groups:")
+        t.readln("Dynamic Trunk Groups:")
+        t.readln("Source interface filtering: enabled")
+        t.readln("")
+        t.read("my_arista#")
+
+        remove_vlan(t, "13")
+        remove_vlan(t, "14")
+
+    @with_protocol
+    def test_show_interfaces_switchport_errors(self, t):
+        t.write("show interfaces patate switchport")
+        t.readln("% Incomplete command")
+        t.read("my_arista>")
+
+        t.write("show interfaces ethernet 1 2 switchport")
+        t.readln("% Invalid input")
+        t.read("my_arista>")

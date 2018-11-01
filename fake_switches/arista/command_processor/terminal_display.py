@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from fake_switches.arista.command_processor import short_port_name
 from fake_switches.switch_configuration import split_port_name
 
 
@@ -85,6 +86,56 @@ class TerminalDisplay(object):
         processor.write_line("     0 output errors, 0 collisions")
         processor.write_line("     0 late collision, 0 deferred, 0 output discards")
         processor.write_line("     0 PAUSE output")
+
+    def show_interface_switchport(self, processor, switchport_json):
+        ports = switchport_json["switchports"].items()
+        if len(ports) > 1:
+            processor.write_line("Default switchport mode: access")
+            processor.write_line("")
+
+        for name, properties in sorted(iter(ports), key=lambda item: int(split_port_name(item[0])[1])):
+            switchport = properties["switchportInfo"]
+            processor.write_line("Name: {}"
+                                 .format(short_port_name(name)))
+
+            processor.write_line("Switchport: {}"
+                                 .format("Enabled" if properties["enabled"] else "Disabled"))
+
+            processor.write_line("Administrative Mode: {}"
+                                 .format("static access" if switchport["mode"] == "access" else switchport["mode"]))
+
+            processor.write_line("Operational Mode: {}"
+                                 .format("static access" if switchport["mode"] == "access" else switchport["mode"]))
+
+            processor.write_line("MAC Address Learning: {}"
+                                 .format("enabled" if switchport["macLearning"] else "disabled"))
+
+            processor.write_line("Dot1q ethertype/TPID: {} ({})"
+                                 .format(switchport["tpid"], "active" if switchport["tpidStatus"] else "inactive"))
+
+            processor.write_line("Dot1q Vlan Tag Required (Administrative/Operational): {}"
+                                 .format("Yes/Yes" if switchport["dot1qVlanTagRequiredStatus"] else "No/No"))
+
+            processor.write_line("Access Mode VLAN: {} ({})"
+                                 .format(switchport["accessVlanId"], switchport["accessVlanName"]))
+
+            processor.write_line("Trunking Native Mode VLAN: {} ({})"
+                                 .format(switchport["trunkingNativeVlanId"], switchport["trunkingNativeVlanName"]))
+
+            processor.write_line("Administrative Native VLAN tagging: disabled")
+
+            processor.write_line("Trunking VLANs Enabled: {}"
+                                 .format(switchport["trunkAllowedVlans"]))
+
+            processor.write_line("Static Trunk Groups:")
+
+            processor.write_line("Dynamic Trunk Groups:")
+
+            processor.write_line("Source interface filtering: {}"
+                                 .format(switchport["sourceportFilterMode"]))
+
+            processor.write_line("")
+
 
 def _to_cidr(ip):
     return "{}/{}".format(ip["address"], ip["maskLen"])
