@@ -61,12 +61,12 @@ class TestAristaRunningConfig(ProtocolTest):
         configuring_interface_vlan(t, "1000", do="ip address 1.1.1.1/27")
         configuring_interface_vlan(t, "2000", do="ip address 2.2.2.2/27")
         configuring_interface(t, "Et1", do="switchport trunk allowed vlan 123-124,127")
-        configuring_interface(t, "Et3", do="switchport mode trunk")
+        configuring_interface(t, "Et2", do="switchport mode trunk")
 
-        t.write("show running-config interfaces Et3 vla 2000 ETHERNET 1 vlan 1000")
+        t.write("show running-config interfaces Et2 vla 2000 ETHERNET 1 vlan 1000")
         t.readln("interface Ethernet1")
         t.readln("   switchport trunk allowed vlan 123-124,127")
-        t.readln("interface Ethernet3")
+        t.readln("interface Ethernet2")
         t.readln("   switchport mode trunk")
         t.readln("interface Vlan1000")
         t.readln("   ip address 1.1.1.1/27")
@@ -74,12 +74,12 @@ class TestAristaRunningConfig(ProtocolTest):
         t.readln("   ip address 2.2.2.2/27")
         t.read("my_arista#")
 
-        result = api.get_config(params="interfaces Vlan1000 Ethernet3 Ethernet1 Vlan2000")
+        result = api.get_config(params="interfaces Vlan1000 Ethernet2 Ethernet1 Vlan2000")
 
         assert_that(result, is_([
             "interface Ethernet1",
             "   switchport trunk allowed vlan 123-124,127",
-            "interface Ethernet3",
+            "interface Ethernet2",
             "   switchport mode trunk",
             "interface Vlan1000",
             "   ip address 1.1.1.1/27",
@@ -89,7 +89,7 @@ class TestAristaRunningConfig(ProtocolTest):
         ]))
 
         configuring_interface(t, "Et1", do="no switchport trunk allowed vlan")
-        configuring_interface(t, "Et3", do="no switchport mode")
+        configuring_interface(t, "Et2", do="no switchport mode")
 
         remove_interface_vlan(t, "1000")
         remove_vlan(t, "1000")

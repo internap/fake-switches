@@ -39,25 +39,52 @@ class TerminalDisplay(object):
 
     def show_interface(self, processor, interfaces_json):
         for interface in sorted(interfaces_json["interfaces"].values(), key=lambda e: int(split_port_name(e["name"])[1])):
-            processor.write_line("{} is up, line protocol is up (connected)".format(interface["name"]))
-            processor.write_line("  Hardware is Vlan, address is {} (bia {})"
-                                 .format(_mac6to3(interface["physicalAddress"]),
-                                         _mac6to3(interface["burnedInAddress"])))
+            if interface["name"].startswith("Vlan"):
+                self._show_vlan_port(processor, interface)
+            else:
+                self._show_phys_port(processor, interface)
 
-            int_address = next(iter(interface["interfaceAddress"]), None)
-            if int_address is not None:
-                primary = _to_cidr(int_address["primaryIp"])
-                if primary == "0.0.0.0/0":
-                    processor.write_line("  No Internet protocol address assigned")
-                else:
-                    processor.write_line("  Internet address is {}".format(primary))
-                    for secondary_ip in int_address["secondaryIpsOrderedList"]:
-                        processor.write_line("  Secondary address is {}".format(_to_cidr(secondary_ip)))
-                    processor.write_line("  Broadcast address is 255.255.255.255")
+    def _show_vlan_port(self, processor, interface):
+        processor.write_line("{} is up, line protocol is up (connected)".format(interface["name"]))
+        processor.write_line("  Hardware is Vlan, address is {} (bia {})"
+                             .format(_mac6to3(interface["physicalAddress"]),
+                                     _mac6to3(interface["burnedInAddress"])))
+        int_address = next(iter(interface["interfaceAddress"]), None)
+        if int_address is not None:
+            primary = _to_cidr(int_address["primaryIp"])
+            if primary == "0.0.0.0/0":
+                processor.write_line("  No Internet protocol address assigned")
+            else:
+                processor.write_line("  Internet address is {}".format(primary))
+                for secondary_ip in int_address["secondaryIpsOrderedList"]:
+                    processor.write_line("  Secondary address is {}".format(_to_cidr(secondary_ip)))
+                processor.write_line("  Broadcast address is 255.255.255.255")
+        processor.write_line("  IP MTU 1500 bytes")
+        processor.write_line("  Up 0 minutes, 0 seconds")
 
-            processor.write_line("  IP MTU 1500 bytes")
-            processor.write_line("  Up 00 minutes, 00 seconds")
-
+    def _show_phys_port(self, processor, interface):
+        processor.write_line("{} is up, line protocol is up (connected)".format(interface["name"]))
+        processor.write_line("  Hardware is Ethernet, address is {} (bia {})"
+                             .format(_mac6to3(interface["physicalAddress"]),
+                                     _mac6to3(interface["burnedInAddress"])))
+        processor.write_line("  Ethernet MTU 9214 bytes")
+        processor.write_line("  Full-duplex, Unconfigured, auto negotiation: off, uni-link: n/a")
+        processor.write_line("  Up 0 minutes, 0 seconds")
+        processor.write_line("  Loopback Mode : None")
+        processor.write_line("  0 link status changes since last clear")
+        processor.write_line("  Last clearing of \"show interface\" counters never")
+        processor.write_line("  0 minutes input rate 0 bps (- with framing overhead), 0 packets/sec")
+        processor.write_line("  0 minutes output rate 0 bps (- with framing overhead), 0 packets/sec")
+        processor.write_line("     0 packets input, 0 bytes")
+        processor.write_line("     Received 0 broadcasts, 0 multicast")
+        processor.write_line("     0 runts, 0 giants")
+        processor.write_line("     0 input errors, 0 CRC, 0 alignment, 0 symbol, 0 input discards")
+        processor.write_line("     0 PAUSE input")
+        processor.write_line("     0 packets output, 0 bytes")
+        processor.write_line("     Sent 0 broadcasts, 0 multicast")
+        processor.write_line("     0 output errors, 0 collisions")
+        processor.write_line("     0 late collision, 0 deferred, 0 output discards")
+        processor.write_line("     0 PAUSE output")
 
 def _to_cidr(ip):
     return "{}/{}".format(ip["address"], ip["maskLen"])

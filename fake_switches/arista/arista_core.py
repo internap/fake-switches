@@ -58,9 +58,7 @@ class AristaSwitchCore(SwitchCore):
     def get_default_ports():
         return [
             Port("Ethernet1"),
-            Port("Ethernet2"),
-            Port("Ethernet3"),
-            Port("Ethernet4")
+            Port("Ethernet2")
         ]
 
     def processor_stack(self, display):
