@@ -66,7 +66,7 @@ class TestAristaInterfaceVlans(ProtocolTest):
         t.readln("  Secondary address is 1.1.1.5/27")
         t.readln("  Broadcast address is 255.255.255.255")
         t.readln("  IP MTU 1500 bytes")
-        t.readln("  Up 00 minutes, 00 seconds")
+        t.readln("  Up 0 minutes, 0 seconds")
         t.read("my_arista#")
 
         result = api.enable("show interfaces VLAN0299")
@@ -143,127 +143,17 @@ class TestAristaInterfaceVlans(ProtocolTest):
 
     @with_protocol
     @with_eapi
-    def test_show_interfaces(self, t, api):
-        enable(t)
-
-        create_vlan(t, "299")
-        create_interface_vlan(t, "299")
-        configuring_interface_vlan(t, "299", do="ip address 1.1.1.2/24")
-
-        create_vlan(t, "777")
-        create_interface_vlan(t, "777")
-        configuring_interface_vlan(t, "777", do="ip address 7.7.7.7/24")
-
-        t.write("show interfaces")
-        t.readln("Vlan299 is up, line protocol is up (connected)")
-        t.readln("  Hardware is Vlan, address is 0000.0000.0000 (bia 0000.0000.0000)")
-        t.readln("  Internet address is 1.1.1.2/24")
-        t.readln("  Broadcast address is 255.255.255.255")
-        t.readln("  IP MTU 1500 bytes")
-        t.readln("  Up 00 minutes, 00 seconds")
-        t.readln("Vlan777 is up, line protocol is up (connected)")
-        t.readln("  Hardware is Vlan, address is 0000.0000.0000 (bia 0000.0000.0000)")
-        t.readln("  Internet address is 7.7.7.7/24")
-        t.readln("  Broadcast address is 255.255.255.255")
-        t.readln("  IP MTU 1500 bytes")
-        t.readln("  Up 00 minutes, 00 seconds")
-        t.read("my_arista#")
-
-        result = api.enable("show interfaces")
-
-        assert_that(result, is_([
-            {
-                "command": "show interfaces",
-                "encoding": "json",
-                "result": {
-                    "sourceDetail": "",
-                    "interfaces": {
-                        "Vlan299": {
-                            "bandwidth": 0,
-                            "burnedInAddress": "00:00:00:00:00:00",
-                            "description": "",
-                            "forwardingModel": "routed",
-                            "hardware": "vlan",
-                            "interfaceAddress": [
-                                {
-                                    "broadcastAddress": "255.255.255.255",
-                                    "dhcp": False,
-                                    "primaryIp": {
-                                        "address": "1.1.1.2",
-                                        "maskLen": 24
-                                    },
-                                    "secondaryIps": {},
-                                    "secondaryIpsOrderedList": [],
-                                    "virtualIp": {
-                                        "address": "0.0.0.0",
-                                        "maskLen": 0
-                                    },
-                                    "virtualSecondaryIps": {},
-                                    "virtualSecondaryIpsOrderedList": []
-                                }
-                            ],
-                            "interfaceStatus": "connected",
-                            "lastStatusChangeTimestamp": 0.0,
-                            "lineProtocolStatus": "up",
-                            "mtu": 1500,
-                            "name": "Vlan299",
-                            "physicalAddress": "00:00:00:00:00:00"
-                        },
-                        "Vlan777": {
-                            "bandwidth": 0,
-                            "burnedInAddress": "00:00:00:00:00:00",
-                            "description": "",
-                            "forwardingModel": "routed",
-                            "hardware": "vlan",
-                            "interfaceAddress": [
-                                {
-                                    "broadcastAddress": "255.255.255.255",
-                                    "dhcp": False,
-                                    "primaryIp": {
-                                        "address": "7.7.7.7",
-                                        "maskLen": 24
-                                    },
-                                    "secondaryIps": {},
-                                    "secondaryIpsOrderedList": [],
-                                    "virtualIp": {
-                                        "address": "0.0.0.0",
-                                        "maskLen": 0
-                                    },
-                                    "virtualSecondaryIps": {},
-                                    "virtualSecondaryIpsOrderedList": []
-                                }
-                            ],
-                            "interfaceStatus": "connected",
-                            "lastStatusChangeTimestamp": 0.0,
-                            "lineProtocolStatus": "up",
-                            "mtu": 1500,
-                            "name": "Vlan777",
-                            "physicalAddress": "00:00:00:00:00:00"
-                        }
-                    }
-                }
-            }
-        ]))
-
-        remove_interface_vlan(t, "299")
-        remove_vlan(t, "299")
-
-        remove_interface_vlan(t, "777")
-        remove_vlan(t, "777")
-
-    @with_protocol
-    @with_eapi
     def test_new_interface_vlan_has_no_internet_address(self, t, api):
         enable(t)
 
         create_vlan(t, "299")
         create_interface_vlan(t, "299")
 
-        t.write("show interfaces")
+        t.write("show interfaces Vlan299")
         t.readln("Vlan299 is up, line protocol is up (connected)")
         t.readln("  Hardware is Vlan, address is 0000.0000.0000 (bia 0000.0000.0000)")
         t.readln("  IP MTU 1500 bytes")
-        t.readln("  Up 00 minutes, 00 seconds")
+        t.readln("  Up 0 minutes, 0 seconds")
         t.read("my_arista#")
 
         result = api.enable("show interfaces Vlan299")
@@ -307,12 +197,12 @@ class TestAristaInterfaceVlans(ProtocolTest):
         configuring_interface_vlan(t, "299", do="ip address 1.1.1.2/24")
         configuring_interface_vlan(t, "299", do="no ip address")
 
-        t.write("show interfaces")
+        t.write("show interfaces Vlan299")
         t.readln("Vlan299 is up, line protocol is up (connected)")
         t.readln("  Hardware is Vlan, address is 0000.0000.0000 (bia 0000.0000.0000)")
         t.readln("  No Internet protocol address assigned")
         t.readln("  IP MTU 1500 bytes")
-        t.readln("  Up 00 minutes, 00 seconds")
+        t.readln("  Up 0 minutes, 0 seconds")
         t.read("my_arista#")
 
         result = api.enable("show interfaces Vlan299")

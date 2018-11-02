@@ -15,6 +15,7 @@ from netaddr import IPNetwork
 
 from fake_switches.arista.command_processor import vlan_display_name, AristaBaseCommandProcessor
 from fake_switches.command_processing.shell_session import TerminalExitSignal
+from fake_switches.switch_configuration import VlanPort
 
 
 class DefaultCommandProcessor(AristaBaseCommandProcessor):
@@ -60,17 +61,17 @@ class DefaultCommandProcessor(AristaBaseCommandProcessor):
             raise NotImplementedError
 
         if len(args) == 0:
-            interfaces = self.switch_configuration.get_vlan_ports()
+            ports = self.switch_configuration.ports
         else:
-            interface = self.switch_configuration.get_port_by_partial_name(self.read_interface_name(args))
+            port = self.switch_configuration.get_port_by_partial_name(self.read_interface_name(args))
 
-            if interface is None:
+            if port is None:
                 self.display.invalid_command(self, "Interface does not exist", json_data=None)
                 return
 
-            interfaces = [interface]
+            ports = [port]
 
-        self.display.show_interface(self, _to_ip_interface_json(interfaces))
+        self.display.show_interface(self, _to_interface_json(ports))
 
 
 def _to_vlans_json(vlans):
@@ -86,37 +87,106 @@ def _to_vlans_json(vlans):
     }
 
 
-def _to_ip_interface_json(interfaces):
+def _to_interface_json(ports):
     return {
         "interfaces": {
-            interface.name: {
-                "bandwidth": 0,
-                "burnedInAddress": "00:00:00:00:00:00",
-                "description": "",
-                "forwardingModel": "routed",
-                "hardware": "vlan",
-                "interfaceAddress": _interface_address_json(interface),
-                "interfaceStatus": "connected",
-                "lastStatusChangeTimestamp": 0.0,
-                "lineProtocolStatus": "up",
-                "mtu": 1500,
-                "name": interface.name,
-                "physicalAddress": "00:00:00:00:00:00"
-            } for interface in interfaces
+            port.name: _json_format_interface(port) for port in ports
         }
     }
 
 
-def _interface_address_json(interface):
-    if len(interface.ips) == 0:
-        if interface.vendor_specific.get("has-internet-protocol", False):
+def _json_format_interface(port):
+    if isinstance(port, VlanPort):
+        return _to_ip_interface_json(port)
+    else:
+        return _to_phys_interface_json(port)
+
+
+def _to_phys_interface_json(port):
+    return {
+        "lastStatusChangeTimestamp": 0.0,
+        "name": port.name,
+        "interfaceStatus": "connected",
+        "autoNegotiate": "unknown",
+        "burnedInAddress": "00:00:00:00:00:00",
+        "loopbackMode": "loopbackNone",
+        "interfaceStatistics": {
+            "inBitsRate": 0.0,
+            "inPktsRate": 0.0,
+            "outBitsRate": 0.0,
+            "updateInterval": 0.0,
+            "outPktsRate": 0.0
+        },
+        "mtu": 9214,
+        "hardware": "ethernet",
+        "duplex": "duplexFull",
+        "bandwidth": 0,
+        "forwardingModel": "bridged",
+        "lineProtocolStatus": "up",
+        "interfaceCounters": {
+            "outBroadcastPkts": 0,
+            "outUcastPkts": 0,
+            "totalOutErrors": 0,
+            "inMulticastPkts": 0,
+            "counterRefreshTime": 0,
+            "inBroadcastPkts": 0,
+            "outputErrorsDetail": {
+                "deferredTransmissions": 0,
+                "txPause": 0,
+                "collisions": 0,
+                "lateCollisions": 0
+            },
+            "inOctets": 0,
+            "outDiscards": 0,
+            "outOctets": 0,
+            "inUcastPkts": 0,
+            "inTotalPkts": 0,
+            "inputErrorsDetail": {
+                "runtFrames": 0,
+                "rxPause": 0,
+                "fcsErrors": 0,
+                "alignmentErrors": 0,
+                "giantFrames": 0,
+                "symbolErrors": 0
+            },
+            "linkStatusChanges": 5,
+            "outMulticastPkts": 0,
+            "totalInErrors": 0,
+            "inDiscards": 0
+        },
+        "interfaceAddress": [],
+        "physicalAddress": "00:00:00:00:00:00",
+        "description": ""
+    }
+
+
+def _to_ip_interface_json(port):
+    return {
+        "bandwidth": 0,
+        "burnedInAddress": "00:00:00:00:00:00",
+        "description": "",
+        "forwardingModel": "routed",
+        "hardware": "vlan",
+        "interfaceAddress": _interface_address_json(port),
+        "interfaceStatus": "connected",
+        "lastStatusChangeTimestamp": 0.0,
+        "lineProtocolStatus": "up",
+        "mtu": 1500,
+        "name": port.name,
+        "physicalAddress": "00:00:00:00:00:00"
+    }
+
+
+def _interface_address_json(port):
+    if len(port.ips) == 0:
+        if port.vendor_specific.get("has-internet-protocol", False):
             primary_ipn = IPNetwork("0.0.0.0/0")
             secondary_ipns = []
         else:
             return []
     else:
-        primary_ipn = interface.ips[0]
-        secondary_ipns = interface.ips[1:]
+        primary_ipn = port.ips[0]
+        secondary_ipns = port.ips[1:]
 
     return [{
         "broadcastAddress": "255.255.255.255",
