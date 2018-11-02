@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from fake_switches.arista.command_processor import AristaBaseCommandProcessor
+from fake_switches.arista.command_processor import AristaBaseCommandProcessor, NameIsIncomplete, InvalidVlanNumber, \
+    VlanNumberIsZero
 from fake_switches.switch_configuration import split_port_name
 
 
@@ -27,14 +28,20 @@ class ConfigCommandProcessor(AristaBaseCommandProcessor):
         return self.switch_configuration.name + "(config)#"
 
     def do_vlan(self, raw_number, *_):
-        number = self.read_vlan_number(raw_number)
+        try:
+            number = self.read_vlan_number(raw_number)
+        except VlanNumberIsZero:
+            self.display.invalid_command(self, "Incomplete command")
+            return
+        except InvalidVlanNumber:
+            self.display.invalid_command(self, "Invalid input")
+            return
 
-        if number is not None:
-            vlan = self.switch_configuration.get_vlan(number)
-            if not vlan:
-                vlan = self.switch_configuration.new("Vlan", number)
-                self.switch_configuration.add_vlan(vlan)
-            self.move_to(self.config_vlan_processor, vlan)
+        vlan = self.switch_configuration.get_vlan(number)
+        if not vlan:
+            vlan = self.switch_configuration.new("Vlan", number)
+            self.switch_configuration.add_vlan(vlan)
+        self.move_to(self.config_vlan_processor, vlan)
 
     def do_no_vlan(self, *args):
         vlan = self.switch_configuration.get_vlan(int(args[0]))
@@ -42,8 +49,13 @@ class ConfigCommandProcessor(AristaBaseCommandProcessor):
             self.switch_configuration.remove_vlan(vlan)
 
     def do_interface(self, *args):
-        interface_name = self.read_interface_name(args)
-        if interface_name is None:
+        try:
+            interface_name = self.read_interface_name(args)
+        except NameIsIncomplete:
+            self.display.invalid_command(self, "Incomplete command")
+            return
+        except InvalidVlanNumber:
+            self.display.invalid_command(self, "Invalid input")
             return
 
         port = self.switch_configuration.get_port_by_partial_name(interface_name)

@@ -27,22 +27,18 @@ class AristaBaseCommandProcessor(BaseCommandProcessor):
         try:
             number = int(input)
         except ValueError:
-            self.display.invalid_command(self, "Invalid input")
-            return None
+            raise VlanNumberIsNotAnInt
 
         if number < 0 or number > 4094:
-            self.display.invalid_command(self, "Invalid input")
+            raise VlanNumberIsNotValid
         elif number == 0:
-            self.display.invalid_command(self, "Incomplete command")
+            raise VlanNumberIsZero
         else:
             return number
 
-        return None
-
     def read_interface_name(self, tokens, return_remaining=False):
         if len(tokens) == 0:
-            self.display.invalid_command(self, "Invalid input")
-            return None
+            raise NothingToRead
 
         name, number = safe_split_port_name(tokens[0])
         if number is not None:
@@ -51,24 +47,11 @@ class AristaBaseCommandProcessor(BaseCommandProcessor):
             name, number = tokens[0:2]
             remaining_tokens = tokens[2:]
         else:
-            self.display.invalid_command(self, "Incomplete command")
-            return None
+            raise NameIsIncomplete
 
         name = name.capitalize()
         if name == "Vlan":
-            if number is None:
-                self.display.invalid_command(self, "Incomplete command")
-                return None
-
-            number = self.read_vlan_number(number)
-            if number is None:
-                return None
-
-            number = str(number)
-        else:
-            existing_port = self.switch_configuration.get_port_by_partial_name(name + number)
-            if existing_port is None:
-                raise NotImplementedError
+            number = str(self.read_vlan_number(number))
 
         full_name = name + number
 
@@ -136,6 +119,66 @@ def with_vlan_list(fn):
     return wrapper
 
 
+def with_valid_port_list(fn):
+    @wraps(fn)
+    def wrapper(self, *args):
+        if len(args) == 0:
+            ports = self.switch_configuration.ports
+        else:
+            try:
+                result = self.read_interface_name(args, return_remaining=True)
+            except NameIsIncomplete:
+                self.display.invalid_command(self, "Incomplete command")
+                return
+            except InvalidVlanNumber:
+                self.display.invalid_command(self, "Invalid input")
+                return
+
+            port_name, remaining = result
+            if len(remaining) > 0:
+                self.display.invalid_command(self, "Invalid input")
+                return
+
+            port = self.switch_configuration.get_port_by_partial_name(port_name)
+
+            if port is None:
+                if port_name.startswith("Vlan"):
+                    self.display.invalid_command(self, "Interface does not exist")
+                else:
+                    self.display.invalid_command(self, "Invalid input")
+                return
+
+            ports = [port]
+
+        return fn(self, ports)
+
+    return wrapper
+
+
 def short_port_name(port_name):
     name, if_id = split_port_name(port_name)
     return "{}{}".format(name[:2], if_id)
+
+
+class NothingToRead(Exception):
+    pass
+
+
+class NameIsIncomplete(Exception):
+    pass
+
+
+class InvalidVlanNumber(Exception):
+    pass
+
+
+class VlanNumberIsNotAnInt(InvalidVlanNumber):
+    pass
+
+
+class VlanNumberIsNotValid(InvalidVlanNumber):
+    pass
+
+
+class VlanNumberIsZero(VlanNumberIsNotValid):
+    pass
