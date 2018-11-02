@@ -379,6 +379,12 @@ class TestAristaInterfaceVlans(ProtocolTest):
                                                     "invalid command [Interface does not exist]"))
 
     @with_protocol
+    def test_show_unknown_interface_errors(self, t):
+        t.write("show interface vlan 6000")
+        t.readln("% Invalid input")
+        t.read("my_arista>")
+
+    @with_protocol
     def test_remove_unknown_interface_vlan_doesnt_care(self, t):
         enable(t)
 

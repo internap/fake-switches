@@ -13,7 +13,8 @@
 # limitations under the License.
 from netaddr import IPNetwork
 
-from fake_switches.arista.command_processor import vlan_display_name, AristaBaseCommandProcessor
+from fake_switches.arista.command_processor import vlan_display_name, AristaBaseCommandProcessor, InvalidVlanNumber, \
+    VlanNumberIsZero, with_valid_port_list
 from fake_switches.command_processing.shell_session import TerminalExitSignal
 from fake_switches.dell.command_processor.enabled import to_vlan_ranges
 from fake_switches.switch_configuration import VlanPort
@@ -45,8 +46,13 @@ class DefaultCommandProcessor(AristaBaseCommandProcessor):
 
     def _show_vlan(self, *args):
         if len(args) == 1:
-            number = self.read_vlan_number(args[0])
-            if number is None:
+            try:
+                number = self.read_vlan_number(args[0])
+            except VlanNumberIsZero:
+                self.display.invalid_command(self, "Incomplete command")
+                return
+            except InvalidVlanNumber:
+                self.display.invalid_command(self, "Invalid input")
                 return
 
             vlans = list(filter(lambda e: e.number == number, self.switch_configuration.vlans))
@@ -59,39 +65,14 @@ class DefaultCommandProcessor(AristaBaseCommandProcessor):
 
         self.display.show_vlans(self, _to_vlans_json(vlans))
 
-    def _show_interfaces(self, *args):
-        if len(args) > 2:
-            raise NotImplementedError
-
-        if len(args) == 0:
-            ports = self.switch_configuration.ports
-        else:
-            port = self.switch_configuration.get_port_by_partial_name(self.read_interface_name(args))
-
-            if port is None:
-                self.display.invalid_command(self, "Interface does not exist", json_data=None)
-                return
-
-            ports = [port]
-
+    @with_valid_port_list
+    def _show_interfaces(self, ports):
         self.display.show_interface(self, _to_interface_json(ports))
 
-    def _show_interfaces_switchport(self, *args):
-        if len(args) == 0:
-            ports = list(filter(lambda p: not isinstance(p, VlanPort), self.switch_configuration.ports))
-        else:
-            result = self.read_interface_name(args, return_remaining=True)
-            if result is None:
-                return
-
-            port_name, remaining = result
-            if len(remaining) > 0:
-                self.display.invalid_command(self, "Invalid input")
-                return
-
-            ports = [self.switch_configuration.get_port_by_partial_name(port_name)]
-
-        self.display.show_interface_switchport(self, _to_switchport_json(ports))
+    @with_valid_port_list
+    def _show_interfaces_switchport(self, ports):
+        phys_ports = filter(lambda p: not isinstance(p, VlanPort), ports)
+        self.display.show_interface_switchport(self, _to_switchport_json(phys_ports))
 
 
 def _to_vlans_json(vlans):

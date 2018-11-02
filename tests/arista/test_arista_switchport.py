@@ -15,7 +15,7 @@
 from hamcrest import assert_that, is_
 
 from tests.arista import enable, assert_interface_configuration, configuring_interface, with_eapi, create_vlan, \
-    remove_vlan
+    remove_vlan, create_interface_vlan, remove_interface_vlan
 from tests.util.protocol_util import ProtocolTest, SshTester, with_protocol
 
 
@@ -238,7 +238,12 @@ class TestAristaInterfaceVlans(ProtocolTest):
 
     @with_protocol
     @with_eapi
-    def test_show_interfaces_switchport(self, t, api):
+    def test_show_interfaces_switchport_doesnt_show_vlan_interfaces(self, t, api):
+        enable(t)
+
+        create_vlan(t, "299")
+        create_interface_vlan(t, "299")
+
         t.write("show interfaces switchport")
         t.readln("Default switchport mode: access")
         t.readln("")
@@ -272,7 +277,7 @@ class TestAristaInterfaceVlans(ProtocolTest):
         t.readln("Dynamic Trunk Groups:")
         t.readln("Source interface filtering: enabled")
         t.readln("")
-        t.read("my_arista>")
+        t.read("my_arista#")
 
         result = api.enable(["show interfaces switchport"], strict=True)
 
@@ -330,6 +335,9 @@ class TestAristaInterfaceVlans(ProtocolTest):
                 "result": expected_json_content
             }
         ]))
+
+        remove_interface_vlan(t, "299")
+        remove_vlan(t, "299")
 
     @with_protocol
     def test_show_interfaces_switchport_trunk_vlans(self, t):
@@ -389,5 +397,9 @@ class TestAristaInterfaceVlans(ProtocolTest):
         t.read("my_arista>")
 
         t.write("show interfaces ethernet 1 2 switchport")
+        t.readln("% Invalid input")
+        t.read("my_arista>")
+
+        t.write("show interfaces et3 switchport")
         t.readln("% Invalid input")
         t.read("my_arista>")

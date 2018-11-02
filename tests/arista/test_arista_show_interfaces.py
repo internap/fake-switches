@@ -14,6 +14,7 @@
 import json
 
 from hamcrest import assert_that, is_
+from pyeapi.eapilib import CommandError
 
 from tests.arista import enable, remove_vlan, create_vlan, create_interface_vlan, configuring_interface_vlan, \
     remove_interface_vlan, with_eapi
@@ -284,3 +285,18 @@ class TestAristaShowInterface(ProtocolTest):
 
         remove_interface_vlan(t, "777")
         remove_vlan(t, "777")
+
+    @with_protocol
+    @with_eapi
+    def test_show_interfaces_unknown(self, t, api):
+        t.write("show interfaces Et3")
+        t.readln("% Invalid input")
+        t.read("my_arista>")
+
+        with self.assertRaises(CommandError) as expect:
+            api.enable("show interfaces Et3", strict=True)
+
+        assert_that(str(expect.exception), is_(
+            "Error [1002]: CLI command 2 of 2 'show interfaces Et3' failed: invalid command "
+            "[Invalid input]"
+        ))
