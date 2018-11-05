@@ -83,3 +83,6 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
                     self.write_line("   ip address {} secondary".format(ip))
                 for ip_helper in port.ip_helpers:
                     self.write_line("   ip helper-address {}".format(ip_helper))
+                for varp_address in sorted(port.varp_addresses):
+                    self.write_line("   ip virtual-router address {}"
+                                    .format(varp_address if varp_address.prefixlen < 32 else varp_address.ip))
