@@ -212,6 +212,7 @@ class VlanPort(Port):
         self.vrrp_common_authentication = None
         self.vrrp_version = None
         self.vrrps = []
+        self.varp_addresses = []
         self.ip_redirect = True
         self.ip_proxy_arp = True
         self.unicast_reverse_path_forwarding = False

@@ -13,7 +13,7 @@
 # limitations under the License.
 import re
 
-from netaddr import IPNetwork
+from netaddr import IPNetwork, AddrFormatError
 
 from fake_switches.arista.command_processor import AristaBaseCommandProcessor, with_params, with_vlan_list, \
     short_port_name
@@ -33,6 +33,8 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
             self._add_ip(args[1:])
         elif "helper-address".startswith(args[0]):
             self._add_ip_helper(args[1:])
+        elif "virtual-router".startswith(args[0]) and "address".startswith(args[1]):
+            self._add_virtual_router_address(*args[2:])
         else:
             raise NotImplementedError
 
@@ -41,6 +43,10 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
             self._remove_ip(args[1:])
         elif "helper-address".startswith(args[0]):
             self._remove_ip_helper(args[1:])
+        elif "virtual-router".startswith(args[0]) and "address".startswith(args[1]) and len(args) == 2:
+            self._remove_all_virtual_router_addresses()
+        elif "virtual-router".startswith(args[0]) and "address".startswith(args[1]):
+            self._remove_virtual_router_address(*args[2:])
         else:
             raise NotImplementedError
 
@@ -185,6 +191,35 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
     @with_vlan_list
     def _switchport_trunk_allowed_vlan(self, vlans):
         self.port.trunk_vlans = vlans
+
+    @with_params(1)
+    def _add_virtual_router_address(self, address):
+        try:
+            ipn = IPNetwork(address)
+        except AddrFormatError:
+            self.display.invalid_command(self, "Invalid input")
+            return
+
+        for i, varp_address in enumerate(self.port.varp_addresses):
+            if varp_address.ip == ipn.ip:
+                self.port.varp_addresses[i] = ipn
+                break
+        else:
+            self.port.varp_addresses.append(ipn)
+
+    @with_params(1)
+    def _remove_virtual_router_address(self, address):
+        ipn = IPNetwork(address)
+
+        for i, varp_address in enumerate(self.port.varp_addresses):
+            if varp_address.ip == ipn.ip:
+                self.port.varp_addresses.pop(i)
+                return
+
+        raise NotImplementedError
+
+    def _remove_all_virtual_router_addresses(self):
+        self.port.varp_addresses = []
 
 
 def _read_ip(tokens):
