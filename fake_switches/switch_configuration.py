@@ -216,6 +216,7 @@ class VlanPort(Port):
         self.ip_redirect = True
         self.ip_proxy_arp = True
         self.unicast_reverse_path_forwarding = False
+        self.load_interval = None
 
     def get_vrrp_group(self, group):
         return next((vrrp for vrrp in self.vrrps if vrrp.group_id == group), None)

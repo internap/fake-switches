@@ -50,6 +50,21 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
         else:
             raise NotImplementedError
 
+    def do_load_interval(self, *args):
+        if len(args) == 0:
+            self.display.invalid_command(self, "Incomplete command")
+            return None
+
+        load_interval = args[0]
+        if not _is_valid_load_interval(load_interval):
+            self.display.invalid_command(self, "Invalid input")
+            return None
+
+        self.port.load_interval = load_interval
+
+    def do_no_load_interval(self):
+        self.port.load_interval = None
+
     def do_switchport(self, *args):
         operations = [
             (("mode",), self._switchport_mode),
@@ -220,6 +235,15 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
 
     def _remove_all_virtual_router_addresses(self):
         self.port.varp_addresses = []
+
+
+def _is_valid_load_interval(text):
+    try:
+        number = int(text)
+    except ValueError:
+        return False
+
+    return 0 <= number <= 600
 
 
 def _read_ip(tokens):
