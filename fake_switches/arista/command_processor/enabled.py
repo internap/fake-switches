@@ -77,6 +77,8 @@ class EnabledCommandProcessor(DefaultCommandProcessor):
             if port.mode is not None:
                 self.write_line("   switchport mode {}".format(port.mode))
             if isinstance(port, VlanPort):
+                if port.load_interval is not None:
+                    self.write_line("   load-interval {}".format(port.load_interval))
                 for ip in port.ips[:1]:
                     self.write_line("   ip address {}".format(ip))
                 for ip in port.ips[1:]:
