@@ -65,6 +65,18 @@ class ConfigInterfaceCommandProcessor(AristaBaseCommandProcessor):
     def do_no_load_interval(self):
         self.port.load_interval = None
 
+    def do_mpls(self, *args):
+        if args[0] == 'ip':
+            self.port.mpls_ip = True
+        else:
+            raise NotImplementedError
+
+    def do_no_mpls(self, *args):
+        if args[0] == 'ip':
+            self.port.mpls_ip = False
+        else:
+            raise NotImplementedError
+
     def do_switchport(self, *args):
         operations = [
             (("mode",), self._switchport_mode),
