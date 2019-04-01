@@ -170,6 +170,62 @@ class EnabledCommandProcessor(BaseCommandProcessor):
                 self.write_line("")
         elif "version".startswith(args[0]):
             self.show_version()
+        elif "feature".startswith(args[0]):
+            self.write_line("Feature Name          Instance  State   ")
+            self.write_line("--------------------  --------  --------")
+            for feature in self.switch_configuration.feature_list:
+                self.write_line("{: <20}  {: <8}  {: <8}".format(feature.name, feature.instance, feature.status))
+
+        elif "inventory".startswith(args[0]):
+            self.write_line('NAME: "Chassis", DESCR: "Nexus5548 Chassis"')
+            self.write_line('PID: N5K-C5548UP       , VID: V01 , SN: SSI172904AT')
+            self.write_line('')
+            self.write_line('NAME: "Module 1", DESCR: "O2 32X10GE/Modular Universal Platform Supervisor"')
+            self.write_line('PID: N5K-C5548UP       , VID: V01 , SN: FOC173669AL')
+            self.write_line('')
+            self.write_line('NAME: "Fan 1", DESCR: "Chassis fan module"')
+            self.write_line('PID: N5548P-FAN        , VID: N/A , SN: N/A')
+            self.write_line('')
+            self.write_line('NAME: "Fan 2", DESCR: "Chassis fan module"')
+            self.write_line('PID: N5548P-FAN        , VID: N/A , SN: N/A')
+            self.write_line('')
+            self.write_line('NAME: "Power supply 1", DESCR: "AC power supply"')
+            self.write_line('PID: N55-PAC-750W      , VID: V02 , SN: POG17317TYB')
+            self.write_line('')
+            self.write_line('NAME: "Power supply 2", DESCR: "AC power supply"')
+            self.write_line('PID: N55-PAC-750W      , VID: V02 , SN: POG17317T1R')
+            self.write_line('')
+            self.write_line('NAME: "Module 3", DESCR: "O2 Daughter Card with L3 ASIC"')
+            self.write_line('PID: N55-D160L3-V2     , VID: V01 , SN: FOC173622N8')
+            self.write_line('')
+            self.write_line('NAME: "FEX 100 CHASSIS", DESCR: "N2K-C2232PP-10GE  CHASSIS"')
+            self.write_line('PID: N2K-C2232PP-10GE  , VID: V04 , SN: SSI17290AV0')
+            self.write_line('')
+            self.write_line('NAME: "FEX 100 Module 1", DESCR: "Fabric Extender Module: 32x10GE, 8x10GE Supervisor"')
+            self.write_line('PID: N2K-C2232PP-10GE  , VID: V04 , SN: FOC17350TU5')
+            self.write_line('')
+            self.write_line('NAME: "FEX 100 Fan 1", DESCR: "Fabric Extender Fan module"')
+            self.write_line('PID: N2K-C2232-FAN     , VID: N/A , SN: N/A')
+            self.write_line('')
+            self.write_line('NAME: "FEX 100 Power Supply 1", DESCR: "Fabric Extender AC power supply"')
+            self.write_line('PID: N2200-PAC-400W    , VID: V04 , SN: LIT17280PY8')
+            self.write_line('')
+            self.write_line('NAME: "FEX 100 Power Supply 2", DESCR: "Fabric Extender AC power supply"')
+            self.write_line('PID: N2200-PAC-400W    , VID: V04 , SN: LIT17280PY4')
+
+        elif "mac".startswith(args[0]):
+            if "address-table".startswith(args[1]):
+                self.write_line("Legend: ")
+                self.write_line("        * - primary entry, G - Gateway MAC, (R) - Routed MAC, O - Overlay MAC")
+                self.write_line("        age - seconds since last seen,+ - primary entry using vPC Peer-Link")
+                self.write_line("   VLAN     MAC Address      Type      age     Secure NTFY   Ports/SWID.SSID.LID")
+                self.write_line("---------+-----------------+--------+---------+------+----+------------------")
+                for mac in self.switch_configuration.mac_table:
+                    self.write_line(
+                        "* {: <7} {: <17} {: <8} {: < 9} {: <6} {: <4} {: <15}".format(
+                            mac.vlan, mac.mac_address, mac.type, 12, 'F', 'F', mac.interface
+                        )
+                    )
 
     def do_copy(self, source_url, destination_url):
         dest_protocol, dest_file = destination_url.split(":")

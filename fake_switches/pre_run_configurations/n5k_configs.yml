@@ -1,0 +1,55 @@
+port_configuration: &PORT_CONFIGURATION
+  mode: access
+  type: eth
+  access_vlan: 2001
+  status: up
+
+switch_level_configs:
+  role: TOR
+  vlans:
+    number: &NO_OF_VLANS 100
+    start_vlan_number: &START_VLAN_NUMBER 2000
+  vrfs:
+    number: 10
+    no_of_routes: random(1000, 5000)
+  routes:
+    number: 500
+  mac_table:
+    number: 1000
+  ports:
+    - <<: *PORT_CONFIGURATION
+      name: "Eth1/1"
+      access_vlan: 2000, 2001
+    - <<: *PORT_CONFIGURATION
+      name: "Eth2/1"
+      mode: trunk
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION # port no 10
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION # port no 20
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION # port no 30
+    - <<: *PORT_CONFIGURATION
+    - <<: *PORT_CONFIGURATION
+

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fake_switches.command_processing.piping_processor_base import PipingProcessorBase, StartOutputAt, Grep
+from fake_switches.command_processing.piping_processor_base import PipingProcessorBase, StartOutputAt, Grep, ToXML
 
 
 class PipingProcessor(PipingProcessorBase):
@@ -22,4 +22,13 @@ class PipingProcessor(PipingProcessorBase):
 
     def do_include(self, *args):
         return Grep(" ".join(args))
+
+    def do_grep(self, *args):
+        return Grep(" ".join(args))
+
+    def do_no_more(self, *args):
+        return None
+
+    def do_xml(self, *args):
+        return ToXML(" ".join(args))
 

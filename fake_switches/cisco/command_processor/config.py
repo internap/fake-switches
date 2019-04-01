@@ -30,6 +30,14 @@ class ConfigCommandProcessor(BaseCommandProcessor):
     def get_prompt(self):
         return self.switch_configuration.name + "(config)#"
 
+    def do_vrf(self, *args):
+        if "context".startswith(args[0]):
+            vrf_context = self.switch_configuration.get_vrf(args[1])
+            if not vrf_context:
+                vrf_context = self.switch_configuration.new('VRF', args[1])
+                self.switch_configuration.add_vrf(vrf_context)
+            self.move_to(self.config_vrf_processor)
+
     def do_vlan(self, raw_number, *_):
         number = int(raw_number)
         if number < 0:
@@ -62,8 +70,13 @@ class ConfigCommandProcessor(BaseCommandProcessor):
             self.switch_configuration.add_vrf(vrf)
             self.move_to(self.config_vrf_processor, vrf)
         elif "route".startswith(cmd):
-            static_route = self.switch_configuration.new("Route", *args)
+            static_route = self.switch_configuration.new("Route", *args, vrf_name='DEFAULT-LAN')
             self.switch_configuration.add_static_route(static_route)
+
+    def do_mac(self, cmd, *args):
+        if "address-table".startswith(cmd):
+            mac = self.switch_configuration.new("MAC", *args)
+            self.switch_configuration.add_mac_entry(mac)
 
     def do_interface(self, *args):
         interface_name = self.interface_separator.join(args)

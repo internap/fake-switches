@@ -25,3 +25,8 @@ class ConfigVRFCommandProcessor(BaseCommandProcessor):
 
     def do_exit(self):
         self.is_done = True
+
+    def do_ip(self, cmd, *args):
+        if "route".startswith(cmd):
+            static_route = self.switch_configuration.new("Route", *args, vrf_name=self.vrf)
+            self.switch_configuration.add_static_route(static_route)

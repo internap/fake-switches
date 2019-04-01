@@ -70,3 +70,11 @@ class Grep(object):
             return data
         else:
             return False
+
+
+class ToXML(object):
+    def __init__(self, lookup):
+        self.lookup = lookup
+
+    def pipe(self, data):
+        return data

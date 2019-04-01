@@ -18,7 +18,7 @@ from netaddr import IPNetwork, IPAddress
 
 
 class SwitchConfiguration(object):
-    def __init__(self, ip, name="", auto_enabled=False, privileged_passwords=None, ports=None, vlans=None, objects_overrides=None, commit_delay=0):
+    def __init__(self, ip, name="", auto_enabled=True, privileged_passwords=None, ports=None, vlans=None, objects_overrides=None, commit_delay=0):
         self.ip = ip
         self.name = name
         self.privileged_passwords = privileged_passwords or []
@@ -26,6 +26,8 @@ class SwitchConfiguration(object):
         self.vlans = []
         self.ports = []
         self.static_routes = []
+        self.mac_table = []
+        self.feature_list = []
         self.vrfs = [VRF('DEFAULT-LAN')]
         self.locked = False
         self.objects_factory = {
@@ -36,6 +38,8 @@ class SwitchConfiguration(object):
             "VRRP": VRRP,
             "VlanPort": VlanPort,
             "AggregatedPort": AggregatedPort,
+            "MAC": MACEntry,
+            "Feature": SwitchFeature,
         }
         self.commit_delay = commit_delay
 
@@ -109,25 +113,54 @@ class SwitchConfiguration(object):
                 if port.vrf and port.vrf.name == name:
                     port.vrf = None
 
+    def add_mac_entry(self, mac_entry):
+        if not self.get_mac_entry(mac_entry.mac_address):
+            self.mac_table.append(mac_entry)
+
+    def get_mac_entry(self, mac_address):
+        return next((mac for mac in self.mac_table if mac.mac_address == mac_address), None)
+
+    def remove_mac_entry(self, mac_address):
+        mac = self.get_mac_entry(mac_address)
+        self.mac_table.remove(mac)
+
     def get_physical_ports(self):
         return [p for p in self.ports if not (isinstance(p, VlanPort) or isinstance(p, AggregatedPort))]
 
     def get_vlan_ports(self):
         return [p for p in self.ports if isinstance(p, VlanPort)]
 
+    def add_switch_feature(self, switch_feature):
+        if not self.get_switch_feature(switch_feature.name):
+            self.feature_list.append(switch_feature)
+
+    def get_switch_feature(self, name=None):
+        return next((feature for feature in self.feature_list if feature.name == name), None)
+
     def commit(self):
         sleep(self.commit_delay)
 
 
 class VRF(object):
-    def __init__(self, name):
+    def __init__(self, name, interface=None, vrf_id=None):
         self.name = name
+        self.interface = interface
+        self.vrf_id = vrf_id
+        self.xml_output_names = dict(name="vrf_name", interface="if_name", vrf_id="vrf_id")
+
+
+class SwitchFeature(object):
+    def __init__(self, name, instance=None, status=None):
+        self.name = name
+        self.instance = instance
+        self.status = status
 
 
 class Route(object):
-    def __init__(self, destination, mask, next_hop):
+    def __init__(self, destination, mask, next_hop, vrf_name=None):
         self.dest = IPNetwork("{}/{}".format(destination, mask))
         self.next_hop = IPAddress(next_hop)
+        self.vrf_name = vrf_name
 
     @property
     def destination(self):
@@ -136,6 +169,14 @@ class Route(object):
     @property
     def mask(self):
         return self.dest.netmask
+
+
+class MACEntry(object):
+    def __init__(self, type='static', mac_address=None, _=None, vlan=None, __=None, interface=None):
+        self.mac_address = mac_address
+        self.type = type
+        self.vlan = vlan
+        self.interface = interface
 
 
 class Vlan(object):

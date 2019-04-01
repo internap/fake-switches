@@ -8,6 +8,7 @@ from fake_switches.dell10g import dell_core as dell10g_core
 from fake_switches.juniper import juniper_core
 from fake_switches.juniper_mx import juniper_mx_core
 from fake_switches.juniper_qfx_copper import juniper_qfx_copper_core
+from fake_switches.cisco.n5k import cisco_core as n5k_cisco_core
 
 DEFAULT_MAPPING = {
     'arista_generic': arista_core.AristaSwitchCore,
@@ -16,6 +17,7 @@ DEFAULT_MAPPING = {
     'cisco_6500': cisco6500_core.Cisco6500SwitchCore,
     'cisco_2960_24TT_L': cisco_core.Cisco2960_24TT_L_SwitchCore,
     'cisco_2960_48TT_L': cisco_core.Cisco2960_48TT_L_SwitchCore,
+    'cisco_n5k': n5k_cisco_core.CiscoN5kSwitchCore,
     'dell_generic': dell_core.DellSwitchCore,
     'dell10g_generic': dell10g_core.Dell10GSwitchCore,
     'juniper_generic': juniper_core.JuniperSwitchCore,
