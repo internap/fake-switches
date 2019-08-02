@@ -1,6 +1,7 @@
+pyhamcrest>=1.6,<=1.9.0
+-r requirements.txt
 nose>=1.2.1
 mock>=1.0.1
-pyhamcrest>=1.6
 pexpect>=4.2.1
 flexmock>=0.9.7
 ncclient>=0.5.2

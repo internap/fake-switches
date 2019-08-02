@@ -17,7 +17,8 @@ import logging
 from twisted.conch import avatar, interfaces as conchinterfaces
 from twisted.conch.insults import insults
 from twisted.conch.ssh import factory, keys, session
-from twisted.cred import portal, checkers
+from twisted.cred import portal, credentials
+from twisted.cred.checkers import ICredentialsChecker
 from zope.interface import implementer
 
 from fake_switches.terminal.ssh import SwitchSSHShell
@@ -69,6 +70,28 @@ class SSHDemoRealm:
             raise Exception("No supported interfaces found.")
 
 
+@implementer(ICredentialsChecker)
+class SSHICredentialsChecker(object):
+    credentialInterfaces = (credentials.IUsernamePassword,
+                            credentials.IUsernameHashedPassword)
+
+    def __init__(self, **users):
+        self.users = {
+            k.encode() if isinstance(k, str) else k:
+                v.encode() if isinstance(v, str) else v
+            for k, v in users.items()
+        }
+
+    def addUser(self, username, password):
+        pass
+
+    def _cbPasswordMatch(self, matched, username):
+        pass
+
+    def requestAvatarId(self, credentials):
+        pass
+
+
 def getRSAKeys():
     host_public_key = """ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC53ANLkvrZmufQsXuIZch7zrzWbevrqQpNT+/YUBffi3wX+I4lfJibL4lFwqgwR3Hshy7hqX4tgQiU6nWSz5QD/dcCuoaMvhVxVH0WyCtzc69xL9GBfHzyDvWYV/SU1bMiWwzWsFXSrnASeok1/zuDK4z5F0+U5gOtN009988/sw5DYBNer8gYq04Lt4r1WlCEPdyemLNkwHqNLMI7zgZw65djAEK7m+t8DhjtpV7ODxKi/ZB5TegoIbdMciMOTR+alX4bdw85d9tkVot7wLFX627/+DIbO0DokFfIDgJAt/jBVZf+MFhzjta/ZicxIWsTxK1yyOpmDlGFTHDR0Zwp fake@ssh"""
     host_private_key = """-----BEGIN RSA PRIVATE KEY-----
@@ -111,8 +134,7 @@ class SwitchSshService(BaseTransport):
         ssh_factory.portal = portal.Portal(SSHDemoRealm(self.switch_core))
         if not self.users:
             self.users = {'root': b'root'}
-        ssh_factory.portal.registerChecker(
-            checkers.InMemoryUsernamePasswordDatabaseDontUse(**self.users))
+        ssh_factory.portal.registerChecker(SSHICredentialsChecker(**self.users))
 
         host_public_key, host_private_key = getRSAKeys()
         ssh_factory.publicKeys = {

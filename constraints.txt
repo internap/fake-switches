@@ -4,18 +4,22 @@
 #
 #    pip-compile --no-index --no-emit-trusted-host --output-file constraints.txt requirements.txt
 #
--e git+https://github.com/stephanerobert/tftpy.git@master#egg=tftpy
 appdirs==1.4.3            # via twisted
-asn1crypto==0.24.0        # via cryptography
-cffi==1.11.5              # via cryptography
+attrs==19.3.0             # via automat, twisted
+automat==0.8.0            # via twisted
+bcrypt==3.1.7             # via twisted
+cffi==1.13.2              # via bcrypt, cryptography
 constantly==15.1.0        # via twisted
-cryptography==2.3.1       # via twisted
-idna==2.7                 # via cryptography
+cryptography==2.8         # via twisted
+hyperlink==19.0.0         # via twisted
+idna==2.8                 # via hyperlink
 incremental==17.5.0       # via twisted
-lxml==4.2.5
+lxml==4.4.2
 netaddr==0.7.19
-pyasn1==0.4.4             # via twisted
+pyasn1==0.4.8             # via twisted
 pycparser==2.19           # via cffi
-six==1.11.0               # via cryptography
-twisted[conch]==16.6.0
-zope.interface==4.5.0     # via twisted
+pyhamcrest==1.10.0        # via twisted
+six==1.13.0               # via automat, bcrypt, cryptography
+tftpy==0.8.0
+twisted[conch]==19.10.0
+zope.interface==4.7.1     # via twisted
