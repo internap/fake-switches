@@ -17,5 +17,5 @@ netaddr==0.7.19
 pyasn1==0.4.4             # via twisted
 pycparser==2.19           # via cffi
 six==1.11.0               # via cryptography
-twisted[conch]==16.6.0
+twisted[conch]==19.7.0
 zope.interface==4.5.0     # via twisted
