@@ -113,9 +113,12 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
                     else:
                         self.show_vlan_page([vlan])
 
+        elif "bridge".startswith(args[0]) and "address-table".startswith(args[1]):
+            self.show_page(self.get_bridge_address_table())
 
         elif "interfaces".startswith(args[0]) and "status".startswith(args[1]):
             self.show_page(self.get_interfaces_status_output())
+
         elif "version".startswith(args[0]):
             self.show_version()
 
@@ -158,6 +161,26 @@ class DellEnabledCommandProcessor(BaseCommandProcessor):
         conf.append('exit')
 
         return conf
+
+    def get_bridge_address_table(self):
+        output_lines = [
+            "",
+            "Aging time is 300 Sec"
+            "",
+            "  Vlan        Mac Address       Port          Type",
+            "-------- --------------------- ---------- --------------------",
+            "1201     F8B1.5649.0F99        vlan 1201  Management",
+            "1206     F8B1.5649.0F99        vlan 1206  Management",
+            "3991     02E0.5236.3801        ch1        Dynamic",
+            "3991     748E.F8A7.1B01        ch1        Dynamic",
+            "4063     0013.C601.53A7        1/g22      Dynamic",
+            "4063     00C0.B785.3213        ch1        Dynamic",
+            "4063     00C0.B7B4.742C        ch1        Dynamic",
+            "",
+            "Total MAC Addresses in use:206",
+            "",
+        ]
+        return output_lines
 
     def get_interfaces_status_output(self):
         output_lines = [

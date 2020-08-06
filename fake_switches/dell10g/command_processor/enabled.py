@@ -122,6 +122,9 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
         elif "interfaces".startswith(args[0]) and "status".startswith(args[1]):
             self.show_interfaces_status()
 
+        elif "mac".startswith(args[0]) and "address-table".startswith(args[1]):
+            self.show_mac_address_table()
+
     def write_vlans(self):
         named_vlans = []
         other_vlans = []
@@ -184,6 +187,25 @@ class Dell10GEnabledCommandProcessor(DellEnabledCommandProcessor):
             for port_string in ports_strings[1:]:
                 self.write_line("{number: <5}  {name: <32} {ports: <13}  {type}".format(
                         number="", name="", ports=port_string, type=""))
+        self.write_line("")
+
+    def show_mac_address_table(self):
+        self.write_line("")
+        self.write_line("Aging time is 300 Sec")
+        self.write_line("")
+
+        self.write_line("Vlan     Mac Address           Type        Port")
+        self.write_line("-------- --------------------- ----------- ---------------------")
+        self.write_line("1        F8B1.567E.FE22        Management  Vl1")
+        self.write_line("972      02E0.52C4.4401        Dynamic     Po22")
+        self.write_line("972      0CC4.7A1B.B30E        Dynamic     Po22")
+        self.write_line("972      0CC4.7A1E.CB77        Dynamic     Te1/0/26")
+        self.write_line("972      0CC4.7A1E.CB8C        Dynamic     Te1/0/13")
+        self.write_line("972      0CC4.7A1E.CBF5        Dynamic     Te1/0/10")
+        self.write_line("972      0CC4.7A1E.CC22        Dynamic     Te1/0/15")
+        self.write_line("972      0CC4.7A6E.0C0D        Dynamic     Po22")
+        self.write_line("972      0CC4.7AA8.C8AF        Dynamic     Po22")
+        self.write_line("972      AC1F.6B40.2C3F        Dynamic     Po22")
         self.write_line("")
 
     def _build_port_strings(self, ports):
