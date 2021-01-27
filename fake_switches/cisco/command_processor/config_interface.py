@@ -18,6 +18,8 @@ from netaddr.ip import IPAddress
 from fake_switches.command_processing.base_command_processor import BaseCommandProcessor
 from fake_switches.switch_configuration import VlanPort
 
+from fake_switches.utils.ip_validator import InvalidIpError, IncompleteIpError, valid_ip_v4
+
 
 class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
     def init(self, switch_configuration, terminal_controller, logger, piping_processor, *args):
@@ -139,9 +141,19 @@ class ConfigInterfaceCommandProcessor(BaseCommandProcessor):
                 self.write_line("% Invalid input detected at '^' marker.")
                 self.write_line("")
             else:
-                ip_address = IPAddress(args[1])
-                if ip_address not in self.port.ip_helpers:
-                    self.port.ip_helpers.append(ip_address)
+                try:
+                    ip_address = _parse_ip(args[1], 4)
+                    if ip_address is None:
+                        raise InvalidIpError
+                    if ip_address not in self.port.ip_helpers:
+                        self.port.ip_helpers.append(ip_address)
+                except InvalidIpError:
+                    self.write_line(" ^")
+                    self.write_line("% Invalid input detected at '^' marker.")
+                    self.write_line("")
+                except IncompleteIpError:
+                    self.write_line("% Incomplete command.")
+                    self.write_line("")
 
     def do_no_ip(self, *args):
         if "address".startswith(args[0]):
@@ -333,7 +345,11 @@ def parse_vlan_list(param):
     return vlans
 
 
-def _parse_ip(ip):
+def _parse_ip(ip, strict_format=None):
+    if strict_format == 4 and not valid_ip_v4(ip):
+        return None
+    elif strict_format and strict_format != 4:
+        raise NotImplementedError("Ip format {} validation not supported.".format(strict_format))
     try:
         return IPAddress(ip)
     except:
