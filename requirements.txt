@@ -1,4 +1,6 @@
 -e git+https://github.com/stephanerobert/tftpy.git@master#egg=tftpy
+cryptography<3; python_version<'3'
+cryptography<3; python_version=='3.5'
 netaddr>=0.7.13
 Twisted[conch]>=16.6.0, <17.0
 lxml>=3.7
