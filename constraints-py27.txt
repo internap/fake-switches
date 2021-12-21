@@ -4,8 +4,6 @@
 #
 #    pip-compile --no-emit-trusted-host --no-index --output-file=constraints-py27.txt requirements.txt
 #
--e git+https://github.com/stephanerobert/tftpy.git@master#egg=tftpy
-    # via -r requirements.txt
 appdirs==1.4.4
     # via twisted
 cffi==1.14.5

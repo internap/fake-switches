@@ -4,11 +4,9 @@
 #
 #    pip-compile --no-emit-trusted-host --no-index --output-file=constraints.txt requirements.txt
 #
--e git+https://github.com/stephanerobert/tftpy.git@master#egg=tftpy
-    # via -r requirements.txt
 appdirs==1.4.4
     # via twisted
-cffi==1.14.5
+cffi==1.15.0
     # via cryptography
 constantly==15.1.0
     # via twisted
@@ -20,13 +18,13 @@ importlib-resources==3.2.1
     # via netaddr
 incremental==21.3.0
     # via twisted
-lxml==4.6.3
+lxml==4.7.1
     # via -r requirements.txt
 netaddr==0.8.0
     # via -r requirements.txt
 pyasn1==0.4.8
     # via twisted
-pycparser==2.20
+pycparser==2.21
     # via cffi
 six==1.16.0
     # via cryptography
