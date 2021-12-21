@@ -1,0 +1,44 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+---
+
+name: release
+
+on:
+  release:
+    types: [released, prereleased]
+
+jobs:
+  build-and-publish:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ["3.5"]
+        tox_env: ['py35']
+    steps:
+    - uses: actions/checkout@v3
+    - name: "Set up Python ${{ matrix.python_version }}"
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python_version }}
+    - name: Install dependencies
+      run: python -m pip install --upgrade pip
+    - name: Install building dependencies
+      run: pip install wheel tox
+    - name: Build venv
+      run: |
+        tox -e ${{ matrix.tox_env }} --notest
+    - name: Run
+      run: |
+        rm -rf dist || true
+        .tox/${{ matrix.tox_env }}/bin/python setup.py sdist bdist_wheel
+    - name: Publish a Python distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      if: github.event_name == 'released'
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+

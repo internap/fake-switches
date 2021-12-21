@@ -104,7 +104,7 @@ class SshTester(ProtocolTester):
     CONF_KEY = "ssh"
 
     def get_ssh_connect_command(self):
-        return 'ssh %s@%s -p %s -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null' \
+        return 'ssh %s@%s -p %s -o StrictHostKeyChecking=no -o KexAlgorithms=+diffie-hellman-group1-sha1 -o KexAlgorithms=+diffie-hellman-group14-sha1 -o UserKnownHostsFile=/dev/null' \
                % (self.username, self.host, self.port)
 
     def login(self):
