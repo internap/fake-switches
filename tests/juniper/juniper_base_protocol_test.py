@@ -1669,6 +1669,21 @@ class JuniperBaseProtocolTest(BaseJuniper):
 
         self.cleanup(reset_interface("ge-0/0/3"))
 
+    def test_that_force_up_can_be_configured(self):
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"ether-options": {
+                        "ieee-802.3ad": {"lacp": {"force-up": ""}},
+                    }}]},
+            ]})
+        self.nc.commit()
+        get_interface_reply = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
+            "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
+        assert_that(get_interface_reply.xpath("data/configuration"), has_length(1))
+        self.cleanup(reset_interface("ge-0/0/1"))
+
     def _interface(self, name):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": name}}}}

@@ -116,6 +116,7 @@ class JuniperNetconfDatastore(object):
                 actual_port.access_vlan = updated_port.access_vlan
                 actual_port.trunk_vlans = deepcopy(updated_port.trunk_vlans)
                 actual_port.trunk_native_vlan = updated_port.trunk_native_vlan
+                actual_port.force_up = updated_port.force_up
                 actual_port.speed = updated_port.speed
                 actual_port.auto_negotiation = updated_port.auto_negotiation
                 actual_port.aggregation_membership = updated_port.aggregation_membership
@@ -208,6 +209,8 @@ class JuniperNetconfDatastore(object):
             if port.aggregation_membership is not None:
                 ether_options["ieee-802.3ad"] = {"bundle": port.aggregation_membership}
 
+            if port.force_up is not None:
+                ether_options["ieee-802.3ad"] = {"lacp": {"force-up": ""}}
             if len(ether_options) > 0:
                 interface_data.append({self.ETHER_OPTIONS_TAG: ether_options})
 
@@ -287,7 +290,9 @@ class JuniperNetconfDatastore(object):
                 speed_node = first(ether_options_attributes.xpath("speed/*"))
                 if speed_node is not None:
                     port.speed = speed_node.tag.split("-")[-1]
-
+                force_up = first(ether_options_attributes.xpath("ieee-802.3ad/lacp/force-up"))
+                if force_up is not None:
+                    port.force_up = True
                 self.edit_errors.extend(assign_auto_negotiation_state(ether_options_attributes, port))
 
                 if resolve_operation(first(ether_options_attributes.xpath("ieee-802.3ad"))) == "delete":
