@@ -1679,10 +1679,45 @@ class JuniperBaseProtocolTest(BaseJuniper):
                     }}]},
             ]})
         self.nc.commit()
+        get_interface_reply = self._interface('ge-0/0/1')
+        assert_that(
+            get_interface_reply.xpath("ether-options/*")[0].tag,
+            is_('ieee-802.3ad')
+        )
+        assert_that(
+            get_interface_reply.xpath("ether-options/ieee-802.3ad/*")[0].tag,
+            is_('lacp')
+        )
+        assert_that(
+            get_interface_reply.xpath("ether-options/ieee-802.3ad/lacp/*")[0].tag,
+            is_('force-up')
+        )
+
+        self.cleanup(reset_interface("ge-0/0/1"))
+
+    def test_that_force_up_can_be_removed(self):
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"ether-options": {
+                        "ieee-802.3ad": {"lacp": {"force-up": ""}},
+                    }}]},
+            ]})
+        self.nc.commit()
+
+        self.edit({
+            "interfaces": [
+                {"interface": [
+                    {"name": "ge-0/0/1"},
+                    {"ether-options": {
+                        "ieee-802.3ad": {"lacp": {XML_ATTRIBUTES: {"operation": "delete"}}},
+                    }}]}
+            ]})
+        self.nc.commit()
         get_interface_reply = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
-        assert_that(get_interface_reply.xpath("data/configuration"), has_length(1))
-        self.cleanup(reset_interface("ge-0/0/1"))
+        assert_that(get_interface_reply.xpath("data/configuration/interfaces/interface/ether-options"), has_length(0))
 
     def _interface(self, name):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
