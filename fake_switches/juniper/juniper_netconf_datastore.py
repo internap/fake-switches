@@ -290,9 +290,7 @@ class JuniperNetconfDatastore(object):
                 speed_node = first(ether_options_attributes.xpath("speed/*"))
                 if speed_node is not None:
                     port.speed = speed_node.tag.split("-")[-1]
-                force_up = first(ether_options_attributes.xpath("ieee-802.3ad/lacp/force-up"))
-                if force_up is not None:
-                    port.force_up = True
+
                 self.edit_errors.extend(assign_auto_negotiation_state(ether_options_attributes, port))
 
                 if resolve_operation(first(ether_options_attributes.xpath("ieee-802.3ad"))) == "delete":
@@ -301,6 +299,15 @@ class JuniperNetconfDatastore(object):
                     port.aggregation_membership = None
                 else:
                     port.aggregation_membership = resolve_new_value(ether_options_attributes, "ieee-802.3ad/bundle", port.aggregation_membership)
+
+                if resolve_operation(first(ether_options_attributes.xpath("ieee-802.3ad/lacp"))) == "delete":
+                    if port.force_up is None:
+                        raise NotFound("lacp")
+                    port.force_up = None
+                else:
+                    force_up = first(ether_options_attributes.xpath("ieee-802.3ad/lacp/force-up"))
+                    if force_up is not None:
+                        port.force_up = True
             else:
                 port.speed = None
                 port.aggregation_membership = None
