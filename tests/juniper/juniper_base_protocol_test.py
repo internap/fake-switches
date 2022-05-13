@@ -1718,6 +1718,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
         get_interface_reply = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
             "configuration": {"interfaces": {"interface": {"name": "ge-0/0/1"}}}}}))
         assert_that(get_interface_reply.xpath("data/configuration/interfaces/interface/ether-options"), has_length(0))
+        self.cleanup(reset_interface("ge-0/0/1"))
 
     def _interface(self, name):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {
