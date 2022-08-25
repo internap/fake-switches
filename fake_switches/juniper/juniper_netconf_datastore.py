@@ -123,11 +123,11 @@ class JuniperNetconfDatastore(object):
                 actual_port.lldp_transmit = updated_port.lldp_transmit
                 actual_port.lldp_receive = updated_port.lldp_receive
                 actual_port.vendor_specific = updated_port.vendor_specific
+                actual_port.recovery_timeout = updated_port.recovery_timeout
 
                 if isinstance(actual_port, AggregatedPort):
                     actual_port.lacp_active = updated_port.lacp_active
                     actual_port.lacp_periodic = updated_port.lacp_periodic
-
                 if isinstance(actual_port, VlanPort):
                     actual_port.vlan_id = updated_port.vlan_id
                     actual_port.access_group_in = updated_port.access_group_in
@@ -233,6 +233,8 @@ class JuniperNetconfDatastore(object):
         if port.access_vlan: vlans.append(port.access_vlan)
         if len(vlans) > 0:
             ethernet_switching["vlan"] = [{"members": str(v)} for v in vlans]
+        if port.recovery_timeout is not None:
+            ethernet_switching["recovery-timeout"] = port.recovery_timeout
         if ethernet_switching or not isinstance(port, AggregatedPort):
             interface_data.append({"unit": {
                 "name": "0",
@@ -317,7 +319,7 @@ class JuniperNetconfDatastore(object):
             port.trunk_native_vlan = None
             port.access_vlan = None
             port.trunk_vlans = None
-            port.trunk_vlans = None
+            port.recovery_timeout = None
             port.vendor_specific["has-ethernet-switching"] = False
         else:
             port_attributes = first(interface_node.xpath("unit/family/{}".format(self.ETHERNET_SWITCHING_TAG)))
@@ -336,6 +338,12 @@ class JuniperNetconfDatastore(object):
                     port.trunk_vlans = None
                 else:
                     self.parse_vlan_members(port, port_attributes)
+
+                if resolve_operation(first(port_attributes.xpath("recovery-timeout"))) == "delete":
+                    port.recovery_timeout = None
+                else:
+                    port.recovery_timeout = resolve_new_value(port_attributes, "recovery-timeout",
+                                                              port.recovery_timeout)
 
             if resolve_operation(first(self.get_trunk_native_vlan_node(interface_node))) == "delete":
                 port.trunk_native_vlan = None

@@ -164,6 +164,7 @@ class Port(object):
         self.vrf = None
         self.speed = None
         self.force_up = None
+        self.recovery_timeout = None
         self.auto_negotiation = None
         self.aggregation_membership = None
         self.mtu = None
