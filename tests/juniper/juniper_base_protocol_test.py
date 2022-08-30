@@ -1738,7 +1738,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
                                 "port-mode": "trunk"}}}]}]}]})
         self.nc.commit()
         get_interface_reply = self._interface('ae1')
-        assert_that(get_interface_reply.xpath("unit/family/ethernet-switching/recovery-timeout")[0].text, equal_to("500"))
+        assert_that(get_interface_reply.xpath("unit/family/ethernet-switching/recovery-timeout/time-in-seconds")[0].text, equal_to("500"))
         self.cleanup(reset_interface("ae1"))
 
     def test_that_recovery_timeout_can_be_updated(self):
@@ -1759,7 +1759,7 @@ class JuniperBaseProtocolTest(BaseJuniper):
                                 "port-mode": "trunk"}}}]}]}]})
         self.nc.commit()
         get_interface_reply = self._interface('ae1')
-        assert_that(get_interface_reply.xpath("unit/family/ethernet-switching/recovery-timeout")[0].text, equal_to("500"))
+        assert_that(get_interface_reply.xpath("unit/family/ethernet-switching/recovery-timeout/time-in-seconds")[0].text, equal_to("500"))
 
         self.edit({
             "interfaces": [
@@ -1772,44 +1772,10 @@ class JuniperBaseProtocolTest(BaseJuniper):
                                 "recovery-timeout": "300"}}}]}]}]})
         self.nc.commit()
         get_interface_reply = self._interface('ae1')
-        assert_that(get_interface_reply.xpath("unit/family/ethernet-switching/recovery-timeout")[0].text, equal_to("300"))
+        assert_that(get_interface_reply.xpath("unit/family/ethernet-switching/recovery-timeout/time-in-seconds")[0].text, equal_to("300"))
 
         self.cleanup(reset_interface("ae1"))
 
-    def test_that_recovery_timeout_can_be_deleted(self):
-        self.edit({
-            "interfaces": [
-                {"interface": [
-                    {"name": "ae1"},
-                    {"aggregated-ether-options": {
-                        "link-speed": "10g",
-                        "lacp": {
-                            "active": {},
-                            "periodic": "slow"}}},
-                    {"unit": [
-                        {"name": "0"},
-                        {"family": {
-                            "ethernet-switching": {
-                                "recovery-timeout": "500",
-                                "port-mode": "trunk"}}}]}]}]})
-        self.nc.commit()
-        get_interface_reply = self._interface('ae1')
-        assert_that(get_interface_reply.xpath("unit/family/ethernet-switching/recovery-timeout")[0].text, equal_to("500"))
-
-        self.edit({
-            "interfaces": [
-                {"interface": [
-                    {"name": "ae1"},
-                    {"unit": [
-                        {"name": "0"},
-                        {"family": {
-                            "ethernet-switching": {
-                                "recovery-timeout": "delete"}}}]}]}]})
-        self.nc.commit()
-        get_interface_reply = self._interface('ae1')
-        assert_that(get_interface_reply.xpath("unit/family/ethernet-switching"), has_length(1))
-
-        self.cleanup(reset_interface("ae1"))
 
     def _interface(self, name):
         result = self.nc.get_config(source="running", filter=dict_2_etree({"filter": {

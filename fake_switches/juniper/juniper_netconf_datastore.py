@@ -234,7 +234,7 @@ class JuniperNetconfDatastore(object):
         if len(vlans) > 0:
             ethernet_switching["vlan"] = [{"members": str(v)} for v in vlans]
         if port.recovery_timeout is not None:
-            ethernet_switching["recovery-timeout"] = port.recovery_timeout
+            ethernet_switching["recovery-timeout"] = {"time-in-seconds": port.recovery_timeout}
         if ethernet_switching or not isinstance(port, AggregatedPort):
             interface_data.append({"unit": {
                 "name": "0",
