@@ -50,6 +50,15 @@ class Base1_0(Capability):
         self.datastore.unlock(resolve_source_name(target[0].tag))
         return Response(etree.Element("ok"))
 
+    def lock_configuration(self, request):
+        return Response(etree.Element("ok"), require_disconnect=False)
+
+    def unlock_configuration(self, request):
+        return Response(etree.Element("ok"), require_disconnect=False)
+
+    def load_configuration(self, request):
+        return Response(etree.Element("ok"), require_disconnect=False)
+
     def discard_changes(self, _):
         self.datastore.reset()
         return Response(etree.Element("ok"))
