@@ -8,5 +8,5 @@ ChangeLog
 *.egg/
 *.egg-info
 .eggs/
-.venv
+.env
 dist/
