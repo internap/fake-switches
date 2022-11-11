@@ -17,7 +17,7 @@ logger.setLevel('DEBUG')
 def main():
     parser = argparse.ArgumentParser(description='Fake-switch simulator launcher',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--model', type=str, default='cisco_generic',
+    parser.add_argument('--model', type=str, default='hp_procurve',
                         help='Switch model, allowed values are ' + ', '.join(switch_factory.DEFAULT_MAPPING.keys()))
     parser.add_argument('--hostname', type=str, default='switch', help='Switch hostname')
     parser.add_argument('--username', type=str, default='root', help='Switch username')
