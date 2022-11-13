@@ -19,7 +19,7 @@ def main():
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--model', type=str, default='hp_procurve',
                         help='Switch model, allowed values are ' + ', '.join(switch_factory.DEFAULT_MAPPING.keys()))
-    parser.add_argument('--hostname', type=str, default='switch', help='Switch hostname')
+    parser.add_argument('--hostname', type=str, default='hp', help='Switch hostname')
     parser.add_argument('--username', type=str, default='root', help='Switch username')
     parser.add_argument('--password', type=str, default='root', help='Switch password')
     parser.add_argument('--listen-host', type=str, default='0.0.0.0', help='Listen host')
