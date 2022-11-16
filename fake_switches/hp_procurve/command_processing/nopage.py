@@ -21,7 +21,7 @@ class NoPageCommandProcessor(BaseCommandProcessor):
 
     def continue_enabling(self, line):
         self.replace_input = False
-        if line == "" or line in self.switch_configuration.privileged_passwords:
+        if line == "" or line.encode() in self.switch_configuration.privileged_passwords:
             self.move_to(self.enabled_processor)
         else:
             self.write_line("Error - Incorrect username or password.")

@@ -58,7 +58,7 @@ class EnabledCommandProcessor(BaseCommandProcessor):
         elif "version".startswith(args[0]):
             self.show_version()
 
-    def do_ncopy(self, protocol, url, filename, target):
+    def do_copy(self, protocol, target, url, filename):
         try:
             SwitchTftpParser(self.switch_configuration).parse(url, filename, self)
             self.write_line("done")
