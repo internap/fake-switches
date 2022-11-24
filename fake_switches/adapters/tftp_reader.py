@@ -28,5 +28,5 @@ class FakeFile(object):
         self.closed = True
 
     def write(self, data):
-        self.content += data
+        self.content += data.decode()
 
