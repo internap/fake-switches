@@ -30,6 +30,13 @@ class SwitchTftpParser(object):
 
         data = self.reader.read_tftp(url, filename).split("\n")
 
+        for line in data:
+            line = line.strip()
+            if line.startswith("vlan"):
+                vlan_id = int(line.split()[1])
+                self.configuration.add_vlan(self.configuration.new(vlan_id + 1)) 
+                self.configuration.remove_vlan(self.configuration.new(vlan_id)) 
+
         command_processor.init(
             self.configuration, NoopTerminalController(),
             self.logger, NotPipingProcessor())
