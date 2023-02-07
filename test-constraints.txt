@@ -20,7 +20,7 @@ constantly==15.1.0
     # via
     #   -r constraints.txt
     #   twisted
-cryptography==2.9.2 ; python_version == "3.5"
+cryptography==39.0.1 ; python_version == "3.5"
     # via
     #   -r constraints.txt
     #   paramiko
