@@ -3,7 +3,9 @@ import logging
 
 
 from fake_switches import switch_factory
+from fake_switches.transports.http_service import SwitchHttpService
 from fake_switches.transports.ssh_service import SwitchSshService
+from fake_switches.transports.telnet_service import SwitchTelnetService
 from twisted.internet import reactor
 
 
@@ -30,6 +32,26 @@ def main():
 
     factory = switch_factory.SwitchFactory()
     switch_core = factory.get(args.model, args.hostname, args.password)
+
+    if args.model == "arista_generic":
+        http_service = SwitchHttpService(
+            ip=args.listen_host,
+            port=80,
+            switch_core=switch_core,
+            users={args.username: args.password})
+        http_service.hook_to_reactor(reactor)
+
+    if args.model in ['cisco_generic',
+                      'cisco_2960_24TT_L',
+                      'cisco_2960_48TT_L',
+                      'dell_generic',
+                      'dell10g_generic']:
+        telnet_service = SwitchTelnetService(
+            ip=args.listen_host,
+            port=args.listen_port+1,
+            switch_core=switch_core,
+            users={args.username: args.password})
+        telnet_service.hook_to_reactor(reactor)
 
     ssh_service = SwitchSshService(
         ip=args.listen_host,
